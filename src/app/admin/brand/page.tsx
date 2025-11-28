@@ -19,11 +19,11 @@ import {
 import {Label} from '../../components/ui/label';
 import {Plus} from 'lucide-react';
 import brandsService from '../../lib/api/services/brands';
+import {Brand} from '@/app/types';
 
 export default function BrandPage() {
-  const [brands, setBrands] = useState<
-    Array<{id: string; name: string; slug: string; logo: string}>
-  >([]);
+  const [brands, setBrands] = useState<Brand[] | null>(null);
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [viewMode, setViewMode] = useState(false);
@@ -56,8 +56,8 @@ export default function BrandPage() {
   const fetchBrands = async () => {
     // setLoading(true);
     try {
-      const res = await brandsService.getAll();
-      setBrands(res.data);
+      const data = await brandsService.findAll();
+      setBrands(data); // Use only the array, not the whole response object
     } catch {
       // handle error
     } finally {
@@ -173,7 +173,7 @@ export default function BrandPage() {
               </thead>
               <tbody>
                 {(Array.isArray(brands) ? brands : []).map(brand => (
-                  <tr key={brand.id} className="border-b">
+                  <tr key={brand.id}>
                     <td className="px-4 py-2">{brand.name}</td>
                     <td className="px-4 py-2">{brand.slug}</td>
                     <td className="px-4 py-2">

@@ -13,19 +13,23 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "../../components/ui/alert-dialog"
 
+
 interface Subcategory {
-  id: string
-  name: string
-  products: number
+  id: string;
+  name: string;
+  categoryId?: string;
 }
 
 interface Category {
-  id: string
-  name: string
-  slug: string
-  image: string
-  products: number
-  subcategories: Subcategory[]
+  id: string;
+  name: string;
+  slug?: string;
+  description?: string;
+  banner?: string;
+  priority?: number;
+  subcategories?: Subcategory[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 const initialCategories: Category[] = [
@@ -33,55 +37,81 @@ const initialCategories: Category[] = [
     id: "1",
     name: "Smartphones",
     slug: "smartphones",
-    image: "/placeholder.svg?key=5c3bh",
-    products: 156,
+    description: "All smartphones",
+    banner: "/placeholder.svg?key=5c3bh",
+    priority: 1,
     subcategories: [
-      { id: "1a", name: "Android Phones", products: 89 },
-      { id: "1b", name: "iPhones", products: 67 },
+      { id: "1a", name: "Android Phones" },
+      { id: "1b", name: "iPhones" },
     ],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   },
   {
     id: "2",
     name: "Laptops",
     slug: "laptops",
-    image: "/placeholder.svg?key=9qrz3",
-    products: 98,
+    description: "All laptops",
+    banner: "/placeholder.svg?key=9qrz3",
+    priority: 2,
     subcategories: [
-      { id: "2a", name: "MacBooks", products: 34 },
-      { id: "2b", name: "Windows Laptops", products: 64 },
+      { id: "2a", name: "MacBooks" },
+      { id: "2b", name: "Windows Laptops" },
     ],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   },
   {
     id: "3",
     name: "Audio",
     slug: "audio",
-    image: "/placeholder.svg?key=vb5kn",
-    products: 234,
+    description: "Audio devices",
+    banner: "/placeholder.svg?key=vb5kn",
+    priority: 3,
     subcategories: [
-      { id: "3a", name: "Headphones", products: 89 },
-      { id: "3b", name: "Earbuds", products: 145 },
+      { id: "3a", name: "Headphones" },
+      { id: "3b", name: "Earbuds" },
     ],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   },
   {
     id: "4",
     name: "Wearables",
     slug: "wearables",
-    image: "/placeholder.svg?key=m2k8p",
-    products: 67,
+    description: "Wearable tech",
+    banner: "/placeholder.svg?key=m2k8p",
+    priority: 4,
     subcategories: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   },
-]
+];
+
 
 export default function AdminCategoriesPage() {
-  const [categories, setCategories] = useState<Category[]>(initialCategories)
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [viewOpen, setViewOpen] = useState(false)
-  const [editOpen, setEditOpen] = useState(false)
-  const [deleteOpen, setDeleteOpen] = useState(false)
-  const [addSubcategoryOpen, setAddSubcategoryOpen] = useState(false)
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
-  const [editFormData, setEditFormData] = useState<Category | null>(null)
-  const [subcategoryFormData, setSubcategoryFormData] = useState({ name: "", products: 0 })
+  const [categories, setCategories] = useState<Category[]>(initialCategories);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [viewOpen, setViewOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [addSubcategoryOpen, setAddSubcategoryOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [editFormData, setEditFormData] = useState<Category | null>(null);
+  const [subcategoryFormData, setSubcategoryFormData] = useState({ name: "", products: 0 });
+  // Add form state
+  const [addFormData, setAddFormData] = useState({
+    name: "",
+    slug: "",
+    banner: "",
+    description: "",
+    priority: "",
+    subcategories: [] as Subcategory[],
+    bannerFile: null as File | null,
+    bannerPreview: ""
+  });
+  // Edit form image preview
+  const [editBannerPreview, setEditBannerPreview] = useState<string>("");
 
   const handleViewClick = (category: Category) => {
     setSelectedCategory(category)
@@ -126,18 +156,16 @@ export default function AdminCategoriesPage() {
       const newSubcategory: Subcategory = {
         id: `${selectedCategory.id}-${Date.now()}`,
         name: subcategoryFormData.name,
-        products: subcategoryFormData.products,
-      }
-
+      };
       setCategories(
         categories.map((c) =>
           c.id === selectedCategory.id
-            ? { ...c, subcategories: [...c.subcategories, newSubcategory] }
+            ? { ...c, subcategories: [...(c.subcategories || []), newSubcategory] }
             : c
         )
-      )
-      setAddSubcategoryOpen(false)
-      setSubcategoryFormData({ name: "", products: 0 })
+      );
+      setAddSubcategoryOpen(false);
+      setSubcategoryFormData({ name: "", products: 0 });
     }
   }
 
@@ -155,18 +183,46 @@ export default function AdminCategoriesPage() {
               Add Category
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-lg w-full px-2 sm:px-6 max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Add New Category</DialogTitle>
             </DialogHeader>
-            <form className="grid gap-4 py-4">
+            <form className="grid gap-4 py-4 w-full" onSubmit={e => {
+              e.preventDefault();
+              // Add new category logic (demo only)
+              setCategories([
+                ...categories,
+                {
+                  id: `${Date.now()}`,
+                  name: addFormData.name,
+                  slug: addFormData.slug,
+                  banner: addFormData.bannerPreview || addFormData.banner,
+                  description: addFormData.description,
+                  priority: addFormData.priority ? Number(addFormData.priority) : undefined,
+                  subcategories: [],
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                }
+              ]);
+              setAddFormData({
+                name: "",
+                slug: "",
+                banner: "",
+                description: "",
+                priority: "",
+                subcategories: [],
+                bannerFile: null,
+                bannerPreview: ""
+              });
+              setIsAddDialogOpen(false);
+            }}>
               <div className="grid gap-2">
                 <Label htmlFor="catName">Category Name</Label>
-                <Input id="catName" placeholder="Enter category name" />
+                <Input id="catName" placeholder="Enter category name" value={addFormData.name} onChange={e => setAddFormData(f => ({ ...f, name: e.target.value }))} />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="catSlug">URL Slug</Label>
-                <Input id="catSlug" placeholder="category-slug" />
+                <Input id="catSlug" placeholder="category-slug" value={addFormData.slug} onChange={e => setAddFormData(f => ({ ...f, slug: e.target.value }))} />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="parent">Parent Category</Label>
@@ -185,12 +241,39 @@ export default function AdminCategoriesPage() {
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label>Category Image</Label>
-                <div className="flex h-32 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/50 hover:bg-muted">
-                  <span className="text-sm text-muted-foreground">Click to upload image</span>
-                </div>
+                <Label>Category Banner Image</Label>
+                <label className="flex flex-col sm:flex-row h-auto min-h-[8rem] cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/50 hover:bg-muted relative p-2 sm:p-0">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="absolute inset-0 opacity-0 cursor-pointer"
+                    onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = ev => {
+                          setAddFormData(f => ({ ...f, bannerFile: file, bannerPreview: ev.target?.result as string }));
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                  {addFormData.bannerPreview ? (
+                    <Image src={addFormData.bannerPreview} alt="Preview" width={120} height={120} className="object-contain h-28 w-28" />
+                  ) : (
+                    <span className="text-sm text-muted-foreground text-center">Click to upload image</span>
+                  )}
+                </label>
               </div>
-              <Button type="submit" onClick={() => setIsAddDialogOpen(false)}>
+              <div className="grid gap-2">
+                <Label htmlFor="catDescription">Description</Label>
+                <Input id="catDescription" placeholder="Category description" value={addFormData.description} onChange={e => setAddFormData(f => ({ ...f, description: e.target.value }))} />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="catPriority">Priority</Label>
+                <Input id="catPriority" type="number" placeholder="Priority (number)" value={addFormData.priority} onChange={e => setAddFormData(f => ({ ...f, priority: e.target.value }))} />
+              </div>
+              <Button type="submit">
                 Create Category
               </Button>
             </form>
@@ -213,7 +296,7 @@ export default function AdminCategoriesPage() {
                 <div className="flex items-center gap-4 p-4">
                   <div className="h-16 w-16 overflow-hidden rounded-lg bg-muted">
                     <Image
-                      src={category.image || "/placeholder.svg"}
+                      src={category.banner || "/placeholder.svg"}
                       alt={category.name}
                       width={64}
                       height={64}
@@ -223,9 +306,10 @@ export default function AdminCategoriesPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <h3 className="font-semibold">{category.name}</h3>
-                      <Badge variant="secondary">{category.products} products</Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground">/{category.slug}</p>
+                    {category.slug && (
+                      <p className="text-sm text-muted-foreground">/{category.slug}</p>
+                    )}
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -253,14 +337,13 @@ export default function AdminCategoriesPage() {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
-                {category.subcategories.length > 0 && (
+                {category.subcategories && category.subcategories.length > 0 && (
                   <div className="border-t border-border bg-muted/30 p-4">
                     <p className="mb-2 text-xs font-medium uppercase text-muted-foreground">Subcategories</p>
                     <div className="flex flex-wrap gap-2">
                       {category.subcategories.map((sub) => (
                         <Badge key={sub.id} variant="outline" className="gap-1">
                           {sub.name}
-                          <span className="text-muted-foreground">({sub.products})</span>
                         </Badge>
                       ))}
                     </div>
@@ -274,7 +357,7 @@ export default function AdminCategoriesPage() {
 
       {/* View Modal */}
       <Dialog open={viewOpen} onOpenChange={setViewOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-lg w-full px-2 sm:px-6 max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>View Category</DialogTitle>
             <DialogDescription>Category details and information</DialogDescription>
@@ -284,7 +367,7 @@ export default function AdminCategoriesPage() {
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <div className="rounded-lg bg-muted p-4">
                   <Image
-                    src={selectedCategory.image || "/placeholder.svg"}
+                    src={selectedCategory.banner || "/placeholder.svg"}
                     alt={selectedCategory.name}
                     width={200}
                     height={200}
@@ -296,28 +379,33 @@ export default function AdminCategoriesPage() {
                     <Label className="text-muted-foreground text-xs uppercase">Category Name</Label>
                     <p className="mt-1 font-medium text-base">{selectedCategory.name}</p>
                   </div>
-                  <div>
-                    <Label className="text-muted-foreground text-xs uppercase">URL Slug</Label>
-                    <p className="mt-1 font-medium text-base">{selectedCategory.slug}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground text-xs uppercase">Total Products</Label>
-                    <p className="mt-1 font-medium text-base">{selectedCategory.products}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground text-xs uppercase">Subcategories</Label>
-                    <p className="mt-1 font-medium text-base">{selectedCategory.subcategories.length}</p>
-                  </div>
+                  {selectedCategory.slug && (
+                    <div>
+                      <Label className="text-muted-foreground text-xs uppercase">URL Slug</Label>
+                      <p className="mt-1 font-medium text-base">{selectedCategory.slug}</p>
+                    </div>
+                  )}
+                  {selectedCategory.description && (
+                    <div>
+                      <Label className="text-muted-foreground text-xs uppercase">Description</Label>
+                      <p className="mt-1 font-medium text-base">{selectedCategory.description}</p>
+                    </div>
+                  )}
+                  {selectedCategory.priority !== undefined && (
+                    <div>
+                      <Label className="text-muted-foreground text-xs uppercase">Priority</Label>
+                      <p className="mt-1 font-medium text-base">{selectedCategory.priority}</p>
+                    </div>
+                  )}
                 </div>
               </div>
-              {selectedCategory.subcategories.length > 0 && (
+              {selectedCategory.subcategories && selectedCategory.subcategories.length > 0 && (
                 <div>
                   <Label className="text-muted-foreground text-xs uppercase">Subcategories List</Label>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {selectedCategory.subcategories.map((sub) => (
                       <Badge key={sub.id} variant="outline" className="gap-1">
                         {sub.name}
-                        <span className="text-muted-foreground">({sub.products})</span>
                       </Badge>
                     ))}
                   </div>
@@ -341,7 +429,7 @@ export default function AdminCategoriesPage() {
             <DialogDescription>Update category information</DialogDescription>
           </DialogHeader>
           {editFormData && (
-            <form className="grid gap-4 py-4">
+            <form className="grid gap-4 py-4 w-full">
               <div className="grid gap-2">
                 <Label htmlFor="edit-name">Category Name</Label>
                 <Input
@@ -361,20 +449,30 @@ export default function AdminCategoriesPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="edit-products">Total Products</Label>
-                <Input
-                  id="edit-products"
-                  type="number"
-                  value={editFormData.products}
-                  onChange={(e) => setEditFormData({ ...editFormData, products: Number(e.target.value) })}
-                  placeholder="Enter number of products"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label>Category Image</Label>
-                <div className="flex h-32 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/50 hover:bg-muted">
-                  <span className="text-sm text-muted-foreground">Click to upload image</span>
-                </div>
+                <Label>Category Banner Image</Label>
+                <label className="flex flex-col sm:flex-row h-auto min-h-[8rem] cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/50 hover:bg-muted relative p-2 sm:p-0">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="absolute inset-0 opacity-0 cursor-pointer"
+                    onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = ev => {
+                          setEditBannerPreview(ev.target?.result as string);
+                          setEditFormData(f => f ? { ...f, banner: ev.target?.result as string } : f);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                  {editBannerPreview || editFormData.banner ? (
+                    <Image src={editBannerPreview || editFormData.banner!} alt="Preview" width={120} height={120} className="object-contain h-28 w-28" />
+                  ) : (
+                    <span className="text-sm text-muted-foreground text-center">Click to upload image</span>
+                  )}
+                </label>
               </div>
             </form>
           )}
