@@ -60,39 +60,46 @@ export interface UserListResponse {
   pagination: PaginationMeta
 }
 
+
+// ==================== Subcategory Types ====================
+export interface Subcategory {
+  id: string;
+  name: string;
+  slug?: string;
+  description?: string;
+  banner?: string;
+  priority?: number;
+  categoryId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ==================== Category Types ====================
 export interface Category {
-  id: string
-  name: string
-  slug: string
-  description?: string
-  image?: string
-  icon?: string
-  parentId?: string
-  children?: Category[]
-  productCount?: number
-  isFeatured?: boolean
-  order?: number
-  createdAt: string
-  updatedAt: string
+  id: string;
+  name: string;
+  slug?: string;
+  description?: string;
+  banner?: string;
+  priority?: number;
+  homeCategoryId?: string;
+  subcategories?: Subcategory[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateCategoryRequest {
   name: string
-  description?: string
-  image?: string
-  icon?: string
-  parentId?: string
-  isFeatured?: boolean
+  slug?: string
+  banner?: string | File
+  priority?: number
 }
 
 export interface UpdateCategoryRequest {
   name?: string
-  description?: string
-  image?: string
-  icon?: string
-  parentId?: string
-  isFeatured?: boolean
+  slug?: string
+  banner?: string | File
+  priority?: number
 }
 
 export interface CategoryProductsResponse {
