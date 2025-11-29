@@ -39,30 +39,41 @@ export function withProtectedRoute<P extends object>(
     const router = useRouter()
     const { user, token, isAuthenticated } = useAuthStore()
     const [isLoading, setIsLoading] = useState(true)
-    const [hasRequiredRole, setHasRequiredRole] = useState(true)
+    const [isAuthorized, setIsAuthorized] = useState(false)
+    const [error, setError] = useState<string | null>(null)
 
     const { requiredRoles = [], fallbackTo = "/login", showLoader = true } = options
 
     useEffect(() => {
       setIsLoading(true)
+      setError(null)
 
       // Check if user is authenticated
       if (!isAuthenticated || !token) {
-        router.push(`${fallbackTo}?from=${typeof window !== "undefined" ? window.location.pathname : ""}`)
+        const pathname = typeof window !== "undefined" ? window.location.pathname : ""
+        router.push(`${fallbackTo}?from=${pathname}`)
         return
       }
 
       // Check if user has required role
-      if (requiredRoles.length > 0 && user) {
+      if (requiredRoles.length > 0) {
+        if (!user) {
+          setError("User data not found")
+          setIsLoading(false)
+          return
+        }
+
         const hasRole = requiredRoles.includes(user.role)
-        setHasRequiredRole(hasRole)
 
         if (!hasRole) {
+          // User is authenticated but doesn't have required role
           router.push("/403")
           return
         }
       }
 
+      // User is authorized
+      setIsAuthorized(true)
       setIsLoading(false)
     }, [isAuthenticated, token, user, router, fallbackTo, requiredRoles])
 
@@ -80,7 +91,17 @@ export function withProtectedRoute<P extends object>(
       return null
     }
 
-    if (!isAuthenticated || !hasRequiredRole) {
+    if (error) {
+      return (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <p className="text-red-600">Error: {error}</p>
+          </div>
+        </div>
+      )
+    }
+
+    if (!isAuthorized) {
       return null
     }
 
