@@ -7,6 +7,7 @@ import { Button } from "../../components/ui/button"
 import { Badge } from "../../components/ui/badge"
 import { formatPrice } from "../../lib/utils/format"
 import { useAuthStore } from "@/app/store/auth-store"
+import { withProtectedRoute } from "@/app/lib/auth/protected-route"
 
 const recentOrders = [
   {
@@ -39,7 +40,7 @@ const quickStats = [
   { label: "Wallet Balance", value: formatPrice(2500), icon: CreditCard },
 ]
 
-export default function AccountPage() {
+function AccountPage() {
   const { user } = useAuthStore()
   const firstName = user?.name?.split(" ")[0] || "User"
 
