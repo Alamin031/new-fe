@@ -2,7 +2,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client'
 
-import { useState, useEffect } from 'react'
+// ...existing code...
 import { Plus, Search, Edit, Trash2, Eye, MoreVertical, Loader2, GripVertical } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
@@ -15,6 +15,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Textarea } from '../../components/ui/textarea'
 import { toast } from 'sonner'
 import { homecategoriesService, type Homecategory } from '../../lib/api/services/homecategories'
+import { useEffect, useState } from 'react'
+import { categoriesService } from '../../lib/api/services/categories'
+import { productsService } from '../../lib/api/services/products'
+import type { Category, Product } from '../../lib/api/types'
 
 export default function HomeshowCategoryPage() {
   const [categories, setCategories] = useState<Homecategory[]>([])
@@ -30,9 +34,31 @@ export default function HomeshowCategoryPage() {
     name: '',
     description: '',
     priority: '',
-    categoryIds: '',
-    productIds: '',
+    categoryIds: [] as string[],
+    productIds: [] as string[],
   })
+
+  const [allCategories, setAllCategories] = useState<Category[]>([])
+  const [allProducts, setAllProducts] = useState<Product[]>([])
+  useEffect(() => {
+    // Fetch all categories and products for dropdowns
+    const fetchDropdownData = async () => {
+      try {
+        const cats = await categoriesService.getAll();
+        setAllCategories(
+          cats.map(cat => ({
+            ...cat,
+            slug: cat.slug ?? '',
+          }))
+        );
+        const prodsRes = await productsService.getAll();
+        setAllProducts(prodsRes.data ?? []);
+      } catch (e) {
+        // ignore errors for dropdowns
+      }
+    };
+    fetchDropdownData();
+  }, []);
 
   useEffect(() => {
     fetchCategories()
@@ -75,8 +101,8 @@ export default function HomeshowCategoryPage() {
       name: '',
       description: '',
       priority: '',
-      categoryIds: '',
-      productIds: '',
+      categoryIds: [],
+      productIds: [],
     })
     setSelectedCategory(null)
     setIsViewMode(false)
@@ -89,8 +115,8 @@ export default function HomeshowCategoryPage() {
       name: category.name,
       description: category.description || '',
       priority: category.priority?.toString() || '',
-      categoryIds: category.categoryIds?.join(', ') || '',
-      productIds: category.productIds?.join(', ') || '',
+      categoryIds: category.categoryIds || [],
+      productIds: category.productIds || [],
     })
     setIsViewMode(false)
     setIsModalOpen(true)
@@ -102,8 +128,8 @@ export default function HomeshowCategoryPage() {
       name: category.name,
       description: category.description || '',
       priority: category.priority?.toString() || '',
-      categoryIds: category.categoryIds?.join(', ') || '',
-      productIds: category.productIds?.join(', ') || '',
+      categoryIds: category.categoryIds || [],
+      productIds: category.productIds || [],
     })
     setIsViewMode(true)
     setIsModalOpen(true)
@@ -121,14 +147,8 @@ export default function HomeshowCategoryPage() {
         name: formData.name,
         description: formData.description,
         priority: formData.priority ? parseInt(formData.priority) : undefined,
-        categoryIds: formData.categoryIds
-          .split(',')
-          .map(id => id.trim())
-          .filter(Boolean),
-        productIds: formData.productIds
-          .split(',')
-          .map(id => id.trim())
-          .filter(Boolean),
+        categoryIds: formData.categoryIds,
+        productIds: formData.productIds,
       }
 
       if (selectedCategory) {
@@ -329,27 +349,41 @@ export default function HomeshowCategoryPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="categoryIds">Category IDs (comma-separated)</Label>
-              <Textarea
+              <Label htmlFor="categoryIds">Select Categories</Label>
+              <select
                 id="categoryIds"
-                placeholder="e.g., CAT-001, CAT-002, CAT-003"
+                multiple
                 value={formData.categoryIds}
-                onChange={e => setFormData({ ...formData, categoryIds: e.target.value })}
+                onChange={e => {
+                  const options = Array.from(e.target.selectedOptions, option => option.value)
+                  setFormData({ ...formData, categoryIds: options })
+                }}
                 disabled={isViewMode}
-                className="min-h-20"
-              />
+                className="min-h-20 w-full border rounded p-2"
+              >
+                {allCategories.map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="productIds">Product IDs (comma-separated)</Label>
-              <Textarea
+              <Label htmlFor="productIds">Select Products</Label>
+              <select
                 id="productIds"
-                placeholder="e.g., PRD-001, PRD-002, PRD-003"
+                multiple
                 value={formData.productIds}
-                onChange={e => setFormData({ ...formData, productIds: e.target.value })}
+                onChange={e => {
+                  const options = Array.from(e.target.selectedOptions, option => option.value)
+                  setFormData({ ...formData, productIds: options })
+                }}
                 disabled={isViewMode}
-                className="min-h-20"
-              />
+                className="min-h-20 w-full border rounded p-2"
+              >
+                {allProducts.map(prod => (
+                  <option key={prod.id} value={prod.id}>{prod.name}</option>
+                ))}
+              </select>
             </div>
           </div>
 

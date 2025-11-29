@@ -15,6 +15,9 @@ import { Textarea } from '../../components/ui/textarea'
 import { toast } from 'sonner'
 import { formatPrice } from '../../lib/utils/format'
 import { careService, type ProductCarePlan } from '../../lib/api/services/care'
+import { productsService } from '../../lib/api/services/products'
+import { categoriesService } from '../../lib/api/services/categories'
+import type { Product, Category } from '../../lib/api/types'
 
 export default function ProductCarePlanPage() {
   const [carePlans, setCarePlans] = useState<ProductCarePlan[]>([])
@@ -27,13 +30,52 @@ export default function ProductCarePlanPage() {
   const [selectedPlan, setSelectedPlan] = useState<ProductCarePlan | null>(null)
 
   const [formData, setFormData] = useState({
-    productId: '',
+    productId: [] as string[],
+    categoryId: [] as string[],
     planName: '',
     price: '',
     duration: '',
     description: '',
     features: '',
   })
+
+  // For product/category search in modal
+  const [productSearch, setProductSearch] = useState('');
+  const [categorySearch, setCategorySearch] = useState('');
+
+  const [allProducts, setAllProducts] = useState<Product[]>([])
+  const [allCategories, setAllCategories] = useState<Category[]>([])
+
+  useEffect(() => {
+    // Fetch products and categories for dropdowns
+    const fetchDropdowns = async () => {
+      try {
+        const prodsRes = await productsService.getAll();
+        // Handle both array and object-with-data
+        let productsArr: Product[] = [];
+        if (Array.isArray(prodsRes)) {
+          productsArr = prodsRes as Product[];
+        } else if (Array.isArray(prodsRes?.data)) {
+          productsArr = prodsRes.data as Product[];
+        }
+        setAllProducts(productsArr);
+        console.log("allProducts", productsArr, prodsRes);
+
+        const catsRes: Category[] | { data: Category[] } = await categoriesService.getAll();
+        let categoriesArr: Category[] = [];
+        if (Array.isArray(catsRes)) {
+          categoriesArr = catsRes as Category[];
+        } else if (catsRes && Array.isArray((catsRes as { data: Category[] }).data)) {
+          categoriesArr = (catsRes as { data: Category[] }).data;
+        }
+        setAllCategories(categoriesArr);
+        console.log("allCategories", categoriesArr, catsRes);
+      } catch (err) {
+        console.error("Dropdown fetch error", err);
+      }
+    };
+    fetchDropdowns();
+  }, []);
 
   useEffect(() => {
     // Initialize with mock data since we need productId
@@ -84,7 +126,8 @@ export default function ProductCarePlanPage() {
 
   const handleAddPlan = () => {
     setFormData({
-      productId: '',
+      productId: [],
+      categoryId: [],
       planName: '',
       price: '',
       duration: '',
@@ -99,7 +142,8 @@ export default function ProductCarePlanPage() {
   const handleEditPlan = (plan: ProductCarePlan) => {
     setSelectedPlan(plan)
     setFormData({
-      productId: plan.productId,
+      productId: Array.isArray(plan.productId) ? plan.productId : [plan.productId],
+      categoryId: plan.categoryId ? (Array.isArray(plan.categoryId) ? plan.categoryId : [plan.categoryId]) : [],
       planName: plan.planName,
       price: plan.price.toString(),
       duration: plan.duration || '',
@@ -113,7 +157,8 @@ export default function ProductCarePlanPage() {
   const handleViewPlan = (plan: ProductCarePlan) => {
     setSelectedPlan(plan)
     setFormData({
-      productId: plan.productId,
+      productId: Array.isArray(plan.productId) ? plan.productId : [plan.productId],
+      categoryId: plan.categoryId ? (Array.isArray(plan.categoryId) ? plan.categoryId : [plan.categoryId]) : [],
       planName: plan.planName,
       price: plan.price.toString(),
       duration: plan.duration || '',
@@ -125,43 +170,78 @@ export default function ProductCarePlanPage() {
   }
 
   const handleSavePlan = async () => {
-    if (!formData.productId || !formData.planName || !formData.price) {
-      toast.error('Product ID, Plan Name, and Price are required')
+    if (!formData.productId.length || !formData.planName || !formData.price) {
+      toast.error('Product(s), Plan Name, and Price are required')
       return
     }
 
     setLoading(true)
     try {
-      const payload = {
-        productId: formData.productId,
-        planName: formData.planName,
-        price: parseFloat(formData.price),
-        duration: formData.duration,
-        description: formData.description,
-        features: formData.features.split(',').map(f => f.trim()).filter(Boolean),
-      }
-
+      const featuresArr = formData.features.split(',').map(f => f.trim()).filter(Boolean);
       if (selectedPlan) {
-        await careService.update(selectedPlan.id, payload)
-        toast.success('Care plan updated successfully')
+        // Only allow single edit for now
+        const payload = {
+          productId: Array.isArray(formData.productId) ? formData.productId[0] : formData.productId,
+          categoryId: formData.categoryId.length ? formData.categoryId[0] : undefined,
+          planName: formData.planName,
+          price: parseFloat(formData.price),
+          duration: formData.duration,
+          description: formData.description,
+          features: featuresArr,
+        };
+        await careService.update(selectedPlan.id, payload);
+        toast.success('Care plan updated successfully');
+        setCarePlans(carePlans.map(p => (p.id === selectedPlan.id ? { ...p, ...payload } : p)));
       } else {
-        await careService.create(formData.productId, payload)
-        toast.success('Care plan created successfully')
+        // Create a care plan for each selected product/category combination
+        const newPlans = [];
+        for (const pid of formData.productId) {
+          if (formData.categoryId.length) {
+            for (const cid of formData.categoryId) {
+              const planPayload = {
+                productId: pid,
+                categoryId: cid,
+                planName: formData.planName,
+                price: parseFloat(formData.price),
+                duration: formData.duration,
+                description: formData.description,
+                features: featuresArr,
+              };
+              await careService.create(pid, planPayload);
+              newPlans.push({
+                id: Date.now().toString() + Math.random(),
+                ...planPayload,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              });
+            }
+          } else {
+            const planPayload = {
+              productId: pid,
+              planName: formData.planName,
+              price: parseFloat(formData.price),
+              duration: formData.duration,
+              description: formData.description,
+              features: featuresArr,
+            };
+            await careService.create(pid, planPayload);
+            newPlans.push({
+              id: Date.now().toString() + Math.random(),
+              ...planPayload,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            });
+          }
+        }
+        toast.success('Care plan(s) created successfully');
+        setCarePlans([...carePlans, ...newPlans]);
       }
-
-      // Update local state
-      if (selectedPlan) {
-        setCarePlans(carePlans.map(p => (p.id === selectedPlan.id ? { ...p, ...payload } : p)))
-      } else {
-        setCarePlans([...carePlans, { id: Date.now().toString(), ...payload, createdAt: new Date(), updatedAt: new Date() }])
-      }
-
-      setIsModalOpen(false)
+      setIsModalOpen(false);
     } catch (error) {
-      toast.error('Failed to save care plan')
-      console.error(error)
+      toast.error('Failed to save care plan');
+      console.error(error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -309,25 +389,60 @@ export default function ProductCarePlanPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="productId">Product ID *</Label>
+                <Label htmlFor="productId">Product(s) *</Label>
                 <Input
-                  id="productId"
-                  placeholder="e.g., PRD-001"
-                  value={formData.productId}
-                  onChange={e => setFormData({ ...formData, productId: e.target.value })}
-                  disabled={isViewMode || !!selectedPlan}
+                  placeholder="Search products..."
+                  value={productSearch}
+                  onChange={e => setProductSearch(e.target.value)}
+                  className="mb-2"
+                  disabled={isViewMode}
                 />
+                <select
+                  id="productId"
+                  multiple
+                  value={formData.productId}
+                  onChange={e => {
+                    const selected = Array.from(e.target.selectedOptions, option => option.value);
+                    setFormData({ ...formData, productId: selected });
+                  }}
+                  disabled={isViewMode}
+                  className="w-full border rounded p-2 min-h-[80px]"
+                  required
+                >
+                  {allProducts
+                    .filter(prod => prod.name.toLowerCase().includes(productSearch.toLowerCase()))
+                    .map(prod => (
+                      <option key={prod.id} value={prod.id}>{prod.name}</option>
+                    ))}
+                </select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="planName">Plan Name *</Label>
+                <Label htmlFor="categoryId">Category(s)</Label>
                 <Input
-                  id="planName"
-                  placeholder="e.g., Basic Protection"
-                  value={formData.planName}
-                  onChange={e => setFormData({ ...formData, planName: e.target.value })}
+                  placeholder="Search categories..."
+                  value={categorySearch}
+                  onChange={e => setCategorySearch(e.target.value)}
+                  className="mb-2"
                   disabled={isViewMode}
                 />
+                <select
+                  id="categoryId"
+                  multiple
+                  value={formData.categoryId}
+                  onChange={e => {
+                    const selected = Array.from(e.target.selectedOptions, option => option.value);
+                    setFormData({ ...formData, categoryId: selected });
+                  }}
+                  disabled={isViewMode}
+                  className="w-full border rounded p-2 min-h-[80px]"
+                >
+                  {allCategories
+                    .filter(cat => cat.name.toLowerCase().includes(categorySearch.toLowerCase()))
+                    .map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                </select>
               </div>
             </div>
 
