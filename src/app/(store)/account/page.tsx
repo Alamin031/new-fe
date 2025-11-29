@@ -163,3 +163,9 @@ function AccountPage() {
     </div>
   )
 }
+
+export default withProtectedRoute(AccountPage, {
+  requiredRoles: ["user"],
+  fallbackTo: "/login",
+  showLoader: true,
+})
