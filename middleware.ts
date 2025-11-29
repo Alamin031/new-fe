@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 
-// Routes that require authentication
-const protectedRoutes = [
+// Routes that require admin authentication
+const adminRoutes = [
+  "/admin",
+]
+
+// Routes that require user/customer authentication
+const userProtectedRoutes = [
   "/account",
   "/account/orders",
   "/account/addresses",
@@ -11,7 +16,6 @@ const protectedRoutes = [
   "/account/wallet",
   "/checkout",
   "/orders",
-  "/admin",
   "/profile",
   "/wishlist",
   "/compare",
@@ -40,8 +44,12 @@ const publicRoutes = [
   "/returns-refunds",
 ]
 
-function isProtectedRoute(pathname: string): boolean {
-  return protectedRoutes.some((route) => pathname.startsWith(route))
+function isAdminRoute(pathname: string): boolean {
+  return adminRoutes.some((route) => pathname.startsWith(route))
+}
+
+function isUserProtectedRoute(pathname: string): boolean {
+  return userProtectedRoutes.some((route) => pathname.startsWith(route))
 }
 
 function isAuthRoute(pathname: string): boolean {
@@ -74,12 +82,13 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  const isProtected = isProtectedRoute(pathname)
+  const isAdmin = isAdminRoute(pathname)
+  const isUserProtected = isUserProtectedRoute(pathname)
   const isAuth = isAuthRoute(pathname)
   const isPublic = isPublicRoute(pathname)
 
-  // If route is protected and user is not authenticated
-  if (isProtected && !token) {
+  // If route is protected (either admin or user) and user is not authenticated
+  if ((isAdmin || isUserProtected) && !token) {
     // Redirect to login with return URL
     const loginUrl = new URL("/login", request.url)
     loginUrl.searchParams.set("from", pathname)
