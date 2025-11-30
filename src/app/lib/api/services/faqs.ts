@@ -14,12 +14,10 @@ export const faqsService = {
   /**
    * Get all global FAQs
    */
-  getAll: async (page = 1, limit = 20): Promise<{ data: FAQ[]; pagination: unknown }> => {
-    const response = await apiClient.get<{ data: FAQ[]; pagination: unknown }>(API_ENDPOINTS.FAQS_GET, {
-      params: { page, limit },
-    })
-    return response.data
-  },
+  getAll: async (): Promise<{ data: FAQ[]; pagination: unknown }> => {
+      const response = await apiClient.get<{ data: FAQ[]; pagination: unknown }>(API_ENDPOINTS.FAQS_GET)
+      return response.data;
+    },
 
   /**
    * Get FAQ by ID

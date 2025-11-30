@@ -74,11 +74,12 @@ export const API_ENDPOINTS = {
   PRODUCTS_DELETE: '/products/{id}',
 
   // Product Care Plans
-  PRODUCT_CARE_CREATE: '/products/{productId}/cares',
+  PRODUCT_CARE_CREATE: '/products/cares',
   PRODUCT_CARE_LIST: '/products/{productId}/cares',
   PRODUCT_CARE_UPDATE: '/products/cares/{id}',
   PRODUCT_CARE_GET: '/products/cares/{id}',
   PRODUCT_CARE_DELETE: '/products/cares/{id}',
+  ALL_CARE_GET: '/products/cares',
 
   // Product Notification Requests
   PRODUCT_NOTIFY_CREATE: '/products/{productId}/notify',
@@ -112,11 +113,10 @@ export const API_ENDPOINTS = {
   // Policies
   POLICIES_CREATE: '/policies',
   POLICIES_GET: '/policies',
-  POLICIES_SLUG: '/policies/{slug}',
   POLICIES_GET_ONE: '/policies/{id}',
   POLICIES_PUBLISHED: '/policies/published',
-  POLICIES_UPDATE: '/policies/{slug}',
-  POLICIES_DELETE: '/policies/{slug}',
+  POLICIES_UPDATE: '/policies/{id}',
+  POLICIES_DELETE: '/policies/{id}',
 
   // FAQs
   FAQS_CREATE: '/faqs',
