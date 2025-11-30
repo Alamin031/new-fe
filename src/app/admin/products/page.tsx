@@ -18,96 +18,75 @@ import { Textarea } from "../../components/ui/textarea"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "../../components/ui/alert-dialog"
 import { formatPrice } from "../../lib/utils/format"
 
-interface Product {
-  id: string
-  name: string
-  image: string
-  sku: string
-  category: string
-  price: number
-  stock: number
-  status: string
-  description?: string
-}
+import { useEffect } from "react"
+import productsService from "../../lib/api/services/products"
+import { Product } from "../../lib/api/types"
 
-const initialProducts: Product[] = [
-  {
-    id: "1",
-    name: "iPhone 15 Pro Max",
-    image: "/placeholder.svg?key=fzlxk",
-    sku: "IPH-15PM-256",
-    category: "Smartphones",
-    price: 129999,
-    stock: 45,
-    status: "Active",
-    description: "Latest iPhone with advanced features and powerful performance.",
-  },
-  {
-    id: "2",
-    name: "MacBook Air M3",
-    image: "/placeholder.svg?key=qlv3u",
-    sku: "MAC-AIR-M3-256",
-    category: "Laptops",
-    price: 79999,
-    stock: 23,
-    status: "Active",
-    description: "Lightweight laptop with M3 chip for seamless performance.",
-  },
-  {
-    id: "3",
-    name: "Samsung Galaxy S24 Ultra",
-    image: "/placeholder.svg?key=u1e3e",
-    sku: "SAM-S24U-256",
-    category: "Smartphones",
-    price: 89999,
-    stock: 0,
-    status: "Out of Stock",
-    description: "Premium smartphone with cutting-edge technology.",
-  },
-  {
-    id: "4",
-    name: "Sony WH-1000XM5",
-    image: "/placeholder.svg?key=b6kf9",
-    sku: "SON-WH1000XM5",
-    category: "Audio",
-    price: 29999,
-    stock: 67,
-    status: "Active",
-    description: "High-quality wireless headphones with noise cancellation.",
-  },
-  {
-    id: "5",
-    name: "iPad Pro 12.9",
-    image: "/placeholder.svg?key=7t86x",
-    sku: "IPD-PRO-129",
-    category: "Tablets",
-    price: 99999,
-    stock: 12,
-    status: "Low Stock",
-    description: "Powerful tablet for professionals and creators.",
-  },
-]
 
 function AdminProductsPage() {
-  const [products, setProducts] = useState<Product[]>(initialProducts)
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  // UI Product type for display
+  type UIProduct = {
+    id: string
+    name: string
+    image: string
+    sku: string
+    category: string
+    price: number
+    stock: number
+    status: string
+    description?: string
+  }
+  const [products, setProducts] = useState<UIProduct[]>([])
+  const [selectedProduct, setSelectedProduct] = useState<UIProduct | null>(null)
   const [viewOpen, setViewOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
-  const [editFormData, setEditFormData] = useState<Product | null>(null)
+  const [editFormData, setEditFormData] = useState<UIProduct | null>(null)
+  const [loading, setLoading] = useState<boolean>(true)
 
-  const handleViewClick = (product: Product) => {
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true)
+      try {
+        const res = await productsService.getAll()
+        console.log("Fetched products:", res)
+        // Use the correct property from ProductListResponse (commonly 'data' or 'results' or similar)
+        // We'll try 'data' and fallback to []
+        // Adjust this line to use the correct property from your ProductListResponse type
+        const apiProducts = Array.isArray(res?.data) ? res.data : []
+        const mapped: UIProduct[] = apiProducts.map((p) => ({
+          id: p.id,
+          name: p.name,
+          image: Array.isArray(p.images) && p.images.length > 0 ? p.images[0] : '/placeholder.svg',
+          sku: p.sku || '',
+          category: typeof p.category === 'object' && p.category !== null ? (p.category.name || p.category.slug || '') : (typeof p.category === 'string' ? p.category : ''),
+          price: typeof p.price === 'number' ? p.price : 0,
+          stock: typeof p.stock === 'number' ? p.stock : 0,
+          status: typeof p.status === 'string' ? p.status : (p.status === true ? 'Active' : p.status === false ? 'Inactive' : 'Unknown'),
+          description: p.description || '',
+        }))
+        setProducts(mapped)
+      } catch {
+        setProducts([])
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchProducts()
+  }, [])
+
+  const handleViewClick = (product: UIProduct) => {
     setSelectedProduct(product)
     setViewOpen(true)
   }
 
-  const handleEditClick = (product: Product) => {
+  const handleEditClick = (product: UIProduct) => {
     setSelectedProduct(product)
     setEditFormData({ ...product })
     setEditOpen(true)
   }
 
-  const handleDeleteClick = (product: Product) => {
+  const handleDeleteClick = (product: UIProduct) => {
     setSelectedProduct(product)
     setDeleteOpen(true)
   }
@@ -198,72 +177,84 @@ function AdminProductsPage() {
                 </tr>
               </thead>
               <tbody>
-                {products.map((product) => (
-                  <tr key={product.id} className="border-b border-border">
-                    <td className="py-4 pr-4">
-                      <Checkbox />
-                    </td>
-                    <td className="py-4 pr-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 overflow-hidden rounded-lg bg-muted">
-                          <Image
-                            src={product.image || "/placeholder.svg"}
-                            alt={product.name}
-                            width={48}
-                            height={48}
-                            className="h-full w-full object-cover"
-                          />
-                        </div>
-                        <span className="font-medium">{product.name}</span>
-                      </div>
-                    </td>
-                    <td className="py-4 pr-4 text-sm text-muted-foreground">{product.sku}</td>
-                    <td className="py-4 pr-4 text-sm">{product.category}</td>
-                    <td className="py-4 pr-4 font-medium">{formatPrice(product.price)}</td>
-                    <td className="py-4 pr-4">{product.stock}</td>
-                    <td className="py-4 pr-4">
-                      <Badge
-                        variant="secondary"
-                        className={
-                          product.status === "Active"
-                            ? "bg-green-500/10 text-green-600"
-                            : product.status === "Low Stock"
-                              ? "bg-yellow-500/10 text-yellow-600"
-                              : "bg-red-500/10 text-red-600"
-                        }
-                      >
-                        {product.status}
-                      </Badge>
-                    </td>
-                    <td className="py-4">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleViewClick(product)}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            View
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEditClick(product)}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Copy className="mr-2 h-4 w-4" />
-                            Duplicate
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(product)}>
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
+                {loading ? (
+                  <tr>
+                    <td colSpan={8} className="py-8 text-center text-muted-foreground">Loading products...</td>
                   </tr>
-                ))}
+                ) : products.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-8 text-center text-muted-foreground">No products found.</td>
+                  </tr>
+                ) : (
+                  products.map((product) => (
+                    <tr key={product.id} className="border-b border-border">
+                      <td className="py-4 pr-4">
+                        <Checkbox />
+                      </td>
+                      <td className="py-4 pr-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-12 w-12 overflow-hidden rounded-lg bg-muted">
+                            <Image
+                              src={product.image || "/placeholder.svg"}
+                              alt={product.name}
+                              width={48}
+                              height={48}
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                          <span className="font-medium">{product.name}</span>
+                        </div>
+                      </td>
+                      <td className="py-4 pr-4 text-sm text-muted-foreground">{product.sku}</td>
+                      <td className="py-4 pr-4 text-sm">{product.category}</td>
+                      <td className="py-4 pr-4 font-medium">{formatPrice(product.price ?? 0)}</td>
+                      <td className="py-4 pr-4">{product.stock}</td>
+                      <td className="py-4 pr-4">
+                        <Badge
+                          variant="secondary"
+                          className={
+                            product.status === "Active"
+                              ? "bg-green-500/10 text-green-600"
+                              : product.status === "Low Stock"
+                                ? "bg-yellow-500/10 text-yellow-600"
+                                : product.status === "Out of Stock"
+                                  ? "bg-red-500/10 text-red-600"
+                                  : "bg-gray-500/10 text-gray-600"
+                          }
+                        >
+                          {product.status}
+                        </Badge>
+                      </td>
+                      <td className="py-4">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleViewClick(product)}>
+                              <Eye className="mr-2 h-4 w-4" />
+                              View
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEditClick(product)}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Copy className="mr-2 h-4 w-4" />
+                              Duplicate
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(product)}>
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -316,7 +307,7 @@ function AdminProductsPage() {
                   </div>
                   <div>
                     <Label className="text-muted-foreground text-xs uppercase">Price</Label>
-                    <p className="mt-1 font-medium text-base">{formatPrice(selectedProduct.price)}</p>
+                    <p className="mt-1 font-medium text-base">{formatPrice(selectedProduct.price ?? 0)}</p>
                   </div>
                   <div>
                     <Label className="text-muted-foreground text-xs uppercase">Stock</Label>
@@ -332,7 +323,9 @@ function AdminProductsPage() {
                             ? "bg-green-500/10 text-green-600"
                             : selectedProduct.status === "Low Stock"
                               ? "bg-yellow-500/10 text-yellow-600"
-                              : "bg-red-500/10 text-red-600"
+                              : selectedProduct.status === "Out of Stock"
+                                ? "bg-red-500/10 text-red-600"
+                                : "bg-gray-500/10 text-gray-600"
                         }
                       >
                         {selectedProduct.status}
@@ -427,6 +420,8 @@ function AdminProductsPage() {
                     <SelectItem value="Active">Active</SelectItem>
                     <SelectItem value="Low Stock">Low Stock</SelectItem>
                     <SelectItem value="Out of Stock">Out of Stock</SelectItem>
+                    <SelectItem value="Inactive">Inactive</SelectItem>
+                    <SelectItem value="Unknown">Unknown</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

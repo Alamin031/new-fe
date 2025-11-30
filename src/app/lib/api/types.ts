@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // ==================== Auth Types ====================
 export interface RegisterRequest {
   name: string
@@ -156,60 +157,96 @@ export interface BrandProductsResponse {
 
 // ==================== Product Types ====================
 export interface Product {
-  id: string
-  name: string
-  slug: string
-  description: string
-  price: number
-  originalPrice?: number
-  images: string[]
-  thumbnail?: string
-  category: Category
-  brand: Brand
-  variants: ProductVariant[]
-  highlights: string[]
-  specifications: Record<string, string>
-  stock: number
-  sku: string
-  warranty: string
-  rating: number
-  reviewCount: number
-  isFeatured?: boolean
-  isNew?: boolean
-  isHot?: boolean
-  discount?: number
-  createdAt: string
-  updatedAt: string
+  id: string;
+  name: string;
+  description?: string;
+  highlights?: string[];
+  categoryId?: string;
+  category?: Category;
+  brandId?: string;
+  brand?: any;
+  productCode?: string;
+  sku?: string;
+  rating?: number;
+  reviewCount?: number;
+  averageRating?: number;
+  rewardsPoints?: number;
+  basePrice: number;
+  priceObj?: any;
+  discountPrice?: number;
+  discountPercent?: number;
+  price?: number;
+  minBookingPrice?: number;
+  purchasePoints?: number;
+  model?: string;
+  slug?: string;
+  productType?: string;
+  warranty?: string;
+  isFeatured?: boolean;
+  isNew?: boolean;
+  isHot?: boolean;
+  isOfficial?: boolean;
+  isComing?: boolean;
+  isPreOrder?: boolean;
+  isActive?: boolean;
+  isOnline?: boolean;
+  freeShipping?: boolean;
+  stock?: number;
+  thumbnail?: string;
+  gallery?: string[];
+  images?: string[];
+  variants?: { name: string; price: string; stock: string }[];
+  regions?: { name: string; price: string; stock: string }[];
+  colors?: { name: string; code: string }[];
+  networks?: string[];
+  sizes?: string[];
+  plugs?: string[];
+  video?: string;
+  emiAvailable?: boolean;
+  seoTitle?: string;
+  seoDescription?: string;
+  seoKeywords?: string[];
+  metaKeywords?: string[];
+  tags?: string[];
+  badges?: string[];
+  dynamicInputs?: Record<string, unknown>;
+  details?: any;
+  specifications?: { key: string; value: string }[];
+  campaigns?: any;
+  metaTitle?: any;
+  faqIds?: string[];
+  status?: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ProductVariant {
-  id: string
-  productId: string
-  name: string
-  type: "color" | "storage" | "ram" | "sim"
-  value: string
-  priceModifier: number
-  stock: number
+  name: string;
+  price: string;
+  stock: string;
+  // Optionally add: type, value, priceModifier, etc. if you extend backend
 }
 
 export interface CreateProductRequest {
-  name: string
-  description: string
-  price: number
-  originalPrice?: number
-  images: string[]
-  thumbnail?: string
-  categoryId: string
-  brandId: string
-  variants: Omit<ProductVariant, "id" | "productId">[]
-  highlights: string[]
-  specifications: Record<string, string>
-  stock: number
-  sku: string
-  warranty: string
-  isFeatured?: boolean
-  isNew?: boolean
-  isHot?: boolean
+  name: string;
+  description?: string;
+  basePrice: number;
+  discountPrice?: number;
+  image?: File | string | null;
+  gallery?: (File | string)[];
+  images?: string[];
+  thumbnail?: string;
+  categoryId: string;
+  brandId: string;
+  variants: Omit<ProductVariant, "id" | "productId">[];
+  highlights?: string[];
+  specifications: { key: string; value: string }[];
+  stock: number;
+  sku?: string;
+  warranty?: string;
+  isFeatured?: boolean;
+  isNew?: boolean;
+  isHot?: boolean;
 }
 
 export interface UpdateProductRequest {
@@ -217,7 +254,9 @@ export interface UpdateProductRequest {
   description?: string
   price?: number
   originalPrice?: number
-  images?: string[]
+  image?: File | string | null;
+  gallery?: (File | string)[];
+  images?: string[];
   thumbnail?: string
   categoryId?: string
   brandId?: string
