@@ -37,10 +37,64 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
-  const { slug } = await params
-  const product = getProductBySlug(slug)
+  try {
+    const { slug } = await params
+    const product = await productsService.getBySlug(slug)
 
-  if (!product) {
+    let relatedProducts: Product[] = []
+    try {
+      const response = await productsService.getAll(
+        { categoryId: product.category.id },
+        1,
+        10
+      )
+      relatedProducts = (response.items || [])
+        .filter((p) => p.id !== product.id)
+        .slice(0, 5)
+    } catch (error) {
+      relatedProducts = []
+    }
+
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-8">
+        {/* Breadcrumb */}
+        <nav className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
+          <a href="/" className="hover:text-foreground">
+            Home
+          </a>
+          <span>/</span>
+          <a href={`/category/${product.category.slug}`} className="hover:text-foreground">
+            {product.category.name}
+          </a>
+          <span>/</span>
+          <span className="text-foreground">{product.name}</span>
+        </nav>
+
+        {/* Product Details */}
+        <div className="grid gap-8 lg:grid-cols-2">
+          <ProductGallery images={product.images} name={product.name} />
+          <ProductInfo product={product} />
+        </div>
+
+        {/* Product Tabs */}
+        <div className="mt-12">
+          <ProductTabs product={product} />
+        </div>
+
+        {/* Related Products */}
+        {relatedProducts.length > 0 && (
+          <div className="mt-16">
+            <ProductSection
+              title="Related Products"
+              subtitle="You might also like"
+              products={relatedProducts}
+              viewAllLink={`/category/${product.category.slug}`}
+            />
+          </div>
+        )}
+      </div>
+    )
+  } catch (error) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center px-4 text-center">
         <h1 className="mb-2 text-9xl font-bold text-muted-foreground/20">404</h1>
@@ -65,46 +119,4 @@ export default async function ProductPage({ params }: ProductPageProps) {
       </div>
     )
   }
-
-  const relatedProducts = getRelatedProducts(product, 5)
-
-  return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
-      {/* Breadcrumb */}
-      <nav className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
-        <a href="/" className="hover:text-foreground">
-          Home
-        </a>
-        <span>/</span>
-        <a href={`/category/${product.category.slug}`} className="hover:text-foreground">
-          {product.category.name}
-        </a>
-        <span>/</span>
-        <span className="text-foreground">{product.name}</span>
-      </nav>
-
-      {/* Product Details */}
-      <div className="grid gap-8 lg:grid-cols-2">
-        <ProductGallery images={product.images} name={product.name} />
-        <ProductInfo product={product} />
-      </div>
-
-      {/* Product Tabs */}
-      <div className="mt-12">
-        <ProductTabs product={product} />
-      </div>
-
-      {/* Related Products */}
-      {relatedProducts.length > 0 && (
-        <div className="mt-16">
-          <ProductSection
-            title="Related Products"
-            subtitle="You might also like"
-            products={relatedProducts}
-            viewAllLink={`/category/${product.category.slug}`}
-          />
-        </div>
-      )}
-    </div>
-  )
 }
