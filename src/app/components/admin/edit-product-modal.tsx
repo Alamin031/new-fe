@@ -353,6 +353,7 @@ export function EditProductModal({
           <DialogDescription>Update product information and settings</DialogDescription>
         </DialogHeader>
 
+        <div className="flex-1 overflow-y-auto">
         <Tabs defaultValue="basic" className="w-full">
           <TabsList className="grid w-full grid-cols-6 gap-0">
             <TabsTrigger value="basic">Basic</TabsTrigger>
@@ -1012,6 +1013,7 @@ export function EditProductModal({
             </div>
           </TabsContent>
         </Tabs>
+        </div>
 
         <DialogFooter className="flex items-center justify-between">
           <div className="flex items-center gap-2">
