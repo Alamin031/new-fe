@@ -13,7 +13,6 @@ import { Badge } from "../ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { formatPrice } from "../../../lib/utils/format";
-import Image from "next/image";
 
 interface ViewProductModalProps {
   open: boolean;
