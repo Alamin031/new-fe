@@ -5,7 +5,9 @@ import { ProductGallery } from "../../../components/product/product-gallery"
 import { ProductInfo } from "../../../components/product/product-info"
 import { ProductTabs } from "../../../components/product/product-tabs"
 import { ProductSection } from "../../../components/home/product-section"
-import NotFound from "../../not-found"
+import Link from "next/link"
+import { Button } from "../../../components/ui/button"
+import { Home, ArrowLeft } from "lucide-react"
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>
