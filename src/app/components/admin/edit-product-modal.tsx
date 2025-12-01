@@ -24,9 +24,9 @@ import {
 } from "../ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import productsService from "../../../lib/api/services/products";
-import categoriesService from "../../../lib/api/services/categories";
-import brandsService from "../../../lib/api/services/brands";
+import productsService from "../../lib/api/services/products";
+import categoriesService from "../../lib/api/services/categories";
+import { brandsService } from "../../lib/api/services/brands";
 
 interface EditProductModalProps {
   open: boolean;
