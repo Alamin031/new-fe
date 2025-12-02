@@ -317,7 +317,7 @@ export function Navbar() {
                             className="flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"
                           >
                             Wishlist
-                            {wishlistCount > 0 && <Badge variant="secondary">{wishlistCount}</Badge>}
+                            {isHydrated && wishlistCount > 0 && <Badge variant="secondary">{wishlistCount}</Badge>}
                           </Link>
                         </SheetClose>
                         <SheetClose asChild>
@@ -326,7 +326,7 @@ export function Navbar() {
                             className="flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"
                           >
                             Compare
-                            {compareCount > 0 && <Badge variant="secondary">{compareCount}</Badge>}
+                            {isHydrated && compareCount > 0 && <Badge variant="secondary">{compareCount}</Badge>}
                           </Link>
                         </SheetClose>
                         <SheetClose asChild>
