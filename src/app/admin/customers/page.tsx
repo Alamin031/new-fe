@@ -366,23 +366,23 @@ export default function AdminCustomersPage() {
                 </div>
               </div>
 
-              <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:shadow-md dark:border-slate-700 dark:bg-slate-800">
-                <h3 className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-50">
+              <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:shadow-md">
+                <h3 className="flex items-center gap-2 font-bold text-slate-900">
                   <span className="h-1 w-1 rounded-full bg-blue-500"></span>
                   Contact Information
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-700/50">
-                    <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Phone</Label>
-                    <p className="mt-2 font-semibold text-slate-900 dark:text-slate-50">{selectedCustomer.phone}</p>
+                  <div className="rounded-lg bg-slate-50 p-3 border border-slate-100">
+                    <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Phone</Label>
+                    <p className="mt-2 font-semibold text-slate-900">{selectedCustomer.phone}</p>
                   </div>
-                  <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-700/50">
-                    <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Email</Label>
-                    <p className="mt-2 truncate font-semibold text-slate-900 dark:text-slate-50">{selectedCustomer.email}</p>
+                  <div className="rounded-lg bg-slate-50 p-3 border border-slate-100">
+                    <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Email</Label>
+                    <p className="mt-2 truncate font-semibold text-slate-900">{selectedCustomer.email}</p>
                   </div>
-                  <div className="col-span-2 rounded-lg bg-slate-50 p-3 dark:bg-slate-700/50">
-                    <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Address</Label>
-                    <p className="mt-2 font-semibold text-slate-900 dark:text-slate-50">{selectedCustomer.address}</p>
+                  <div className="col-span-2 rounded-lg bg-slate-50 p-3 border border-slate-100">
+                    <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Address</Label>
+                    <p className="mt-2 font-semibold text-slate-900">{selectedCustomer.address}</p>
                   </div>
                 </div>
               </div>
