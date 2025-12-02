@@ -595,7 +595,7 @@ export default function AdminCustomersPage() {
       </Sheet>
 
       {/* Block Customer Modal */}
-      <AlertDialog open={blockOpen} onOpenChange={setBlockOpen}>
+      <AlertDialog open={blockOpen} onOpenChange={handleCloseBlock}>
         <AlertDialogContent className="alert-animate border-0 bg-white shadow-2xl">
           <AlertDialogHeader className="space-y-2">
             <AlertDialogTitle className="text-xl font-bold text-slate-900">Block Customer</AlertDialogTitle>
