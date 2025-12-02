@@ -32,6 +32,9 @@ export const metadata: Metadata = {
 };
 
 export default async function Page({ searchParams }: AllProductsPageProps) {
+  // Await searchParams
+  const params = await searchParams;
+
   // Fetch all categories
   const categoriesRaw = await categoriesService.getAll();
   const categories: Category[] = (categoriesRaw as unknown as RawCategory[]).map(
