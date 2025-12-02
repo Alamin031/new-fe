@@ -27,6 +27,15 @@ export function ViewProductModal({
 }: ViewProductModalProps) {
   if (!product) return null;
 
+  const parseJSON = (val: any, fallback: any = null) => {
+    if (!val) return fallback;
+    try {
+      return typeof val === "string" ? JSON.parse(val) : val;
+    } catch {
+      return fallback;
+    }
+  };
+
   const getStatusBadgeColor = (status: any) => {
     if (typeof status === "string") {
       if (status === "Active" || status === true || status === "true")
