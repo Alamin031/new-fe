@@ -22,20 +22,18 @@ import { SearchModal } from "./search-modal"
 import { useAuthStore } from "@/app/store/auth-store"
 import { cn } from "@/app/lib/utils"
 import Image from "next/image"
-
-const categories = [
-  { name: "Smartphones", slug: "smartphones" },
-  { name: "Laptops", slug: "laptops" },
-  { name: "Tablets", slug: "tablets" },
-  { name: "Accessories", slug: "accessories" },
-  { name: "Audio", slug: "audio" },
-  { name: "Wearables", slug: "wearables" },
-]
+import { categoriesService } from "@/app/lib/api/services/categories"
+import { brandsService } from "@/app/lib/api/services/brands"
+import type { Category, Brand } from "@/app/types"
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [categories, setCategories] = useState<Category[]>([])
+  const [brands, setBrands] = useState<Brand[]>([])
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true)
+  const [isLoadingBrands, setIsLoadingBrands] = useState(true)
   const pathname = usePathname()
   const router = useRouter()
 
@@ -50,6 +48,38 @@ export function Navbar() {
     }
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
+
+  useEffect(() => {
+    async function fetchCategories() {
+      try {
+        setIsLoadingCategories(true)
+        const data = await categoriesService.getAll()
+        setCategories(data)
+      } catch (error) {
+        console.error("Error fetching categories:", error)
+        setCategories([])
+      } finally {
+        setIsLoadingCategories(false)
+      }
+    }
+    fetchCategories()
+  }, [])
+
+  useEffect(() => {
+    async function fetchBrands() {
+      try {
+        setIsLoadingBrands(true)
+        const data = await brandsService.findAll()
+        setBrands(data)
+      } catch (error) {
+        console.error("Error fetching brands:", error)
+        setBrands([])
+      } finally {
+        setIsLoadingBrands(false)
+      }
+    }
+    fetchBrands()
   }, [])
 
   const handleLogout = () => {
@@ -101,7 +131,7 @@ export function Navbar() {
               Categories
               <ChevronDown className={cn("h-4 w-4 transition-transform", isMegaMenuOpen && "rotate-180")} />
             </button>
-            {categories.slice(0, 4).map((category) => (
+            {categories.slice(0, 3).map((category) => (
               <Link
                 key={category.slug}
                 href={`/category/${category.slug}`}
@@ -113,6 +143,15 @@ export function Navbar() {
                 {category.name}
               </Link>
             ))}
+            <Link
+              href="/all-products"
+              className={cn(
+                "rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent",
+                pathname === "/all-products" && "bg-accent",
+              )}
+            >
+              All Products
+            </Link>
           </nav>
 
           {/* Search - Desktop */}
@@ -234,6 +273,14 @@ export function Navbar() {
                   </div>
                   <nav className="flex-1 overflow-y-auto p-4">
                     <div className="space-y-1">
+                      <SheetClose asChild>
+                        <Link
+                          href="/all-products"
+                          className="block rounded-md px-3 py-2 text-sm font-medium font-semibold transition-colors hover:bg-accent"
+                        >
+                          All Products
+                        </Link>
+                      </SheetClose>
                       {categories.map((category) => (
                         <SheetClose key={category.slug} asChild>
                           <Link
@@ -327,7 +374,7 @@ export function Navbar() {
         </div>
 
         {/* Mega Menu */}
-        <MegaMenu isOpen={isMegaMenuOpen} onClose={() => setIsMegaMenuOpen(false)} />
+        <MegaMenu isOpen={isMegaMenuOpen} onClose={() => setIsMegaMenuOpen(false)} categories={categories} brands={brands} />
       </header>
 
       {/* Search Modal */}
