@@ -581,7 +581,11 @@ export function ViewProductModal({
                     <label className="text-xs font-semibold text-muted-foreground uppercase">
                       SEO Keywords
                     </label>
-                    <p className="mt-1 text-sm">{product.seoKeywords}</p>
+                    <p className="mt-1 text-sm">
+                      {Array.isArray(product.seoKeywords)
+                        ? product.seoKeywords.join(", ")
+                        : String(product.seoKeywords)}
+                    </p>
                   </div>
                 )}
 
