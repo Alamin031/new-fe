@@ -59,7 +59,7 @@ const notificationSettings = [
   { id: "newsletter", label: "Newsletter", description: "Weekly updates on new products", enabled: false },
 ]
 
-export default function NotificationsPage() {
+function NotificationsPage() {
   const [notifs, setNotifs] = useState(notifications)
   const [settings, setSettings] = useState(notificationSettings)
 
