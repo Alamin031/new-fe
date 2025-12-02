@@ -9,7 +9,7 @@ import { CategoryProducts } from "@/app/components/category/category-products";
 import type { Category, Brand, Product } from "@/app/types/index";
 
 interface AllProductsPageProps {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 type RawCategory = {
