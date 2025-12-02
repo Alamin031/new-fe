@@ -44,7 +44,7 @@ const orderDetails = {
   ],
 }
 
-export default function OrderDetailPage() {
+function OrderDetailPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -203,3 +203,7 @@ export default function OrderDetailPage() {
     </div>
   )
 }
+
+export default withProtectedRoute(OrderDetailPage, {
+  requiredRoles: ["user"],
+})
