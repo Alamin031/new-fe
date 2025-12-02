@@ -26,6 +26,11 @@ export class TokenManager {
     if (refreshToken) {
       localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken)
     }
+      // Set cookies
+      document.cookie = `access_token=${token}; path=/;`;
+      if (refreshToken) {
+        document.cookie = `refresh_token=${refreshToken}; path=/;`;
+      }
   }
 
   /**
@@ -36,6 +41,9 @@ export class TokenManager {
     localStorage.removeItem(STORAGE_KEYS.TOKEN)
     localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN)
     localStorage.removeItem(STORAGE_KEYS.USER)
+      // Remove cookies by setting expiry in past
+      document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      document.cookie = "refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
   }
 
   /**
