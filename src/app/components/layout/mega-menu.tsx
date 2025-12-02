@@ -38,12 +38,10 @@ export function MegaMenu({ isOpen, onClose, categories }: MegaMenuProps) {
     return priorityA - priorityB
   })
 
-  // Calculate layout: max 3 rows, 10 columns, "View All" always at last position (row 3, col 10)
-  const maxItems = 29 // 3 rows * 10 columns - 1 (for View All button)
-  const displayCategories = sortedCategories.slice(0, maxItems)
-  const totalPositions = 30 // 3 rows * 10 columns
-  const currentItems = displayCategories.length + 1 // +1 for View All button
-  const emptySlots = totalPositions - currentItems
+  // Display max 30 categories (3 rows × 10 columns)
+  const maxCategoriesPerView = 30
+  const displayCategories = sortedCategories.slice(0, maxCategoriesPerView)
+  const hasMoreCategories = sortedCategories.length > maxCategoriesPerView
 
   return (
     <div
