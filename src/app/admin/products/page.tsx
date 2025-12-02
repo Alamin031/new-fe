@@ -81,7 +81,11 @@ function AdminProductsPage() {
     const fetchCategories = async () => {
       try {
         const cats = await categoriesService.getAll();
-        setCategories(cats.map((c: any) => ({id: c.id, name: c.name})));
+        setCategories(
+          cats
+            .filter((c: any) => c.id !== 'all')
+            .map((c: any) => ({id: c.id, name: c.name}))
+        );
       } catch {
         setCategories([]);
       }
@@ -90,6 +94,7 @@ function AdminProductsPage() {
   }, []);
 
   // Fetch products, optionally filtered by category
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
@@ -116,12 +121,20 @@ function AdminProductsPage() {
           const fetched = await Promise.all(
             missingCategoryIds.map(id => categoriesService.getById(id)),
           );
-          setCategories(prev => [
-            ...prev,
-            ...fetched
-              .filter(Boolean)
-              .map((c: any) => ({id: c.id, name: c.name})),
-          ]);
+          setCategories(prev => {
+            const allCats = [
+              ...prev,
+              ...fetched
+                .filter(Boolean)
+                .filter((c: any) => c.id !== 'all')
+                .map((c: any) => ({id: c.id, name: c.name})),
+            ];
+            // Deduplicate by id
+            const deduped = Array.from(
+              new Map(allCats.map(cat => [cat.id, cat])).values()
+            );
+            return deduped;
+          });
         }
         const mapped: UIProduct[] = apiProducts.map((p: any) => {
           const categoryObj = categories.find(c => c.id === p.categoryId);
@@ -163,7 +176,7 @@ function AdminProductsPage() {
       }
     };
     fetchProducts();
-  }, [selectedCategory, categories]);
+  }, [selectedCategory]);
 
   const handleViewClick = (product: UIProduct) => {
     setSelectedProduct(product);
@@ -221,7 +234,13 @@ function AdminProductsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
-                  {categories.map(cat => (
+                  {Array.from(
+                    new Map(
+                      categories
+                        .filter(cat => cat.id !== 'all')
+                        .map(cat => [cat.id, cat])
+                    ).values()
+                  ).map(cat => (
                     <SelectItem key={cat.id} value={cat.id}>
                       {cat.name}
                     </SelectItem>
