@@ -3,31 +3,16 @@
 import { useEffect, useRef } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { ArrowRight } from "lucide-react"
 import { cn } from "@/app/lib/utils"
-import type { Category, Brand } from "@/app/types"
-
-const trendingData = [
-  { name: "iPhone 15 Pro Max", slug: "iphone-15-pro-max" },
-  { name: "Samsung Galaxy S24 Ultra", slug: "samsung-galaxy-s24-ultra" },
-  { name: "MacBook Pro M3", slug: "macbook-pro-m3" },
-  { name: "AirPods Pro 2", slug: "airpods-pro-2" },
-]
-
-const dealsData = [
-  { name: "Flash Sale - Up to 50% Off", slug: "flash-sale" },
-  { name: "Bundle Deals", slug: "bundle-deals" },
-  { name: "Clearance Sale", slug: "clearance" },
-]
+import type { Category } from "@/app/types"
 
 interface MegaMenuProps {
   isOpen: boolean
   onClose: () => void
   categories: Category[]
-  brands: Brand[]
 }
 
-export function MegaMenu({ isOpen, onClose, categories, brands }: MegaMenuProps) {
+export function MegaMenu({ isOpen, onClose, categories }: MegaMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -46,6 +31,20 @@ export function MegaMenu({ isOpen, onClose, categories, brands }: MegaMenuProps)
     }
   }, [isOpen, onClose])
 
+  // Sort categories by priority
+  const sortedCategories = [...categories].sort((a, b) => {
+    const priorityA = a.priority ? Number(a.priority) : Infinity
+    const priorityB = b.priority ? Number(b.priority) : Infinity
+    return priorityA - priorityB
+  })
+
+  // Calculate layout: max 3 rows, 10 columns, "View All" always at last position (row 3, col 10)
+  const maxItems = 29 // 3 rows * 10 columns - 1 (for View All button)
+  const displayCategories = sortedCategories.slice(0, maxItems)
+  const totalPositions = 30 // 3 rows * 10 columns
+  const currentItems = displayCategories.length + 1 // +1 for View All button
+  const emptySlots = totalPositions - currentItems
+
   return (
     <div
       ref={menuRef}
@@ -56,118 +55,49 @@ export function MegaMenu({ isOpen, onClose, categories, brands }: MegaMenuProps)
       )}
     >
       <div className="mx-auto max-w-7xl px-4 py-8">
-        <div className="grid gap-8 lg:grid-cols-4">
-          {/* Categories */}
-          <div>
-            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Categories</h3>
-            <div className="space-y-1">
-              {categories.length > 0 ? (
-                categories.map((category) => (
+        <div>
+          {/* Categories Only */}
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Categories</h3>
+          <div className="grid gap-3 grid-cols-10">
+            {displayCategories.length > 0 ? (
+              <>
+                {displayCategories.map((category) => (
                   <Link
                     key={category.slug}
                     href={`/category/${category.slug}`}
                     onClick={onClose}
-                    className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-accent"
+                    className="flex flex-col items-center gap-2 rounded-lg p-3 transition-colors hover:bg-accent"
                   >
-                    <div className="relative h-10 w-10 overflow-hidden rounded-lg bg-muted">
+                    <div className="relative h-12 w-12 overflow-hidden rounded-lg bg-muted flex-shrink-0">
                       <Image
-                        src={category.image || "/placeholder.svg"}
+                        src={category.banner || category.image || "/placeholder.svg"}
                         alt={category.name}
                         fill
                         className="object-cover"
                       />
                     </div>
-                    <span className="text-sm font-medium">{category.name}</span>
+                    <span className="text-xs font-medium text-center line-clamp-2">{category.name}</span>
                   </Link>
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground">Loading categories...</p>
-              )}
-            </div>
-          </div>
-
-          {/* Brands */}
-          <div>
-            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Top Brands</h3>
-            <div className="grid grid-cols-2 gap-2">
-              {brands.length > 0 ? (
-                brands.slice(0, 6).map((brand) => (
-                  <Link
-                    key={brand.slug}
-                    href={`/brand/${brand.slug}`}
-                    onClick={onClose}
-                    className="flex items-center gap-2 rounded-lg p-2 transition-colors hover:bg-accent"
-                  >
-                    <div className="relative h-8 w-8 overflow-hidden rounded bg-muted">
-                      <Image
-                        src={brand.logo || "/placeholder.svg"}
-                        alt={brand.name}
-                        fill
-                        className="object-contain p-1"
-                      />
-                    </div>
-                    <span className="text-sm font-medium">{brand.name}</span>
-                  </Link>
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground">Loading brands...</p>
-              )}
-            </div>
-            <Link
-              href="/all-products"
-              onClick={onClose}
-              className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground"
-            >
-              View All Brands
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-
-          {/* Trending */}
-          <div>
-            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Trending Now</h3>
-            <div className="space-y-1">
-              {trendingData.map((item) => (
+                ))}
+                {/* Empty slots to push View All to the last position */}
+                {Array.from({ length: emptySlots }).map((_, idx) => (
+                  <div key={`empty-${idx}`} className="flex flex-col items-center gap-2 rounded-lg p-3" />
+                ))}
+                {/* View All button at last position */}
                 <Link
-                  key={item.slug}
-                  href={`/product/${item.slug}`}
+                  href="/all-products"
                   onClick={onClose}
-                  className="block rounded-lg p-2 text-sm font-medium transition-colors hover:bg-accent"
+                  className="flex flex-col items-center justify-center gap-2 rounded-lg p-3 transition-colors hover:bg-accent"
                 >
-                  {item.name}
+                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-foreground text-background text-xl font-bold flex-shrink-0">
+                    +
+                  </div>
+                  <span className="text-xs font-medium text-center">View All</span>
                 </Link>
-              ))}
-            </div>
-          </div>
-
-          {/* Hot Deals */}
-          <div>
-            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-[oklch(0.55_0.2_25)]">Hot Deals</h3>
-            <div className="space-y-2">
-              {dealsData.map((deal) => (
-                <Link
-                  key={deal.slug}
-                  href={`/deals/${deal.slug}`}
-                  onClick={onClose}
-                  className="block rounded-lg border border-[oklch(0.55_0.2_25)]/20 bg-[oklch(0.55_0.2_25)]/5 p-3 text-sm font-medium transition-colors hover:bg-[oklch(0.55_0.2_25)]/10"
-                >
-                  {deal.name}
-                </Link>
-              ))}
-            </div>
-            <div className="mt-6 rounded-xl bg-foreground p-4 text-background">
-              <p className="text-xs uppercase tracking-wider">Limited Time</p>
-              <p className="mt-1 text-lg font-bold">Flash Sale</p>
-              <p className="text-sm opacity-80">Up to 50% off selected items</p>
-              <Link
-                href="/deals/flash-sale"
-                onClick={onClose}
-                className="mt-3 inline-flex items-center gap-1 text-sm font-medium"
-              >
-                Shop Now
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">Loading categories...</p>
+            )}
           </div>
         </div>
       </div>
