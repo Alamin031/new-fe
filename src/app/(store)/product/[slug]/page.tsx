@@ -60,7 +60,8 @@ export default async function ProductPage({params}: ProductPageProps) {
     }
   }
 
-  if (!apiProduct || !category || !category.slug || !category.name) {
+  // Allow page to render even without category data - fallback values will be used
+  if (!apiProduct || !apiProduct.slug || !apiProduct.name) {
     notFound();
   }
 
