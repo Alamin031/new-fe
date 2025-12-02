@@ -74,6 +74,11 @@ export function ProductInfo({ product }: ProductInfoProps) {
     }
   }
 
+  const handleAddToCompareAndNavigate = () => {
+    addToCompare(product)
+    router.push("/compare")
+  }
+
   return (
     <div className="flex flex-col">
       {/* Brand */}
