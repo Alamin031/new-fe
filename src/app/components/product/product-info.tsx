@@ -81,6 +81,19 @@ export function ProductInfo({ product }: ProductInfoProps) {
 
   return (
     <div className="flex flex-col">
+      {/* Add to Compare Button */}
+      <div className="mb-4 flex justify-end">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-2 text-muted-foreground hover:text-foreground"
+          onClick={handleAddToCompareAndNavigate}
+        >
+          <BarChart3 className="h-4 w-4" />
+          Add to Compare
+        </Button>
+      </div>
+
       {/* Brand */}
       {product.brand && (
         <Link
