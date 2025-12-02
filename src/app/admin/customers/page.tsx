@@ -158,7 +158,7 @@ export default function AdminCustomersPage() {
       setCustomers(
         customers.map((c) => (c.id === selectedCustomer.id ? { ...c, status: "Blocked" } : c))
       )
-      setBlockOpen(false)
+      handleCloseBlock(false)
     }
   }
 
