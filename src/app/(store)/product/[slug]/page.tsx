@@ -48,7 +48,6 @@ export default async function ProductPage({params}: ProductPageProps) {
   const apiProduct = await productsService.getBySlug(slug);
 
   let category = apiProduct.category;
-  // যদি category না থাকে, তাহলে categoryId দিয়ে ফেচ করো
 
   // Allow page to render even without category data - fallback values will be used
   if (!apiProduct || !apiProduct.slug || !apiProduct.name) {
