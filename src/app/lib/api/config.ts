@@ -24,6 +24,7 @@ export const API_ENDPOINTS = {
   AUTH_LOGOUT: '/auth/logout',
 
   // Users
+  USER_ME: '/users/me',
   USERS_CREATE: '/users',
   USERS_GET_ALL: '/users',
   USERS_GET_LIST: '/users/all',
