@@ -63,11 +63,13 @@ export interface User {
   id: string
   name: string
   email: string
-  phone?: string
+  phone?: string | null
   avatar?: string
+  image?: string | null
   role: "user" | "admin"
   addresses: Address[]
   createdAt: string
+  updatedAt: string
 }
 
 export interface Address {
