@@ -150,6 +150,21 @@ export class AuthService {
     const role = this.getUserRole()
     return role === "manager" || role === "admin"
   }
+
+  /**
+   * Decode token using backend endpoint
+   * POST /auth/decode/{token}
+   */
+  async decodeToken(token: string): Promise<Record<string, unknown>> {
+    try {
+      const endpoint = API_ENDPOINTS.AUTH_DECODE.replace("{token}", token)
+      const response = await apiClient.post<Record<string, unknown>>(endpoint)
+      return response.data
+    } catch (error) {
+      console.error("Failed to decode token:", error)
+      throw error
+    }
+  }
 }
 
 export default AuthService
