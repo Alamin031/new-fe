@@ -34,15 +34,15 @@ function NotifyProductsPage() {
   const fetchNotifications = async () => {
     setLoading(true)
     try {
-      const data = await productNotifyService.getAll()
-      const normalizedData = Array.isArray(data) ? data.map((n: any) => ({
+      const response = await apiClient.get('/products/notify')
+      const data = Array.isArray(response.data) ? response.data : []
+      const normalizedData = data.map((n: any) => ({
         ...n,
         createdAt: new Date(n.createdAt)
-      })) : []
+      }))
       setNotifications(normalizedData)
     } catch (error) {
       console.error('Failed to fetch notifications:', error)
-      toast.error('Failed to load notifications')
       setNotifications([])
     } finally {
       setLoading(false)
