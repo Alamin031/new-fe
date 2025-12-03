@@ -16,6 +16,8 @@ interface AuthStore {
   setInitialized: (value: boolean) => void
 }
 
+
+
 export const useAuthStore = create<AuthStore>()(
   persist(
     (set, get) => ({
