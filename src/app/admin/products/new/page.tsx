@@ -41,7 +41,17 @@ function NewProductPage() {
   const [productName, setProductName] = useState('');
   const [slug, setSlug] = useState('');
   const [description, setDescription] = useState('');
+  const [shortDescription, setShortDescription] = useState('');
   const [productCode, setProductCode] = useState('');
+
+  // Rich text editor functions
+  const formatText = (command: string, value?: string) => {
+    document.execCommand(command, false, value);
+  };
+
+  const handleShortDescriptionChange = (e: React.FormEvent<HTMLDivElement>) => {
+    setShortDescription(e.currentTarget.innerHTML);
+  };
   const [sku, setSku] = useState('');
   const [warranty, setWarranty] = useState('');
 
@@ -73,12 +83,46 @@ function NewProductPage() {
   const [seoCanonical, setSeoCanonical] = useState('');
   const [tags, setTags] = useState('');
 
-  // FAQ IDs
-  const [faqIds, setFaqIds] = useState('');
+  // Direct Colors (region-independent for simple products like headphones, watches)
+  interface DirectColorVariant {
+    // Default pricing (shared by all colors)
+    defaultPrice: string;
+    defaultComparePrice: string;
+    defaultDiscountPercent: string;
+    defaultDiscountPrice: string;
+    defaultStockQuantity: string;
+    defaultLowStockAlert: string;
 
-  // Base Price (for products with network adjustments)
-  const [basePrice, setBasePrice] = useState('');
-  const [baseComparePrice, setBaseComparePrice] = useState('');
+    // Colors with shared pricing
+    colors: Array<{
+      id: string;
+      colorName: string;
+      colorImage: string;
+    }>;
+
+    // Custom pricing overrides (for colors with different prices)
+    customPricing: Array<{
+      id: string;
+      colorId: string;
+      price: string;
+      comparePrice: string;
+      discountPercent: string;
+      discountPrice: string;
+      stockQuantity: string;
+      lowStockAlert: string;
+    }>;
+  }
+  const [directColorVariant, setDirectColorVariant] =
+    useState<DirectColorVariant>({
+      defaultPrice: '',
+      defaultComparePrice: '',
+      defaultDiscountPercent: '',
+      defaultDiscountPrice: '',
+      defaultStockQuantity: '',
+      defaultLowStockAlert: '5',
+      colors: [],
+      customPricing: [],
+    });
 
   // Networks → Colors → Storages → Prices
   const [networks, setNetworks] = useState<
@@ -95,17 +139,12 @@ function NewProductPage() {
         singlePrice: string;
         singleComparePrice: string;
         singleStockQuantity: string;
-        features: string;
         storages: Array<{
           id: string;
           storageSize: string;
           regularPrice: string;
-          comparePrice: string;
           discountPrice: string;
           discountPercent: string;
-          campaignPrice: string;
-          campaignStart: string;
-          campaignEnd: string;
           stockQuantity: string;
           lowStockAlert: string;
         }>;
@@ -114,20 +153,13 @@ function NewProductPage() {
   >([]);
 
   // File uploads
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
-  const [imagePreviews, setImagePreviews] = useState<
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string>('');
+  const [galleryImageFiles, setGalleryImageFiles] = useState<File[]>([]);
+  const [galleryImagePreviews, setGalleryImagePreviews] = useState<
     Array<{
       url: string;
-      isThumbnail: boolean;
       altText: string;
-      file: File;
-    }>
-  >([]);
-  const [colorImageFiles, setColorImageFiles] = useState<File[]>([]);
-  const [colorImagePreviews, setColorImagePreviews] = useState<
-    Array<{
-      url: string;
-      name: string;
       file: File;
     }>
   >([]);
@@ -141,31 +173,36 @@ function NewProductPage() {
     }>
   >([{id: 'video-1', url: '', type: 'youtube'}]);
 
-  // Regions → Colors → Storages → Prices
+  // Regions → Default Storages + Colors (with optional custom storages)
   const [regions, setRegions] = useState<
     Array<{
       id: string;
       regionName: string;
       isDefault: boolean;
+      defaultStorages: Array<{
+        id: string;
+        storageSize: string;
+        regularPrice: string;
+        discountPrice: string;
+        discountPercent: string;
+        stockQuantity: string;
+        lowStockAlert: string;
+      }>;
       colors: Array<{
         id: string;
         colorName: string;
         colorImage: string;
         hasStorage: boolean;
+        useDefaultStorages: boolean;
         singlePrice: string;
         singleComparePrice: string;
         singleStockQuantity: string;
-        features: string;
         storages: Array<{
           id: string;
           storageSize: string;
           regularPrice: string;
-          comparePrice: string;
           discountPrice: string;
           discountPercent: string;
-          campaignPrice: string;
-          campaignStart: string;
-          campaignEnd: string;
           stockQuantity: string;
           lowStockAlert: string;
         }>;
@@ -176,58 +213,47 @@ function NewProductPage() {
       id: 'region-1',
       regionName: 'International',
       isDefault: true,
+      defaultStorages: [
+        {
+          id: 'default-storage-1',
+          storageSize: '256GB',
+          regularPrice: '',
+          discountPrice: '',
+          discountPercent: '',
+          stockQuantity: '',
+          lowStockAlert: '5',
+        },
+      ],
       colors: [
         {
           id: 'color-1',
           colorName: 'Midnight',
           colorImage: '',
           hasStorage: true,
+          useDefaultStorages: true,
           singlePrice: '',
           singleComparePrice: '',
           singleStockQuantity: '',
-          features: '',
-          storages: [
-            {
-              id: 'storage-1',
-              storageSize: '256GB',
-              regularPrice: '',
-              comparePrice: '',
-              discountPrice: '',
-              discountPercent: '',
-              campaignPrice: '',
-              campaignStart: '',
-              campaignEnd: '',
-              stockQuantity: '',
-              lowStockAlert: '5',
-            },
-          ],
+          storages: [],
         },
       ],
     },
   ]);
 
-  // Specifications (grouped)
-  const [specificationGroups, setSpecificationGroups] = useState<
+  // Specifications (flat list)
+  const [specifications, setSpecifications] = useState<
     Array<{
       id: string;
-      groupName: string;
-      icon: string;
-      specs: Array<{
-        id: string;
-        key: string;
-        value: string;
-      }>;
+      key: string;
+      value: string;
     }>
-  >([
-    {
-      id: 'group-1',
-      groupName: 'Display',
-      icon: 'display-icon',
-      specs: [{id: 'spec-1', key: 'Screen Size', value: ''}],
-    },
-  ]);
+  >([{id: 'spec-1', key: '', value: ''}]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Collapsible sections state
+  const [isNetworksExpanded, setIsNetworksExpanded] = useState(true);
+  const [isRegionsExpanded, setIsRegionsExpanded] = useState(true);
 
   // Fetch categories and brands
   useEffect(() => {
@@ -288,18 +314,13 @@ function NewProductPage() {
             singlePrice: '',
             singleComparePrice: '',
             singleStockQuantity: '',
-            features: '',
             storages: [
               {
                 id: `storage-${Date.now()}`,
                 storageSize: '',
                 regularPrice: '',
-                comparePrice: '',
                 discountPrice: '',
                 discountPercent: '',
-                campaignPrice: '',
-                campaignStart: '',
-                campaignEnd: '',
                 stockQuantity: '',
                 lowStockAlert: '5',
               },
@@ -337,18 +358,13 @@ function NewProductPage() {
                   singlePrice: '',
                   singleComparePrice: '',
                   singleStockQuantity: '',
-                  features: '',
                   storages: [
                     {
                       id: `storage-${Date.now()}`,
                       storageSize: '',
                       regularPrice: '',
-                      comparePrice: '',
                       discountPrice: '',
                       discountPercent: '',
-                      campaignPrice: '',
-                      campaignStart: '',
-                      campaignEnd: '',
                       stockQuantity: '',
                       lowStockAlert: '5',
                     },
@@ -408,12 +424,8 @@ function NewProductPage() {
                           id: `storage-${Date.now()}`,
                           storageSize: '',
                           regularPrice: '',
-                          comparePrice: '',
                           discountPrice: '',
                           discountPercent: '',
-                          campaignPrice: '',
-                          campaignStart: '',
-                          campaignEnd: '',
                           stockQuantity: '',
                           lowStockAlert: '5',
                         },
@@ -467,9 +479,35 @@ function NewProductPage() {
                 c.id === colorId
                   ? {
                       ...c,
-                      storages: c.storages.map(s =>
-                        s.id === storageId ? {...s, [field]: value} : s,
-                      ),
+                      storages: c.storages.map(s => {
+                        if (s.id === storageId) {
+                          const updated = {...s, [field]: value};
+                          // Auto-calculate discount price when regular price or discount percent changes
+                          if (
+                            field === 'regularPrice' ||
+                            field === 'discountPercent'
+                          ) {
+                            const regularPrice =
+                              field === 'regularPrice'
+                                ? Number(value)
+                                : Number(s.regularPrice);
+                            const discountPercent =
+                              field === 'discountPercent'
+                                ? Number(value)
+                                : Number(s.discountPercent);
+                            if (regularPrice && discountPercent) {
+                              updated.discountPrice = String(
+                                Math.round(
+                                  regularPrice -
+                                    (regularPrice * discountPercent) / 100,
+                                ),
+                              );
+                            }
+                          }
+                          return updated;
+                        }
+                        return s;
+                      }),
                     }
                   : c,
               ),
@@ -477,6 +515,145 @@ function NewProductPage() {
           : n,
       ),
     );
+  };
+
+  // Direct Color Variant management (region-independent)
+  const updateDirectColorVariant = (field: string, value: string) => {
+    const updated = {...directColorVariant, [field]: value};
+
+    // Auto-calculate default discount price
+    if (field === 'defaultPrice' || field === 'defaultDiscountPercent') {
+      const price = parseFloat(
+        field === 'defaultPrice' ? value : updated.defaultPrice,
+      );
+      const discountPercent = parseFloat(
+        field === 'defaultDiscountPercent'
+          ? value
+          : updated.defaultDiscountPercent,
+      );
+
+      if (!isNaN(price) && !isNaN(discountPercent) && discountPercent > 0) {
+        updated.defaultDiscountPrice = (
+          price -
+          (price * discountPercent) / 100
+        ).toFixed(2);
+      } else {
+        updated.defaultDiscountPrice = '';
+      }
+    }
+
+    setDirectColorVariant(updated);
+  };
+
+  // Add color to variant
+  const addColorToVariant = () => {
+    setDirectColorVariant({
+      ...directColorVariant,
+      colors: [
+        ...directColorVariant.colors,
+        {
+          id: `color-${Date.now()}`,
+          colorName: '',
+          colorImage: '',
+        },
+      ],
+    });
+  };
+
+  const removeColorFromVariant = (colorId: string) => {
+    setDirectColorVariant({
+      ...directColorVariant,
+      colors: directColorVariant.colors.filter(c => c.id !== colorId),
+      customPricing: directColorVariant.customPricing.filter(
+        cp => cp.colorId !== colorId,
+      ),
+    });
+  };
+
+  const updateColorInVariant = (
+    colorId: string,
+    field: string,
+    value: string,
+  ) => {
+    setDirectColorVariant({
+      ...directColorVariant,
+      colors: directColorVariant.colors.map(color =>
+        color.id === colorId ? {...color, [field]: value} : color,
+      ),
+    });
+  };
+
+  // Add custom pricing for a specific color
+  const addCustomPricing = (colorId: string) => {
+    const exists = directColorVariant.customPricing.some(
+      cp => cp.colorId === colorId,
+    );
+    if (exists) return;
+
+    setDirectColorVariant({
+      ...directColorVariant,
+      customPricing: [
+        ...directColorVariant.customPricing,
+        {
+          id: `custom-${Date.now()}`,
+          colorId: colorId,
+          price: '',
+          comparePrice: '',
+          discountPercent: '',
+          discountPrice: '',
+          stockQuantity: '',
+          lowStockAlert: '5',
+        },
+      ],
+    });
+  };
+
+  const removeCustomPricing = (customPricingId: string) => {
+    setDirectColorVariant({
+      ...directColorVariant,
+      customPricing: directColorVariant.customPricing.filter(
+        cp => cp.id !== customPricingId,
+      ),
+    });
+  };
+
+  const updateCustomPricing = (
+    customPricingId: string,
+    field: string,
+    value: string,
+  ) => {
+    setDirectColorVariant({
+      ...directColorVariant,
+      customPricing: directColorVariant.customPricing.map(cp => {
+        if (cp.id === customPricingId) {
+          const updated = {...cp, [field]: value};
+
+          // Auto-calculate custom discount price
+          if (field === 'price' || field === 'discountPercent') {
+            const price = parseFloat(field === 'price' ? value : updated.price);
+            const discountPercent = parseFloat(
+              field === 'discountPercent' ? value : updated.discountPercent,
+            );
+
+            if (
+              !isNaN(price) &&
+              !isNaN(discountPercent) &&
+              discountPercent > 0
+            ) {
+              updated.discountPrice = (
+                price -
+                (price * discountPercent) / 100
+              ).toFixed(2);
+            } else {
+              updated.discountPrice = '';
+            }
+          }
+
+          return updated;
+        }
+        return cp;
+      }),
+    });
   };
 
   // Region management
@@ -487,35 +664,114 @@ function NewProductPage() {
         id: `region-${Date.now()}`,
         regionName: '',
         isDefault: false,
+        defaultStorages: [
+          {
+            id: `default-storage-${Date.now()}`,
+            storageSize: '',
+            regularPrice: '',
+            discountPrice: '',
+            discountPercent: '',
+            stockQuantity: '',
+            lowStockAlert: '5',
+          },
+        ],
         colors: [
           {
             id: `color-${Date.now()}`,
             colorName: '',
             colorImage: '',
             hasStorage: true,
+            useDefaultStorages: true,
             singlePrice: '',
             singleComparePrice: '',
             singleStockQuantity: '',
-            features: '',
-            storages: [
-              {
-                id: `storage-${Date.now()}`,
-                storageSize: '',
-                regularPrice: '',
-                comparePrice: '',
-                discountPrice: '',
-                discountPercent: '',
-                campaignPrice: '',
-                campaignStart: '',
-                campaignEnd: '',
-                stockQuantity: '',
-                lowStockAlert: '5',
-              },
-            ],
+            storages: [],
           },
         ],
       },
     ]);
+  };
+
+  // Default storage management at region level
+  const addDefaultStorage = (regionId: string) => {
+    setRegions(
+      regions.map(r =>
+        r.id === regionId
+          ? {
+              ...r,
+              defaultStorages: [
+                ...r.defaultStorages,
+                {
+                  id: `default-storage-${Date.now()}`,
+                  storageSize: '',
+                  regularPrice: '',
+                  discountPrice: '',
+                  discountPercent: '',
+                  stockQuantity: '',
+                  lowStockAlert: '5',
+                },
+              ],
+            }
+          : r,
+      ),
+    );
+  };
+
+  const removeDefaultStorage = (regionId: string, storageId: string) => {
+    setRegions(
+      regions.map(r =>
+        r.id === regionId
+          ? {
+              ...r,
+              defaultStorages: r.defaultStorages.filter(
+                s => s.id !== storageId,
+              ),
+            }
+          : r,
+      ),
+    );
+  };
+
+  const updateDefaultStorage = (
+    regionId: string,
+    storageId: string,
+    field: string,
+    value: any,
+  ) => {
+    setRegions(
+      regions.map(r =>
+        r.id === regionId
+          ? {
+              ...r,
+              defaultStorages: r.defaultStorages.map(s => {
+                if (s.id === storageId) {
+                  const updated = {...s, [field]: value};
+                  // Auto-calculate discount price
+                  if (field === 'regularPrice' || field === 'discountPercent') {
+                    const regularPrice =
+                      field === 'regularPrice'
+                        ? Number(value)
+                        : Number(s.regularPrice);
+                    const discountPercent =
+                      field === 'discountPercent'
+                        ? Number(value)
+                        : Number(s.discountPercent);
+                    if (regularPrice && discountPercent) {
+                      updated.discountPrice = String(
+                        Math.round(
+                          regularPrice - (regularPrice * discountPercent) / 100,
+                        ),
+                      );
+                    }
+                  }
+                  return updated;
+                }
+                return s;
+              }),
+            }
+          : r,
+      ),
+    );
   };
 
   const removeRegion = (regionId: string) => {
@@ -542,25 +798,11 @@ function NewProductPage() {
                   colorName: '',
                   colorImage: '',
                   hasStorage: true,
+                  useDefaultStorages: true,
                   singlePrice: '',
                   singleComparePrice: '',
                   singleStockQuantity: '',
-                  features: '',
-                  storages: [
-                    {
-                      id: `storage-${Date.now()}`,
-                      storageSize: '',
-                      regularPrice: '',
-                      comparePrice: '',
-                      discountPrice: '',
-                      discountPercent: '',
-                      campaignPrice: '',
-                      campaignStart: '',
-                      campaignEnd: '',
-                      stockQuantity: '',
-                      lowStockAlert: '5',
-                    },
-                  ],
+                  storages: [],
                 },
               ],
             }
@@ -599,6 +841,44 @@ function NewProductPage() {
     );
   };
 
+  const handleNetworkColorImageUpload = async (
+    networkId: string,
+    colorId: string,
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      const imageUrl = URL.createObjectURL(file);
+
+      updateColorInNetwork(networkId, colorId, 'colorImage', imageUrl);
+    }
+  };
+
+  const handleRegionColorImageUpload = async (
+    regionId: string,
+    colorId: string,
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      const imageUrl = URL.createObjectURL(file);
+
+      updateColor(regionId, colorId, 'colorImage', imageUrl);
+    }
+  };
+
+  const handleVariantColorImageUpload = async (
+    colorId: string,
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      const imageUrl = URL.createObjectURL(file);
+
+      updateColorInVariant(colorId, 'colorImage', imageUrl);
+    }
+  };
+
   // Storage management within color
   const addStorage = (regionId: string, colorId: string) => {
     setRegions(
@@ -616,7 +896,6 @@ function NewProductPage() {
                           id: `storage-${Date.now()}`,
                           storageSize: '',
                           regularPrice: '',
-                          comparePrice: '',
                           discountPrice: '',
                           discountPercent: '',
                           campaignPrice: '',
@@ -675,9 +954,35 @@ function NewProductPage() {
                 c.id === colorId
                   ? {
                       ...c,
-                      storages: c.storages.map(s =>
-                        s.id === storageId ? {...s, [field]: value} : s,
-                      ),
+                      storages: c.storages.map(s => {
+                        if (s.id === storageId) {
+                          const updated = {...s, [field]: value};
+                          // Auto-calculate discount price when regular price or discount percent changes
+                          if (
+                            field === 'regularPrice' ||
+                            field === 'discountPercent'
+                          ) {
+                            const regularPrice =
+                              field === 'regularPrice'
+                                ? Number(value)
+                                : Number(s.regularPrice);
+                            const discountPercent =
+                              field === 'discountPercent'
+                                ? Number(value)
+                                : Number(s.discountPercent);
+                            if (regularPrice && discountPercent) {
+                              updated.discountPrice = String(
+                                Math.round(
+                                  regularPrice -
+                                    (regularPrice * discountPercent) / 100,
+                                ),
+                              );
+                            }
+                          }
+                          return updated;
+                        }
+                        return s;
+                      }),
                     }
                   : c,
               ),
@@ -687,41 +992,24 @@ function NewProductPage() {
     );
   };
 
-  // Product Image management
-  const handleProductImageUpload = async (
+  // Thumbnail Image management (single)
+  const handleThumbnailUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     if (e.target.files && e.target.files.length > 0) {
-      const files = Array.from(e.target.files);
-
-      const newPreviews = files.map((file, idx) => ({
-        url: URL.createObjectURL(file),
-        isThumbnail: imagePreviews.length === 0 && idx === 0,
-        altText: productName || file.name,
-        file,
-      }));
-
-      setImageFiles([...imageFiles, ...files]);
-      setImagePreviews([...imagePreviews, ...newPreviews]);
+      const file = e.target.files[0];
+      setThumbnailFile(file);
+      setThumbnailPreview(URL.createObjectURL(file));
     }
   };
 
-  const removeProductImage = (index: number) => {
-    setImageFiles(imageFiles.filter((_, i) => i !== index));
-    setImagePreviews(imagePreviews.filter((_, i) => i !== index));
+  const removeThumbnail = () => {
+    setThumbnailFile(null);
+    setThumbnailPreview('');
   };
 
-  const toggleThumbnail = (index: number) => {
-    setImagePreviews(
-      imagePreviews.map((img, i) => ({
-        ...img,
-        isThumbnail: i === index,
-      })),
-    );
-  };
-
-  // Color Image management
-  const handleColorImageUpload = async (
+  // Gallery Images management (multiple)
+  const handleGalleryImageUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -729,18 +1017,18 @@ function NewProductPage() {
 
       const newPreviews = files.map(file => ({
         url: URL.createObjectURL(file),
-        name: file.name,
+        altText: productName || file.name,
         file,
       }));
 
-      setColorImageFiles([...colorImageFiles, ...files]);
-      setColorImagePreviews([...colorImagePreviews, ...newPreviews]);
+      setGalleryImageFiles([...galleryImageFiles, ...files]);
+      setGalleryImagePreviews([...galleryImagePreviews, ...newPreviews]);
     }
   };
 
-  const removeColorImage = (index: number) => {
-    setColorImageFiles(colorImageFiles.filter((_, i) => i !== index));
-    setColorImagePreviews(colorImagePreviews.filter((_, i) => i !== index));
+  const removeGalleryImage = (index: number) => {
+    setGalleryImageFiles(galleryImageFiles.filter((_, i) => i !== index));
+    setGalleryImagePreviews(galleryImagePreviews.filter((_, i) => i !== index));
   };
 
   // Video management
@@ -759,91 +1047,102 @@ function NewProductPage() {
     setVideos(videos.map(v => (v.id === id ? {...v, [field]: value} : v)));
   };
 
-  // Specification group management
-  const addSpecGroup = () => {
-    setSpecificationGroups([
-      ...specificationGroups,
-      {
-        id: `group-${Date.now()}`,
-        groupName: '',
-        icon: '',
-        specs: [{id: `spec-${Date.now()}`, key: '', value: ''}],
-      },
+  // Specification management
+  const addSpecification = () => {
+    setSpecifications([
+      ...specifications,
+      {id: `spec-${Date.now()}`, key: '', value: ''},
     ]);
   };
 
-  const removeSpecGroup = (groupId: string) => {
-    setSpecificationGroups(specificationGroups.filter(g => g.id !== groupId));
+  const removeSpecification = (specId: string) => {
+    setSpecifications(specifications.filter(s => s.id !== specId));
   };
 
-  const updateSpecGroup = (groupId: string, field: string, value: any) => {
-    setSpecificationGroups(
-      specificationGroups.map(g =>
-        g.id === groupId ? {...g, [field]: value} : g,
-      ),
-    );
-  };
-
-  const addSpecToGroup = (groupId: string) => {
-    setSpecificationGroups(
-      specificationGroups.map(g =>
-        g.id === groupId
-          ? {
-              ...g,
-              specs: [
-                ...g.specs,
-                {id: `spec-${Date.now()}`, key: '', value: ''},
-              ],
-            }
-          : g,
-      ),
-    );
-  };
-
-  const removeSpecFromGroup = (groupId: string, specId: string) => {
-    setSpecificationGroups(
-      specificationGroups.map(g =>
-        g.id === groupId
-          ? {...g, specs: g.specs.filter(s => s.id !== specId)}
-          : g,
-      ),
-    );
-  };
-
-  const updateSpec = (
-    groupId: string,
+  const updateSpecification = (
     specId: string,
     field: string,
     value: string,
   ) => {
-    setSpecificationGroups(
-      specificationGroups.map(g =>
-        g.id === groupId
-          ? {
-              ...g,
-              specs: g.specs.map(s =>
-                s.id === specId ? {...s, [field]: value} : s,
-              ),
-            }
-          : g,
-      ),
+    setSpecifications(
+      specifications.map(s => (s.id === specId ? {...s, [field]: value} : s)),
     );
   };
 
   // Handle publish product with FormData
   const handlePublish = async () => {
+    // Validate thumbnail
+    if (!thumbnailFile) {
+      alert('❌ Please upload a product thumbnail image.');
+      return;
+    }
+
+    // Validate no duplicate color names within direct color variants
+    if (directColorVariant.colors.length > 0) {
+      const colorNames = directColorVariant.colors.map(c =>
+        c.colorName.toLowerCase().trim(),
+      );
+      const duplicates = colorNames.filter(
+        (name, index) => colorNames.indexOf(name) !== index,
+      );
+      if (duplicates.length > 0) {
+        alert(
+          `❌ Duplicate color names found in Direct Color Variants:\n\n` +
+            `Duplicate colors: ${[...new Set(duplicates)].join(', ')}\n\n` +
+            `Please ensure each color has a unique name.`,
+        );
+        return;
+      }
+    }
+
+    // Validate no duplicate color names within each region
+    for (const region of regions) {
+      const colorNames = region.colors.map(c =>
+        c.colorName.toLowerCase().trim(),
+      );
+      const duplicates = colorNames.filter(
+        (name, index) => colorNames.indexOf(name) !== index,
+      );
+      if (duplicates.length > 0) {
+        alert(
+          `❌ Duplicate color names found in region "${region.regionName}":\n\n` +
+            `Duplicate colors: ${[...new Set(duplicates)].join(', ')}\n\n` +
+            `Please ensure each color has a unique name within the same region.`,
+        );
+        return;
+      }
+    }
+
+    // Validate no duplicate color names within each network
+    for (const network of networks) {
+      const colorNames = network.colors.map(c =>
+        c.colorName.toLowerCase().trim(),
+      );
+      const duplicates = colorNames.filter(
+        (name, index) => colorNames.indexOf(name) !== index,
+      );
+      if (duplicates.length > 0) {
+        alert(
+          `❌ Duplicate color names found in network "${network.networkName}":\n\n` +
+            `Duplicate colors: ${[...new Set(duplicates)].join(', ')}\n\n` +
+            `Please ensure each color has a unique name within the same network.`,
+        );
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     try {
       const formData = new FormData();
 
-      // Append product image files
-      imageFiles.forEach(file => {
-        formData.append('images', file);
-      });
+      // Append thumbnail image
+      if (thumbnailFile) {
+        formData.append('thumbnail', thumbnailFile);
+      }
 
-      // Append color image files
-      colorImageFiles.forEach(file => {
-        formData.append('colorImages', file);
+      // Append gallery images
+      galleryImageFiles.forEach(file => {
+        formData.append('galleryImages', file);
       });
 
       // Prepare JSON payload
@@ -851,6 +1150,7 @@ function NewProductPage() {
         name: productName,
         slug,
         description: description || undefined,
+        shortDescription: shortDescription || undefined,
         categoryId: selectedCategory || undefined,
         brandId: selectedBrand || undefined,
         productCode: productCode || undefined,
@@ -865,8 +1165,6 @@ function NewProductPage() {
         isEmi,
         rewardPoints: rewardPoints ? Number(rewardPoints) : undefined,
         minBookingPrice: minBookingPrice ? Number(minBookingPrice) : undefined,
-        basePrice: basePrice ? Number(basePrice) : undefined,
-        baseComparePrice: baseComparePrice ? Number(baseComparePrice) : undefined,
         seoTitle: seoTitle || undefined,
         seoDescription: seoDescription || undefined,
         seoKeywords: seoKeywords
@@ -874,125 +1172,203 @@ function NewProductPage() {
           : undefined,
         seoCanonical: seoCanonical || undefined,
         tags: tags ? tags.split(',').map(t => t.trim()) : undefined,
-        faqIds: faqIds ? faqIds.split(',').map(id => id.trim()) : undefined,
+
+        // Direct Colors (region-independent, for simple products)
+        directColors:
+          directColorVariant.colors.length > 0
+            ? directColorVariant.colors.map((color, idx) => {
+                // Check if this color has custom pricing
+                const customPrice = directColorVariant.customPricing.find(
+                  cp => cp.colorId === color.id,
+                );
+
+                if (customPrice) {
+                  // Use custom pricing
+                  return {
+                    colorName: color.colorName,
+                    colorImage: color.colorImage,
+                    hasStorage: false,
+                    singlePrice: customPrice.price
+                      ? Number(customPrice.price)
+                      : 0,
+                    singleComparePrice: customPrice.comparePrice
+                      ? Number(customPrice.comparePrice)
+                      : undefined,
+                    singleDiscountPercent: customPrice.discountPercent
+                      ? Number(customPrice.discountPercent)
+                      : undefined,
+                    singleDiscountPrice: customPrice.discountPrice
+                      ? Number(customPrice.discountPrice)
+                      : undefined,
+                    singleStockQuantity: customPrice.stockQuantity
+                      ? Number(customPrice.stockQuantity)
+                      : 0,
+                    singleLowStockAlert: customPrice.lowStockAlert
+                      ? Number(customPrice.lowStockAlert)
+                      : 5,
+                    displayOrder: idx,
+                  };
+                } else {
+                  // Use default pricing
+                  return {
+                    colorName: color.colorName,
+                    colorImage: color.colorImage,
+                    hasStorage: false,
+                    singlePrice: directColorVariant.defaultPrice
+                      ? Number(directColorVariant.defaultPrice)
+                      : 0,
+                    singleComparePrice: directColorVariant.defaultComparePrice
+                      ? Number(directColorVariant.defaultComparePrice)
+                      : undefined,
+                    singleDiscountPercent:
+                      directColorVariant.defaultDiscountPercent
+                        ? Number(directColorVariant.defaultDiscountPercent)
+                        : undefined,
+                    singleDiscountPrice: directColorVariant.defaultDiscountPrice
+                      ? Number(directColorVariant.defaultDiscountPrice)
+                      : undefined,
+                    singleStockQuantity: directColorVariant.defaultStockQuantity
+                      ? Number(directColorVariant.defaultStockQuantity)
+                      : 0,
+                    singleLowStockAlert: directColorVariant.defaultLowStockAlert
+                      ? Number(directColorVariant.defaultLowStockAlert)
+                      : 5,
+                    displayOrder: idx,
+                  };
+                }
+              })
+            : undefined,
 
         // Networks with nested colors, storages, and prices
-        networks: networks.length > 0 ? networks.map((network, nIdx) => ({
-          networkName: network.networkName,
-          priceAdjustment: network.priceAdjustment ? Number(network.priceAdjustment) : 0,
-          isDefault: network.isDefault,
-          displayOrder: nIdx,
-          colors: network.colors.map((color, cIdx) => ({
-            colorName: color.colorName,
-            hasStorage: color.hasStorage,
-            singlePrice:
-              !color.hasStorage && color.singlePrice
-                ? Number(color.singlePrice)
-                : undefined,
-            singleComparePrice:
-              !color.hasStorage && color.singleComparePrice
-                ? Number(color.singleComparePrice)
-                : undefined,
-            singleStockQuantity:
-              !color.hasStorage && color.singleStockQuantity
-                ? Number(color.singleStockQuantity)
-                : undefined,
-            features: color.features
-              ? color.features.split(',').map(f => f.trim())
-              : undefined,
-            displayOrder: cIdx,
-            storages: color.hasStorage
-              ? color.storages.map((storage, sIdx) => ({
-                  storageSize: storage.storageSize,
-                  displayOrder: sIdx,
-                  price: {
-                    regularPrice: storage.regularPrice
-                      ? Number(storage.regularPrice)
-                      : 0,
-                    comparePrice: storage.comparePrice
-                      ? Number(storage.comparePrice)
+        networks:
+          networks.length > 0
+            ? networks.map((network, nIdx) => ({
+                networkName: network.networkName,
+                priceAdjustment: network.priceAdjustment
+                  ? Number(network.priceAdjustment)
+                  : 0,
+                isDefault: network.isDefault,
+                displayOrder: nIdx,
+                colors: network.colors.map((color, cIdx) => ({
+                  colorName: color.colorName,
+                  hasStorage: color.hasStorage,
+                  singlePrice:
+                    !color.hasStorage && color.singlePrice
+                      ? Number(color.singlePrice)
                       : undefined,
-                    discountPrice: storage.discountPrice
-                      ? Number(storage.discountPrice)
+                  singleComparePrice:
+                    !color.hasStorage && color.singleComparePrice
+                      ? Number(color.singleComparePrice)
                       : undefined,
-                    discountPercent: storage.discountPercent
-                      ? Number(storage.discountPercent)
+                  singleStockQuantity:
+                    !color.hasStorage && color.singleStockQuantity
+                      ? Number(color.singleStockQuantity)
                       : undefined,
-                    campaignPrice: storage.campaignPrice
-                      ? Number(storage.campaignPrice)
-                      : undefined,
-                    campaignStart: storage.campaignStart || undefined,
-                    campaignEnd: storage.campaignEnd || undefined,
-                    stockQuantity: storage.stockQuantity
-                      ? Number(storage.stockQuantity)
-                      : 0,
-                    lowStockAlert: storage.lowStockAlert
-                      ? Number(storage.lowStockAlert)
-                      : 5,
-                  },
-                }))
-              : undefined,
-          })),
-        })) : undefined,
+                  displayOrder: cIdx,
+                  storages: color.hasStorage
+                    ? color.storages.map((storage, sIdx) => ({
+                        storageSize: storage.storageSize,
+                        displayOrder: sIdx,
+                        price: {
+                          regularPrice: storage.regularPrice
+                            ? Number(storage.regularPrice)
+                            : 0,
+                          discountPrice: storage.discountPrice
+                            ? Number(storage.discountPrice)
+                            : undefined,
+                          discountPercent: storage.discountPercent
+                            ? Number(storage.discountPercent)
+                            : undefined,
+                          stockQuantity: storage.stockQuantity
+                            ? Number(storage.stockQuantity)
+                            : 0,
+                          lowStockAlert: storage.lowStockAlert
+                            ? Number(storage.lowStockAlert)
+                            : 5,
+                        },
+                      }))
+                    : undefined,
+                })),
+              }))
+            : undefined,
 
         // Regions with nested colors, storages, and prices (color images will be assigned by backend)
-        regions: regions.length > 0 ? regions.map((region, rIdx) => ({
-          regionName: region.regionName,
-          isDefault: region.isDefault,
-          displayOrder: rIdx,
-          colors: region.colors.map((color, cIdx) => ({
-            colorName: color.colorName,
-            // colorImage will be auto-assigned by backend from uploaded colorImages
-            hasStorage: color.hasStorage,
-            singlePrice:
-              !color.hasStorage && color.singlePrice
-                ? Number(color.singlePrice)
-                : undefined,
-            singleComparePrice:
-              !color.hasStorage && color.singleComparePrice
-                ? Number(color.singleComparePrice)
-                : undefined,
-            singleStockQuantity:
-              !color.hasStorage && color.singleStockQuantity
-                ? Number(color.singleStockQuantity)
-                : undefined,
-            features: color.features
-              ? color.features.split(',').map(f => f.trim())
-              : undefined,
-            displayOrder: cIdx,
-            storages: color.hasStorage
-              ? color.storages.map((storage, sIdx) => ({
-                  storageSize: storage.storageSize,
-                  displayOrder: sIdx,
-                  price: {
-                    regularPrice: storage.regularPrice
-                      ? Number(storage.regularPrice)
-                      : 0,
-                    comparePrice: storage.comparePrice
-                      ? Number(storage.comparePrice)
+        regions:
+          regions.length > 0
+            ? regions.map((region, rIdx) => ({
+                regionName: region.regionName,
+                isDefault: region.isDefault,
+                displayOrder: rIdx,
+                // Default storages shared by all colors in this region
+                defaultStorages: region.defaultStorages
+                  .filter(s => s.storageSize && s.regularPrice)
+                  .map((storage, sIdx) => ({
+                    storageSize: storage.storageSize,
+                    displayOrder: sIdx,
+                    price: {
+                      regularPrice: storage.regularPrice
+                        ? Number(storage.regularPrice)
+                        : 0,
+                      discountPrice: storage.discountPrice
+                        ? Number(storage.discountPrice)
+                        : undefined,
+                      discountPercent: storage.discountPercent
+                        ? Number(storage.discountPercent)
+                        : undefined,
+                      stockQuantity: storage.stockQuantity
+                        ? Number(storage.stockQuantity)
+                        : 0,
+                      lowStockAlert: storage.lowStockAlert
+                        ? Number(storage.lowStockAlert)
+                        : 5,
+                    },
+                  })),
+                colors: region.colors.map((color, cIdx) => ({
+                  colorName: color.colorName,
+                  // colorImage will be auto-assigned by backend from uploaded colorImages
+                  hasStorage: color.hasStorage,
+                  useDefaultStorages: color.useDefaultStorages,
+                  singlePrice:
+                    !color.hasStorage && color.singlePrice
+                      ? Number(color.singlePrice)
                       : undefined,
-                    discountPrice: storage.discountPrice
-                      ? Number(storage.discountPrice)
+                  singleComparePrice:
+                    !color.hasStorage && color.singleComparePrice
+                      ? Number(color.singleComparePrice)
                       : undefined,
-                    discountPercent: storage.discountPercent
-                      ? Number(storage.discountPercent)
+                  singleStockQuantity:
+                    !color.hasStorage && color.singleStockQuantity
+                      ? Number(color.singleStockQuantity)
                       : undefined,
-                    campaignPrice: storage.campaignPrice
-                      ? Number(storage.campaignPrice)
+                  displayOrder: cIdx,
+                  // Only include custom storages if useDefaultStorages = false
+                  storages:
+                    color.hasStorage && !color.useDefaultStorages
+                      ? color.storages.map((storage, sIdx) => ({
+                          storageSize: storage.storageSize,
+                          displayOrder: sIdx,
+                          price: {
+                            regularPrice: storage.regularPrice
+                              ? Number(storage.regularPrice)
+                              : 0,
+                            discountPrice: storage.discountPrice
+                              ? Number(storage.discountPrice)
+                              : undefined,
+                            discountPercent: storage.discountPercent
+                              ? Number(storage.discountPercent)
+                              : undefined,
+                            stockQuantity: storage.stockQuantity
+                              ? Number(storage.stockQuantity)
+                              : 0,
+                            lowStockAlert: storage.lowStockAlert
+                              ? Number(storage.lowStockAlert)
+                              : 5,
+                          },
+                        }))
                       : undefined,
-                    campaignStart: storage.campaignStart || undefined,
-                    campaignEnd: storage.campaignEnd || undefined,
-                    stockQuantity: storage.stockQuantity
-                      ? Number(storage.stockQuantity)
-                      : 0,
-                    lowStockAlert: storage.lowStockAlert
-                      ? Number(storage.lowStockAlert)
-                      : 5,
-                  },
-                }))
-              : undefined,
-          })),
-        })) : undefined,
+                })),
+              }))
+            : undefined,
 
         // Videos
         videos: videos
@@ -1003,20 +1379,13 @@ function NewProductPage() {
             displayOrder: idx,
           })),
 
-        // Specifications (grouped)
-        specifications: specificationGroups
-          .filter(g => g.groupName && g.specs.some(s => s.key && s.value))
-          .map((g, gIdx) => ({
-            groupName: g.groupName,
-            displayOrder: gIdx,
-            icon: g.icon || undefined,
-            specs: g.specs
-              .filter(s => s.key && s.value)
-              .map((s, sIdx) => ({
-                specKey: s.key,
-                specValue: s.value,
-                displayOrder: sIdx,
-              })),
+        // Specifications (flat list)
+        specifications: specifications
+          .filter(s => s.key && s.value)
+          .map((s, idx) => ({
+            specKey: s.key,
+            specValue: s.value,
+            displayOrder: idx,
           })),
       };
 
@@ -1033,8 +1402,8 @@ function NewProductPage() {
       });
 
       console.log('Submitting FormData with files...');
-      console.log('Product Images:', imageFiles.length);
-      console.log('Color Images:', colorImageFiles.length);
+      console.log('Thumbnail:', thumbnailFile ? 'Yes' : 'No');
+      console.log('Gallery Images:', galleryImageFiles.length);
 
       // Call API with FormData
       await productsService.createWithFormData(formData);
@@ -1044,10 +1413,36 @@ function NewProductPage() {
       // router.push('/admin/products');
     } catch (err: any) {
       console.error('Error creating product:', err);
-      alert(
-        'Failed to create product: ' +
-          (err?.response?.data?.message || err?.message || 'Unknown error'),
-      );
+
+      // Enhanced error handling for duplicate key errors
+      const errorMessage =
+        err?.response?.data?.message || err?.message || 'Unknown error';
+
+      if (
+        errorMessage.includes('duplicate key') ||
+        errorMessage.includes('E11000')
+      ) {
+        alert(
+          '⚠️ Database Error: Duplicate color name detected.\n\n' +
+            'This is a backend issue where the product ID is not being set correctly.\n\n' +
+            'Please contact the backend team to fix the product-color relationship.\n\n' +
+            'Technical details: ' +
+            errorMessage,
+        );
+      } else if (
+        errorMessage.includes('Color name') &&
+        errorMessage.includes('already exists')
+      ) {
+        alert(
+          '⚠️ Duplicate Color Name\n\n' +
+            'One or more colors have the same name within this product.\n' +
+            'Please ensure each color has a unique name.\n\n' +
+            'Error: ' +
+            errorMessage,
+        );
+      } else {
+        alert('❌ Failed to create product:\n\n' + errorMessage);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -1106,6 +1501,70 @@ function NewProductPage() {
                 value={description}
                 onChange={e => setDescription(e.target.value)}
               />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="shortDescription">Short Description</Label>
+              <div className="border rounded-md">
+                {/* Formatting Toolbar */}
+                <div className="flex items-center gap-1 p-2 border-b bg-muted/50">
+                  <button
+                    type="button"
+                    onClick={() => formatText('bold')}
+                    className="p-2 hover:bg-accent rounded transition-colors"
+                    title="Bold (Ctrl+B)">
+                    <strong className="text-sm">B</strong>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => formatText('italic')}
+                    className="p-2 hover:bg-accent rounded transition-colors"
+                    title="Italic (Ctrl+I)">
+                    <em className="text-sm">I</em>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => formatText('underline')}
+                    className="p-2 hover:bg-accent rounded transition-colors"
+                    title="Underline (Ctrl+U)">
+                    <span className="text-sm underline">U</span>
+                  </button>
+                  <div className="w-px h-6 bg-border mx-1" />
+                  <button
+                    type="button"
+                    onClick={() => formatText('insertUnorderedList')}
+                    className="p-2 hover:bg-accent rounded transition-colors"
+                    title="Bullet List">
+                    <span className="text-sm">• List</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => formatText('insertOrderedList')}
+                    className="p-2 hover:bg-accent rounded transition-colors"
+                    title="Numbered List">
+                    <span className="text-sm">1. List</span>
+                  </button>
+                  <div className="w-px h-6 bg-border mx-1" />
+                  <button
+                    type="button"
+                    onClick={() => formatText('removeFormat')}
+                    className="p-2 hover:bg-accent rounded transition-colors text-xs"
+                    title="Clear Formatting">
+                    Clear
+                  </button>
+                </div>
+                {/* Editable Content */}
+                <div
+                  contentEditable
+                  onInput={handleShortDescriptionChange}
+                  dangerouslySetInnerHTML={{__html: shortDescription}}
+                  className="min-h-[120px] p-3 focus:outline-none"
+                  style={{wordBreak: 'break-word'}}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Use the toolbar above to format text with bold, italic,
+                underline, and lists.
+              </p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="grid gap-2">
@@ -1221,11 +1680,7 @@ function NewProductPage() {
                 <Label htmlFor="freeShipping">Free Shipping</Label>
               </div>
               <div className="flex items-center gap-2">
-                <Switch
-                  id="isEmi"
-                  checked={isEmi}
-                  onCheckedChange={setIsEmi}
-                />
+                <Switch id="isEmi" checked={isEmi} onCheckedChange={setIsEmi} />
                 <Label htmlFor="isEmi">EMI Available</Label>
               </div>
             </div>
@@ -1258,98 +1713,63 @@ function NewProductPage() {
             </div>
           </div>
 
-          {/* Base Price (for network variants) */}
+          {/* Thumbnail Image (Single) */}
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Base Price (Optional - for Network Variants)</h2>
+            <h2 className="text-lg font-semibold">Product Thumbnail *</h2>
             <p className="text-sm text-muted-foreground">
-              Set base price if using network variants with price adjustments
-            </p>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="grid gap-2">
-                <Label htmlFor="basePrice">Base Price</Label>
-                <Input
-                  id="basePrice"
-                  type="number"
-                  placeholder="0"
-                  value={basePrice}
-                  onChange={e => setBasePrice(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="baseComparePrice">Base Compare Price</Label>
-                <Input
-                  id="baseComparePrice"
-                  type="number"
-                  placeholder="0"
-                  value={baseComparePrice}
-                  onChange={e => setBaseComparePrice(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Product Images */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Product Images</h2>
-            <p className="text-sm text-muted-foreground">
-              Upload main product images. Click an image to set as thumbnail.
-              Files will be uploaded to Cloudflare.
+              Upload the main thumbnail image for this product. This will be
+              shown in product listings.
             </p>
             <div className="grid gap-4 sm:grid-cols-4">
-              {imagePreviews.map((image, index) => (
-                <div
-                  key={index}
-                  className="relative aspect-square rounded-lg border border-border bg-muted">
+              {thumbnailPreview && (
+                <div className="relative aspect-square rounded-lg border border-border bg-muted">
                   <button
                     className="absolute -right-2 -top-2 rounded-full bg-destructive p-1 text-destructive-foreground z-10"
-                    onClick={() => removeProductImage(index)}>
+                    onClick={removeThumbnail}>
                     <X className="h-3 w-3" />
                   </button>
-                  {image.isThumbnail && (
-                    <div className="absolute left-2 top-2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs z-10">
-                      Thumbnail
-                    </div>
-                  )}
+                  <div className="absolute left-2 top-2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs z-10">
+                    Thumbnail
+                  </div>
                   <img
-                    src={image.url}
-                    alt={image.altText}
-                    className="w-full h-full object-cover rounded-lg cursor-pointer"
-                    onClick={() => toggleThumbnail(index)}
+                    src={thumbnailPreview}
+                    alt="Product thumbnail"
+                    className="w-full h-full object-cover rounded-lg"
                   />
                 </div>
-              ))}
-              <label className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/50 hover:bg-muted">
-                <Upload className="mb-2 h-8 w-8 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Upload</span>
-                <input
-                  type="file"
-                  className="hidden"
-                  accept="image/*"
-                  multiple
-                  onChange={handleProductImageUpload}
-                />
-              </label>
+              )}
+              {!thumbnailPreview && (
+                <label className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/50 hover:bg-muted">
+                  <Upload className="mb-2 h-8 w-8 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">
+                    Upload Thumbnail
+                  </span>
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleThumbnailUpload}
+                  />
+                </label>
+              )}
             </div>
           </div>
 
-          {/* Color Images */}
+          {/* Product Gallery (Multiple Images) */}
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Color Variant Images</h2>
+            <h2 className="text-lg font-semibold">Product Gallery</h2>
             <p className="text-sm text-muted-foreground">
-              Upload images for color variants. These will be automatically
-              assigned to colors in order. Upload{' '}
-              {networks.reduce((sum, n) => sum + n.colors.length, 0) + 
-               regions.reduce((sum, r) => sum + r.colors.length, 0)} images (one
-              per color across all networks and regions).
+              Upload multiple images for the product gallery. These images will
+              be shown in the product detail page.
             </p>
-            <div className="grid gap-4 sm:grid-cols-6">
-              {colorImagePreviews.map((image, index) => (
+            <div className="grid gap-4 sm:grid-cols-5">
+              {galleryImagePreviews.map((image, index) => (
                 <div
                   key={index}
                   className="relative aspect-square rounded-lg border border-border bg-muted">
                   <button
                     className="absolute -right-2 -top-2 rounded-full bg-destructive p-1 text-destructive-foreground z-10"
-                    onClick={() => removeColorImage(index)}>
+                    onClick={() => removeGalleryImage(index)}>
                     <X className="h-3 w-3" />
                   </button>
                   <div className="absolute left-1 top-1 bg-black/60 text-white px-1.5 py-0.5 rounded text-xs z-10">
@@ -1357,177 +1777,488 @@ function NewProductPage() {
                   </div>
                   <img
                     src={image.url}
-                    alt={image.name}
+                    alt={image.altText}
                     className="w-full h-full object-cover rounded-lg"
                   />
                 </div>
               ))}
               <label className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/50 hover:bg-muted">
-                <ImageIcon className="mb-2 h-6 w-6 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Colors</span>
+                <Upload className="mb-2 h-6 w-6 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">
+                  Add Images
+                </span>
                 <input
                   type="file"
                   className="hidden"
                   accept="image/*"
                   multiple
-                  onChange={handleColorImageUpload}
+                  onChange={handleGalleryImageUpload}
                 />
               </label>
             </div>
           </div>
 
+          {/* Direct Color Variants (Region-Independent) - Always Visible */}
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-lg font-semibold">Direct Color Variants</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                For simple products without network/region complexity
+                (Headphones, Watches, Cases, Power Banks, etc.)
+              </p>
+            </div>
+
+            <Card className="border-2 border-purple-200">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base text-purple-900">
+                  Product Color Variants
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Default Pricing Section */}
+                <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                  <h4 className="font-semibold text-purple-900 mb-3">
+                    Default Pricing (Shared by All Colors)
+                  </h4>
+
+                  <div className="grid gap-4 sm:grid-cols-2 mb-4">
+                    <div className="grid gap-2">
+                      <Label>Regular Price *</Label>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        value={directColorVariant.defaultPrice}
+                        onChange={e =>
+                          updateDirectColorVariant(
+                            'defaultPrice',
+                            e.target.value,
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Compare Price</Label>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        value={directColorVariant.defaultComparePrice}
+                        onChange={e =>
+                          updateDirectColorVariant(
+                            'defaultComparePrice',
+                            e.target.value,
+                          )
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-3 mb-4">
+                    <div className="grid gap-2">
+                      <Label>Discount %</Label>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        value={directColorVariant.defaultDiscountPercent}
+                        onChange={e =>
+                          updateDirectColorVariant(
+                            'defaultDiscountPercent',
+                            e.target.value,
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Discount Price (Auto)</Label>
+                      <Input
+                        type="number"
+                        value={directColorVariant.defaultDiscountPrice}
+                        readOnly
+                        className="bg-muted cursor-not-allowed"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Stock Quantity *</Label>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        value={directColorVariant.defaultStockQuantity}
+                        onChange={e =>
+                          updateDirectColorVariant(
+                            'defaultStockQuantity',
+                            e.target.value,
+                          )
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-2" style={{maxWidth: '200px'}}>
+                    <Label>Low Stock Alert</Label>
+                    <Input
+                      type="number"
+                      placeholder="5"
+                      value={directColorVariant.defaultLowStockAlert}
+                      onChange={e =>
+                        updateDirectColorVariant(
+                          'defaultLowStockAlert',
+                          e.target.value,
+                        )
+                      }
+                    />
+                  </div>
+                </div>
+
+                {/* Colors Section */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-semibold text-purple-900">
+                      Colors (Using Default Price)
+                    </h4>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addColorToVariant()}>
+                      <Plus className="mr-2 h-3 w-3" /> Add Color
+                    </Button>
+                  </div>
+
+                  {directColorVariant.colors.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      No colors added yet. Click &quot;Add Color&quot; to start.
+                    </p>
+                  ) : (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {directColorVariant.colors.map(color => {
+                        const hasCustomPricing =
+                          directColorVariant.customPricing.some(
+                            cp => cp.colorId === color.id,
+                          );
+
+                        return (
+                          <div
+                            key={color.id}
+                            className="p-3 bg-white rounded border space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium">Color</span>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() =>
+                                  removeColorFromVariant(color.id)
+                                }>
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+
+                            <div className="grid gap-2">
+                              <Input
+                                placeholder="Color name (e.g. Black)"
+                                value={color.colorName}
+                                onChange={e =>
+                                  updateColorInVariant(
+                                    color.id,
+                                    'colorName',
+                                    e.target.value,
+                                  )
+                                }
+                                required
+                              />
+                            </div>
+
+                            <div className="grid gap-2">
+                              <div className="space-y-2">
+                                {color.colorImage && (
+                                  <div className="relative inline-block">
+                                    <img
+                                      src={color.colorImage}
+                                      alt={color.colorName}
+                                      className="h-16 w-16 object-cover rounded border"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        updateColorInVariant(
+                                          color.id,
+                                          'colorImage',
+                                          '',
+                                        )
+                                      }
+                                      className="absolute -top-2 -right-2 rounded-full bg-destructive p-1 text-destructive-foreground">
+                                      <X className="h-3 w-3" />
+                                    </button>
+                                  </div>
+                                )}
+                                <label className="flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/50 hover:bg-muted px-4 py-2">
+                                  <Upload className="mr-2 h-4 w-4 text-muted-foreground" />
+                                  <span className="text-sm text-muted-foreground">
+                                    {color.colorImage
+                                      ? 'Change Image'
+                                      : 'Upload Image'}
+                                  </span>
+                                  <input
+                                    type="file"
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={e =>
+                                      handleVariantColorImageUpload(color.id, e)
+                                    }
+                                  />
+                                </label>
+                              </div>
+                            </div>
+
+                            {!hasCustomPricing && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full text-xs"
+                                onClick={() => addCustomPricing(color.id)}>
+                                Set Custom Price
+                              </Button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Custom Pricing Section */}
+                {directColorVariant.customPricing.length > 0 && (
+                  <div className="space-y-3 p-4 bg-orange-50 rounded-lg border border-orange-200">
+                    <h4 className="font-semibold text-orange-900">
+                      Custom Pricing (Different from Default)
+                    </h4>
+
+                    {directColorVariant.customPricing.map(customPrice => {
+                      const color = directColorVariant.colors.find(
+                        c => c.id === customPrice.colorId,
+                      );
+
+                      return (
+                        <div
+                          key={customPrice.id}
+                          className="p-3 bg-white rounded border space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-semibold text-orange-900">
+                              {color?.colorName || 'Unknown Color'}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() =>
+                                removeCustomPricing(customPrice.id)
+                              }>
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="grid gap-2">
+                              <Label className="text-xs">Regular Price *</Label>
+                              <Input
+                                type="number"
+                                placeholder="0"
+                                value={customPrice.price}
+                                onChange={e =>
+                                  updateCustomPricing(
+                                    customPrice.id,
+                                    'price',
+                                    e.target.value,
+                                  )
+                                }
+                                required
+                              />
+                            </div>
+                            <div className="grid gap-2">
+                              <Label className="text-xs">Compare Price</Label>
+                              <Input
+                                type="number"
+                                placeholder="0"
+                                value={customPrice.comparePrice}
+                                onChange={e =>
+                                  updateCustomPricing(
+                                    customPrice.id,
+                                    'comparePrice',
+                                    e.target.value,
+                                  )
+                                }
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid gap-4 sm:grid-cols-3">
+                            <div className="grid gap-2">
+                              <Label className="text-xs">Discount %</Label>
+                              <Input
+                                type="number"
+                                placeholder="0"
+                                value={customPrice.discountPercent}
+                                onChange={e =>
+                                  updateCustomPricing(
+                                    customPrice.id,
+                                    'discountPercent',
+                                    e.target.value,
+                                  )
+                                }
+                              />
+                            </div>
+                            <div className="grid gap-2">
+                              <Label className="text-xs">
+                                Discount Price (Auto)
+                              </Label>
+                              <Input
+                                type="number"
+                                value={customPrice.discountPrice}
+                                readOnly
+                                className="bg-muted cursor-not-allowed"
+                              />
+                            </div>
+                            <div className="grid gap-2">
+                              <Label className="text-xs">Stock</Label>
+                              <Input
+                                type="number"
+                                placeholder="0"
+                                value={customPrice.stockQuantity}
+                                onChange={e =>
+                                  updateCustomPricing(
+                                    customPrice.id,
+                                    'stockQuantity',
+                                    e.target.value,
+                                  )
+                                }
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
           {/* Networks, Colors, Storages, Prices */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">
-                Networks, Colors, Storages & Pricing
-              </h2>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsNetworksExpanded(!isNetworksExpanded)}
+                  className="p-2">
+                  {isNetworksExpanded ? '▼' : '▶'}
+                </Button>
+                <h2 className="text-lg font-semibold">
+                  Networks, Colors, Storages & Pricing
+                </h2>
+              </div>
               <Button variant="outline" size="sm" onClick={addNetwork}>
                 <Plus className="mr-2 h-4 w-4" /> Add Network
               </Button>
             </div>
 
-            {networks.map((network, networkIdx) => (
-              <Card key={network.id} className="border-2 border-blue-200">
-                <CardHeader className="flex flex-row items-center justify-between bg-blue-50">
-                  <CardTitle className="text-base">
-                    Network #{networkIdx + 1}
-                  </CardTitle>
-                  {networks.length > 1 && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeNetwork(network.id)}>
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
-                </CardHeader>
-                <CardContent className="space-y-4 mt-4">
-                  <div className="grid gap-4 sm:grid-cols-3">
-                    <div className="grid gap-2">
-                      <Label>Network Name *</Label>
-                      <Input
-                        placeholder="e.g. 4G LTE, 5G, WiFi Only"
-                        value={network.networkName}
-                        onChange={e =>
-                          updateNetwork(network.id, 'networkName', e.target.value)
-                        }
-                        required
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Price Adjustment</Label>
-                      <Input
-                        type="number"
-                        placeholder="0 (positive or negative)"
-                        value={network.priceAdjustment}
-                        onChange={e =>
-                          updateNetwork(network.id, 'priceAdjustment', e.target.value)
-                        }
-                      />
-                    </div>
-                    <div className="flex items-center gap-2 mt-7">
-                      <Switch
-                        checked={network.isDefault}
-                        onCheckedChange={checked =>
-                          updateNetwork(network.id, 'isDefault', checked)
-                        }
-                      />
-                      <Label>Default Network</Label>
-                    </div>
-                  </div>
-
-                  {/* Colors within this network */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label className="font-semibold">Colors</Label>
+            {isNetworksExpanded &&
+              networks.map((network, networkIdx) => (
+                <Card key={network.id} className="border-2 border-blue-200">
+                  <CardHeader className="flex flex-row items-center justify-between bg-blue-50">
+                    <CardTitle className="text-base">
+                      Network #{networkIdx + 1}
+                    </CardTitle>
+                    {networks.length > 1 && (
                       <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => addColorToNetwork(network.id)}>
-                        <Plus className="mr-2 h-3 w-3" /> Add Color
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeNetwork(network.id)}>
+                        <X className="h-4 w-4" />
                       </Button>
+                    )}
+                  </CardHeader>
+                  <CardContent className="space-y-4 mt-4">
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      <div className="grid gap-2">
+                        <Label>Network Name *</Label>
+                        <Input
+                          placeholder="e.g. 4G LTE, 5G, WiFi Only"
+                          value={network.networkName}
+                          onChange={e =>
+                            updateNetwork(
+                              network.id,
+                              'networkName',
+                              e.target.value,
+                            )
+                          }
+                          required
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Price Adjustment</Label>
+                        <Input
+                          type="number"
+                          placeholder="0 (positive or negative)"
+                          value={network.priceAdjustment}
+                          onChange={e =>
+                            updateNetwork(
+                              network.id,
+                              'priceAdjustment',
+                              e.target.value,
+                            )
+                          }
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 mt-7">
+                        <Switch
+                          checked={network.isDefault}
+                          onCheckedChange={checked =>
+                            updateNetwork(network.id, 'isDefault', checked)
+                          }
+                        />
+                        <Label>Default Network</Label>
+                      </div>
                     </div>
 
-                    {network.colors.map((color, colorIdx) => (
-                      <Card key={color.id} className="border">
-                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                          <CardTitle className="text-sm">
-                            Color #{colorIdx + 1}
-                          </CardTitle>
-                          {network.colors.length > 1 && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => removeColorFromNetwork(network.id, color.id)}>
-                              <X className="h-3 w-3" />
-                            </Button>
-                          )}
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          <div className="grid gap-4 sm:grid-cols-2">
-                            <div className="grid gap-2">
-                              <Label>Color Name *</Label>
-                              <Input
-                                placeholder="e.g. Midnight"
-                                value={color.colorName}
-                                onChange={e =>
-                                  updateColorInNetwork(
-                                    network.id,
-                                    color.id,
-                                    'colorName',
-                                    e.target.value,
-                                  )
-                                }
-                                required
-                              />
-                            </div>
-                            <div className="grid gap-2">
-                              <Label>Features (comma separated)</Label>
-                              <Input
-                                placeholder="e.g. Wireless Charging, 5G"
-                                value={color.features}
-                                onChange={e =>
-                                  updateColorInNetwork(
-                                    network.id,
-                                    color.id,
-                                    'features',
-                                    e.target.value,
-                                  )
-                                }
-                              />
-                            </div>
-                          </div>
+                    {/* Colors within this network */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="font-semibold">Colors</Label>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addColorToNetwork(network.id)}>
+                          <Plus className="mr-2 h-3 w-3" /> Add Color
+                        </Button>
+                      </div>
 
-                          <div className="flex items-center gap-2">
-                            <Switch
-                              checked={color.hasStorage}
-                              onCheckedChange={checked =>
-                                updateColorInNetwork(
-                                  network.id,
-                                  color.id,
-                                  'hasStorage',
-                                  checked,
-                                )
-                              }
-                            />
-                            <Label>Has Storage Variants</Label>
-                          </div>
-
-                          {/* Color-only pricing (when hasStorage = false) */}
-                          {!color.hasStorage && (
-                            <div className="grid gap-4 sm:grid-cols-3 p-4 bg-muted rounded-lg">
+                      {network.colors.map((color, colorIdx) => (
+                        <Card key={color.id} className="border">
+                          <CardHeader className="flex flex-row items-center justify-between pb-2">
+                            <CardTitle className="text-sm">
+                              Color #{colorIdx + 1}
+                            </CardTitle>
+                            {network.colors.length > 1 && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() =>
+                                  removeColorFromNetwork(network.id, color.id)
+                                }>
+                                <X className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="grid gap-4 sm:grid-cols-2">
                               <div className="grid gap-2">
-                                <Label>Price *</Label>
+                                <Label>Color Name *</Label>
                                 <Input
-                                  type="number"
-                                  placeholder="0"
-                                  value={color.singlePrice}
+                                  placeholder="e.g. Midnight"
+                                  value={color.colorName}
                                   onChange={e =>
                                     updateColorInNetwork(
                                       network.id,
                                       color.id,
-                                      'singlePrice',
+                                      'colorName',
                                       e.target.value,
                                     )
                                   }
@@ -1535,364 +2266,397 @@ function NewProductPage() {
                                 />
                               </div>
                               <div className="grid gap-2">
-                                <Label>Compare Price</Label>
-                                <Input
-                                  type="number"
-                                  placeholder="0"
-                                  value={color.singleComparePrice}
-                                  onChange={e =>
-                                    updateColorInNetwork(
-                                      network.id,
-                                      color.id,
-                                      'singleComparePrice',
-                                      e.target.value,
-                                    )
-                                  }
-                                />
-                              </div>
-                              <div className="grid gap-2">
-                                <Label>Stock Quantity</Label>
-                                <Input
-                                  type="number"
-                                  placeholder="0"
-                                  value={color.singleStockQuantity}
-                                  onChange={e =>
-                                    updateColorInNetwork(
-                                      network.id,
-                                      color.id,
-                                      'singleStockQuantity',
-                                      e.target.value,
-                                    )
-                                  }
-                                />
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Storages within this color (only if hasStorage = true) */}
-                          {color.hasStorage && (
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between">
-                                <Label className="font-semibold">
-                                  Storage Variants & Pricing
-                                </Label>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    addStorageToNetwork(network.id, color.id)
-                                  }>
-                                  <Plus className="mr-2 h-3 w-3" /> Add Storage
-                                </Button>
-                              </div>
-
-                              {color.storages.map((storage, storageIdx) => (
-                                <div
-                                  key={storage.id}
-                                  className="rounded border p-4 space-y-3">
-                                  <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm font-medium">
-                                      Storage #{storageIdx + 1}
-                                    </span>
-                                    {color.storages.length > 1 && (
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
+                                <Label>Color Image</Label>
+                                <div className="flex items-center gap-2">
+                                  {color.colorImage && (
+                                    <div className="relative w-16 h-16 rounded border">
+                                      <img
+                                        src={color.colorImage}
+                                        alt={color.colorName}
+                                        className="w-full h-full object-cover rounded"
+                                      />
+                                      <button
+                                        type="button"
+                                        className="absolute -right-1 -top-1 rounded-full bg-destructive p-0.5 text-destructive-foreground"
                                         onClick={() =>
-                                          removeStorageFromNetwork(
+                                          updateColorInNetwork(
                                             network.id,
                                             color.id,
-                                            storage.id,
+                                            'colorImage',
+                                            '',
                                           )
                                         }>
                                         <X className="h-3 w-3" />
-                                      </Button>
-                                    )}
-                                  </div>
-
-                                  <div className="grid gap-4 sm:grid-cols-3">
-                                    <div className="grid gap-2">
-                                      <Label>Storage Size *</Label>
-                                      <Input
-                                        placeholder="e.g. 256GB"
-                                        value={storage.storageSize}
-                                        onChange={e =>
-                                          updateStorageInNetwork(
-                                            network.id,
-                                            color.id,
-                                            storage.id,
-                                            'storageSize',
-                                            e.target.value,
-                                          )
-                                        }
-                                        required
-                                      />
+                                      </button>
                                     </div>
-                                    <div className="grid gap-2">
-                                      <Label>Regular Price *</Label>
-                                      <Input
-                                        type="number"
-                                        placeholder="0"
-                                        value={storage.regularPrice}
-                                        onChange={e =>
-                                          updateStorageInNetwork(
-                                            network.id,
-                                            color.id,
-                                            storage.id,
-                                            'regularPrice',
-                                            e.target.value,
-                                          )
-                                        }
-                                        required
-                                      />
+                                  )}
+                                  <label className="flex-1">
+                                    <div className="flex h-10 w-full cursor-pointer items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground">
+                                      <Upload className="mr-2 h-4 w-4" />
+                                      {color.colorImage ? 'Change' : 'Upload'}
                                     </div>
-                                    <div className="grid gap-2">
-                                      <Label>Compare Price</Label>
-                                      <Input
-                                        type="number"
-                                        placeholder="0"
-                                        value={storage.comparePrice}
-                                        onChange={e =>
-                                          updateStorageInNetwork(
-                                            network.id,
-                                            color.id,
-                                            storage.id,
-                                            'comparePrice',
-                                            e.target.value,
-                                          )
-                                        }
-                                      />
-                                    </div>
-                                  </div>
-
-                                  <div className="grid gap-4 sm:grid-cols-3">
-                                    <div className="grid gap-2">
-                                      <Label>Discount Price</Label>
-                                      <Input
-                                        type="number"
-                                        placeholder="0"
-                                        value={storage.discountPrice}
-                                        onChange={e =>
-                                          updateStorageInNetwork(
-                                            network.id,
-                                            color.id,
-                                            storage.id,
-                                            'discountPrice',
-                                            e.target.value,
-                                          )
-                                        }
-                                      />
-                                    </div>
-                                    <div className="grid gap-2">
-                                      <Label>Discount %</Label>
-                                      <Input
-                                        type="number"
-                                        placeholder="0"
-                                        value={storage.discountPercent}
-                                        onChange={e =>
-                                          updateStorageInNetwork(
-                                            network.id,
-                                            color.id,
-                                            storage.id,
-                                            'discountPercent',
-                                            e.target.value,
-                                          )
-                                        }
-                                      />
-                                    </div>
-                                    <div className="grid gap-2">
-                                      <Label>Campaign Price</Label>
-                                      <Input
-                                        type="number"
-                                        placeholder="0"
-                                        value={storage.campaignPrice}
-                                        onChange={e =>
-                                          updateStorageInNetwork(
-                                            network.id,
-                                            color.id,
-                                            storage.id,
-                                            'campaignPrice',
-                                            e.target.value,
-                                          )
-                                        }
-                                      />
-                                    </div>
-                                  </div>
-
-                                  <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="grid gap-2">
-                                      <Label>Campaign Start</Label>
-                                      <Input
-                                        type="datetime-local"
-                                        value={storage.campaignStart}
-                                        onChange={e =>
-                                          updateStorageInNetwork(
-                                            network.id,
-                                            color.id,
-                                            storage.id,
-                                            'campaignStart',
-                                            e.target.value,
-                                          )
-                                        }
-                                      />
-                                    </div>
-                                    <div className="grid gap-2">
-                                      <Label>Campaign End</Label>
-                                      <Input
-                                        type="datetime-local"
-                                        value={storage.campaignEnd}
-                                        onChange={e =>
-                                          updateStorageInNetwork(
-                                            network.id,
-                                            color.id,
-                                            storage.id,
-                                            'campaignEnd',
-                                            e.target.value,
-                                          )
-                                        }
-                                      />
-                                    </div>
-                                  </div>
-
-                                  <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="grid gap-2">
-                                      <Label>Stock Quantity *</Label>
-                                      <Input
-                                        type="number"
-                                        placeholder="0"
-                                        value={storage.stockQuantity}
-                                        onChange={e =>
-                                          updateStorageInNetwork(
-                                            network.id,
-                                            color.id,
-                                            storage.id,
-                                            'stockQuantity',
-                                            e.target.value,
-                                          )
-                                        }
-                                        required
-                                      />
-                                    </div>
-                                    <div className="grid gap-2">
-                                      <Label>Low Stock Alert</Label>
-                                      <Input
-                                        type="number"
-                                        placeholder="5"
-                                        value={storage.lowStockAlert}
-                                        onChange={e =>
-                                          updateStorageInNetwork(
-                                            network.id,
-                                            color.id,
-                                            storage.id,
-                                            'lowStockAlert',
-                                            e.target.value,
-                                          )
-                                        }
-                                      />
-                                    </div>
-                                  </div>
+                                    <input
+                                      type="file"
+                                      className="hidden"
+                                      accept="image/*"
+                                      onChange={e =>
+                                        handleNetworkColorImageUpload(
+                                          network.id,
+                                          color.id,
+                                          e,
+                                        )
+                                      }
+                                    />
+                                  </label>
                                 </div>
-                              ))}
+                              </div>
                             </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+
+                            <div className="flex items-center gap-2">
+                              <Switch
+                                checked={color.hasStorage}
+                                onCheckedChange={checked =>
+                                  updateColorInNetwork(
+                                    network.id,
+                                    color.id,
+                                    'hasStorage',
+                                    checked,
+                                  )
+                                }
+                              />
+                              <Label>Has Storage Variants</Label>
+                            </div>
+
+                            {/* Color-only pricing (when hasStorage = false) */}
+                            {!color.hasStorage && (
+                              <div className="grid gap-4 sm:grid-cols-3 p-4 bg-muted rounded-lg">
+                                <div className="grid gap-2">
+                                  <Label>Price *</Label>
+                                  <Input
+                                    type="number"
+                                    placeholder="0"
+                                    value={color.singlePrice}
+                                    onChange={e =>
+                                      updateColorInNetwork(
+                                        network.id,
+                                        color.id,
+                                        'singlePrice',
+                                        e.target.value,
+                                      )
+                                    }
+                                    required
+                                  />
+                                </div>
+                                <div className="grid gap-2">
+                                  <Label>Compare Price</Label>
+                                  <Input
+                                    type="number"
+                                    placeholder="0"
+                                    value={color.singleComparePrice}
+                                    onChange={e =>
+                                      updateColorInNetwork(
+                                        network.id,
+                                        color.id,
+                                        'singleComparePrice',
+                                        e.target.value,
+                                      )
+                                    }
+                                  />
+                                </div>
+                                <div className="grid gap-2">
+                                  <Label>Stock Quantity</Label>
+                                  <Input
+                                    type="number"
+                                    placeholder="0"
+                                    value={color.singleStockQuantity}
+                                    onChange={e =>
+                                      updateColorInNetwork(
+                                        network.id,
+                                        color.id,
+                                        'singleStockQuantity',
+                                        e.target.value,
+                                      )
+                                    }
+                                  />
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Storages within this color (only if hasStorage = true) */}
+                            {color.hasStorage && (
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <Label className="font-semibold">
+                                    Storage Variants & Pricing
+                                  </Label>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      addStorageToNetwork(network.id, color.id)
+                                    }>
+                                    <Plus className="mr-2 h-3 w-3" /> Add
+                                    Storage
+                                  </Button>
+                                </div>
+
+                                {color.storages.map((storage, storageIdx) => (
+                                  <div
+                                    key={storage.id}
+                                    className="rounded border p-4 space-y-3">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <span className="text-sm font-medium">
+                                        Storage #{storageIdx + 1}
+                                      </span>
+                                      {color.storages.length > 1 && (
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={() =>
+                                            removeStorageFromNetwork(
+                                              network.id,
+                                              color.id,
+                                              storage.id,
+                                            )
+                                          }>
+                                          <X className="h-3 w-3" />
+                                        </Button>
+                                      )}
+                                    </div>
+
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                      <div className="grid gap-2">
+                                        <Label>Storage Size *</Label>
+                                        <Input
+                                          placeholder="e.g. 256GB"
+                                          value={storage.storageSize}
+                                          onChange={e =>
+                                            updateStorageInNetwork(
+                                              network.id,
+                                              color.id,
+                                              storage.id,
+                                              'storageSize',
+                                              e.target.value,
+                                            )
+                                          }
+                                          required
+                                        />
+                                      </div>
+                                      <div className="grid gap-2">
+                                        <Label>Regular Price *</Label>
+                                        <Input
+                                          type="number"
+                                          placeholder="0"
+                                          value={storage.regularPrice}
+                                          onChange={e =>
+                                            updateStorageInNetwork(
+                                              network.id,
+                                              color.id,
+                                              storage.id,
+                                              'regularPrice',
+                                              e.target.value,
+                                            )
+                                          }
+                                          required
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div className="grid gap-4 sm:grid-cols-3">
+                                      <div className="grid gap-2">
+                                        <Label>Discount %</Label>
+                                        <Input
+                                          type="number"
+                                          placeholder="0"
+                                          value={storage.discountPercent}
+                                          onChange={e =>
+                                            updateStorageInNetwork(
+                                              network.id,
+                                              color.id,
+                                              storage.id,
+                                              'discountPercent',
+                                              e.target.value,
+                                            )
+                                          }
+                                        />
+                                      </div>
+                                      <div className="grid gap-2">
+                                        <Label>Discount Price (Auto)</Label>
+                                        <Input
+                                          type="number"
+                                          placeholder="0"
+                                          value={storage.discountPrice}
+                                          readOnly
+                                          className="bg-muted cursor-not-allowed"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                      <div className="grid gap-2">
+                                        <Label>Stock Quantity *</Label>
+                                        <Input
+                                          type="number"
+                                          placeholder="0"
+                                          value={storage.stockQuantity}
+                                          onChange={e =>
+                                            updateStorageInNetwork(
+                                              network.id,
+                                              color.id,
+                                              storage.id,
+                                              'stockQuantity',
+                                              e.target.value,
+                                            )
+                                          }
+                                          required
+                                        />
+                                      </div>
+                                      <div className="grid gap-2">
+                                        <Label>Low Stock Alert</Label>
+                                        <Input
+                                          type="number"
+                                          placeholder="5"
+                                          value={storage.lowStockAlert}
+                                          onChange={e =>
+                                            updateStorageInNetwork(
+                                              network.id,
+                                              color.id,
+                                              storage.id,
+                                              'lowStockAlert',
+                                              e.target.value,
+                                            )
+                                          }
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
           </div>
 
           {/* Regions, Colors, Storages, Prices */}
-          <div className="space-y-4">
+          <div className="space-y-4 mt-8">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">
-                Regions, Colors, Storages & Pricing
-              </h2>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsRegionsExpanded(!isRegionsExpanded)}
+                  className="p-2">
+                  {isRegionsExpanded ? '▼' : '▶'}
+                </Button>
+                <h2 className="text-lg font-semibold">
+                  Regions, Colors, Storages & Pricing
+                </h2>
+              </div>
               <Button variant="outline" size="sm" onClick={addRegion}>
                 <Plus className="mr-2 h-4 w-4" /> Add Region
               </Button>
             </div>
 
-            {regions.map((region, regionIdx) => (
-              <Card key={region.id} className="border-2">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="text-base">
-                    Region #{regionIdx + 1}
-                  </CardTitle>
-                  {regions.length > 1 && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeRegion(region.id)}>
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="grid gap-2">
-                      <Label>Region Name *</Label>
-                      <Input
-                        placeholder="e.g. International, USA, Europe"
-                        value={region.regionName}
-                        onChange={e =>
-                          updateRegion(region.id, 'regionName', e.target.value)
-                        }
-                        required
-                      />
-                    </div>
-                    <div className="flex items-center gap-2 mt-7">
-                      <Switch
-                        checked={region.isDefault}
-                        onCheckedChange={checked =>
-                          updateRegion(region.id, 'isDefault', checked)
-                        }
-                      />
-                      <Label>Default Region</Label>
-                    </div>
-                  </div>
-
-                  {/* Colors within this region */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label className="font-semibold">Colors</Label>
+            {isRegionsExpanded &&
+              regions.map((region, regionIdx) => (
+                <Card key={region.id} className="border-2">
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="text-base">
+                      Region #{regionIdx + 1}
+                    </CardTitle>
+                    {regions.length > 1 && (
                       <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => addColor(region.id)}>
-                        <Plus className="mr-2 h-3 w-3" /> Add Color
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeRegion(region.id)}>
+                        <X className="h-4 w-4" />
                       </Button>
+                    )}
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="grid gap-2">
+                        <Label>Region Name *</Label>
+                        <Input
+                          placeholder="e.g. International, USA, Europe"
+                          value={region.regionName}
+                          onChange={e =>
+                            updateRegion(
+                              region.id,
+                              'regionName',
+                              e.target.value,
+                            )
+                          }
+                          required
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 mt-7">
+                        <Switch
+                          checked={region.isDefault}
+                          onCheckedChange={checked =>
+                            updateRegion(region.id, 'isDefault', checked)
+                          }
+                        />
+                        <Label>Default Region</Label>
+                      </div>
                     </div>
 
-                    {region.colors.map((color, colorIdx) => (
-                      <Card key={color.id} className="border">
-                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                          <CardTitle className="text-sm">
-                            Color #{colorIdx + 1}
-                          </CardTitle>
-                          {region.colors.length > 1 && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => removeColor(region.id, color.id)}>
-                              <X className="h-3 w-3" />
-                            </Button>
-                          )}
-                        </CardHeader>
-                        <CardContent className="space-y-4">
+                    {/* Default Storages for this region (shared by all colors) */}
+                    <div className="space-y-2 p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label className="font-semibold text-blue-900">
+                            Default Storage & Pricing (Shared)
+                          </Label>
+                          <p className="text-xs text-blue-700 mt-1">
+                            These storages will be used by all colors unless a
+                            color has custom pricing
+                          </p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addDefaultStorage(region.id)}>
+                          <Plus className="mr-2 h-3 w-3" /> Add Storage
+                        </Button>
+                      </div>
+
+                      {region.defaultStorages.map((storage, storageIdx) => (
+                        <div
+                          key={storage.id}
+                          className="rounded border bg-white p-4 space-y-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium">
+                              Default Storage #{storageIdx + 1}
+                            </span>
+                            {region.defaultStorages.length > 1 && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() =>
+                                  removeDefaultStorage(region.id, storage.id)
+                                }>
+                                <X className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </div>
+
                           <div className="grid gap-4 sm:grid-cols-2">
                             <div className="grid gap-2">
-                              <Label>Color Name *</Label>
+                              <Label>Storage Size *</Label>
                               <Input
-                                placeholder="e.g. Midnight"
-                                value={color.colorName}
+                                placeholder="e.g. 256GB"
+                                value={storage.storageSize}
                                 onChange={e =>
-                                  updateColor(
+                                  updateDefaultStorage(
                                     region.id,
-                                    color.id,
-                                    'colorName',
+                                    storage.id,
+                                    'storageSize',
                                     e.target.value,
                                   )
                                 }
@@ -1900,51 +2664,133 @@ function NewProductPage() {
                               />
                             </div>
                             <div className="grid gap-2">
-                              <Label>Features (comma separated)</Label>
+                              <Label>Regular Price *</Label>
                               <Input
-                                placeholder="e.g. Wireless Charging, 5G"
-                                value={color.features}
+                                type="number"
+                                placeholder="0"
+                                value={storage.regularPrice}
                                 onChange={e =>
-                                  updateColor(
+                                  updateDefaultStorage(
                                     region.id,
-                                    color.id,
-                                    'features',
+                                    storage.id,
+                                    'regularPrice',
+                                    e.target.value,
+                                  )
+                                }
+                                required
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid gap-4 sm:grid-cols-3">
+                            <div className="grid gap-2">
+                              <Label>Discount %</Label>
+                              <Input
+                                type="number"
+                                placeholder="0"
+                                value={storage.discountPercent}
+                                onChange={e =>
+                                  updateDefaultStorage(
+                                    region.id,
+                                    storage.id,
+                                    'discountPercent',
+                                    e.target.value,
+                                  )
+                                }
+                              />
+                            </div>
+                            <div className="grid gap-2">
+                              <Label>Discount Price (Auto)</Label>
+                              <Input
+                                type="number"
+                                placeholder="0"
+                                value={storage.discountPrice}
+                                readOnly
+                                className="bg-muted cursor-not-allowed"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="grid gap-2">
+                              <Label>Stock Quantity *</Label>
+                              <Input
+                                type="number"
+                                placeholder="0"
+                                value={storage.stockQuantity}
+                                onChange={e =>
+                                  updateDefaultStorage(
+                                    region.id,
+                                    storage.id,
+                                    'stockQuantity',
+                                    e.target.value,
+                                  )
+                                }
+                                required
+                              />
+                            </div>
+                            <div className="grid gap-2">
+                              <Label>Low Stock Alert</Label>
+                              <Input
+                                type="number"
+                                placeholder="5"
+                                value={storage.lowStockAlert}
+                                onChange={e =>
+                                  updateDefaultStorage(
+                                    region.id,
+                                    storage.id,
+                                    'lowStockAlert',
                                     e.target.value,
                                   )
                                 }
                               />
                             </div>
                           </div>
+                        </div>
+                      ))}
+                    </div>
 
-                          <div className="flex items-center gap-2">
-                            <Switch
-                              checked={color.hasStorage}
-                              onCheckedChange={checked =>
-                                updateColor(
-                                  region.id,
-                                  color.id,
-                                  'hasStorage',
-                                  checked,
-                                )
-                              }
-                            />
-                            <Label>Has Storage Variants</Label>
-                          </div>
+                    {/* Colors within this region */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="font-semibold">Colors</Label>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addColor(region.id)}>
+                          <Plus className="mr-2 h-3 w-3" /> Add Color
+                        </Button>
+                      </div>
 
-                          {/* Color-only pricing (when hasStorage = false) */}
-                          {!color.hasStorage && (
-                            <div className="grid gap-4 sm:grid-cols-3 p-4 bg-muted rounded-lg">
+                      {region.colors.map((color, colorIdx) => (
+                        <Card key={color.id} className="border">
+                          <CardHeader className="flex flex-row items-center justify-between pb-2">
+                            <CardTitle className="text-sm">
+                              Color #{colorIdx + 1}
+                            </CardTitle>
+                            {region.colors.length > 1 && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() =>
+                                  removeColor(region.id, color.id)
+                                }>
+                                <X className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="grid gap-4 sm:grid-cols-2">
                               <div className="grid gap-2">
-                                <Label>Price *</Label>
+                                <Label>Color Name *</Label>
                                 <Input
-                                  type="number"
-                                  placeholder="0"
-                                  value={color.singlePrice}
+                                  placeholder="e.g. Midnight"
+                                  value={color.colorName}
                                   onChange={e =>
                                     updateColor(
                                       region.id,
                                       color.id,
-                                      'singlePrice',
+                                      'colorName',
                                       e.target.value,
                                     )
                                   }
@@ -1952,273 +2798,322 @@ function NewProductPage() {
                                 />
                               </div>
                               <div className="grid gap-2">
-                                <Label>Compare Price</Label>
-                                <Input
-                                  type="number"
-                                  placeholder="0"
-                                  value={color.singleComparePrice}
-                                  onChange={e =>
-                                    updateColor(
-                                      region.id,
-                                      color.id,
-                                      'singleComparePrice',
-                                      e.target.value,
-                                    )
-                                  }
-                                />
-                              </div>
-                              <div className="grid gap-2">
-                                <Label>Stock Quantity</Label>
-                                <Input
-                                  type="number"
-                                  placeholder="0"
-                                  value={color.singleStockQuantity}
-                                  onChange={e =>
-                                    updateColor(
-                                      region.id,
-                                      color.id,
-                                      'singleStockQuantity',
-                                      e.target.value,
-                                    )
-                                  }
-                                />
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Storages within this color (only if hasStorage = true) */}
-                          {color.hasStorage && (
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between">
-                                <Label className="font-semibold">
-                                  Storage Variants & Pricing
-                                </Label>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    addStorage(region.id, color.id)
-                                  }>
-                                  <Plus className="mr-2 h-3 w-3" /> Add Storage
-                                </Button>
-                              </div>
-
-                              {color.storages.map((storage, storageIdx) => (
-                                <div
-                                  key={storage.id}
-                                  className="rounded border p-4 space-y-3">
-                                  <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm font-medium">
-                                      Storage #{storageIdx + 1}
-                                    </span>
-                                    {color.storages.length > 1 && (
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
+                                <Label>Color Image</Label>
+                                <div className="flex items-center gap-2">
+                                  {color.colorImage && (
+                                    <div className="relative w-16 h-16 rounded border">
+                                      <img
+                                        src={color.colorImage}
+                                        alt={color.colorName}
+                                        className="w-full h-full object-cover rounded"
+                                      />
+                                      <button
+                                        type="button"
+                                        className="absolute -right-1 -top-1 rounded-full bg-destructive p-0.5 text-destructive-foreground"
                                         onClick={() =>
-                                          removeStorage(
+                                          updateColor(
                                             region.id,
                                             color.id,
-                                            storage.id,
+                                            'colorImage',
+                                            '',
                                           )
                                         }>
                                         <X className="h-3 w-3" />
-                                      </Button>
-                                    )}
-                                  </div>
+                                      </button>
+                                    </div>
+                                  )}
+                                  <label className="flex-1">
+                                    <div className="flex h-10 w-full cursor-pointer items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground">
+                                      <Upload className="mr-2 h-4 w-4" />
+                                      {color.colorImage ? 'Change' : 'Upload'}
+                                    </div>
+                                    <input
+                                      type="file"
+                                      className="hidden"
+                                      accept="image/*"
+                                      onChange={e =>
+                                        handleRegionColorImageUpload(
+                                          region.id,
+                                          color.id,
+                                          e,
+                                        )
+                                      }
+                                    />
+                                  </label>
+                                </div>
+                              </div>
+                            </div>
 
-                                  <div className="grid gap-4 sm:grid-cols-3">
-                                    <div className="grid gap-2">
-                                      <Label>Storage Size *</Label>
-                                      <Input
-                                        placeholder="e.g. 256GB"
-                                        value={storage.storageSize}
-                                        onChange={e =>
-                                          updateStorage(
-                                            region.id,
-                                            color.id,
-                                            storage.id,
-                                            'storageSize',
-                                            e.target.value,
-                                          )
-                                        }
-                                        required
-                                      />
-                                    </div>
-                                    <div className="grid gap-2">
-                                      <Label>Regular Price *</Label>
-                                      <Input
-                                        type="number"
-                                        placeholder="0"
-                                        value={storage.regularPrice}
-                                        onChange={e =>
-                                          updateStorage(
-                                            region.id,
-                                            color.id,
-                                            storage.id,
-                                            'regularPrice',
-                                            e.target.value,
-                                          )
-                                        }
-                                        required
-                                      />
-                                    </div>
-                                    <div className="grid gap-2">
-                                      <Label>Compare Price</Label>
-                                      <Input
-                                        type="number"
-                                        placeholder="0"
-                                        value={storage.comparePrice}
-                                        onChange={e =>
-                                          updateStorage(
-                                            region.id,
-                                            color.id,
-                                            storage.id,
-                                            'comparePrice',
-                                            e.target.value,
-                                          )
-                                        }
-                                      />
-                                    </div>
-                                  </div>
+                            <div className="flex items-center gap-2">
+                              <Switch
+                                checked={color.hasStorage}
+                                onCheckedChange={checked =>
+                                  updateColor(
+                                    region.id,
+                                    color.id,
+                                    'hasStorage',
+                                    checked,
+                                  )
+                                }
+                              />
+                              <Label>Has Storage Variants</Label>
+                            </div>
 
-                                  <div className="grid gap-4 sm:grid-cols-3">
-                                    <div className="grid gap-2">
-                                      <Label>Discount Price</Label>
-                                      <Input
-                                        type="number"
-                                        placeholder="0"
-                                        value={storage.discountPrice}
-                                        onChange={e =>
-                                          updateStorage(
-                                            region.id,
-                                            color.id,
-                                            storage.id,
-                                            'discountPrice',
-                                            e.target.value,
-                                          )
-                                        }
-                                      />
-                                    </div>
-                                    <div className="grid gap-2">
-                                      <Label>Discount %</Label>
-                                      <Input
-                                        type="number"
-                                        placeholder="0"
-                                        value={storage.discountPercent}
-                                        onChange={e =>
-                                          updateStorage(
-                                            region.id,
-                                            color.id,
-                                            storage.id,
-                                            'discountPercent',
-                                            e.target.value,
-                                          )
-                                        }
-                                      />
-                                    </div>
-                                    <div className="grid gap-2">
-                                      <Label>Campaign Price</Label>
-                                      <Input
-                                        type="number"
-                                        placeholder="0"
-                                        value={storage.campaignPrice}
-                                        onChange={e =>
-                                          updateStorage(
-                                            region.id,
-                                            color.id,
-                                            storage.id,
-                                            'campaignPrice',
-                                            e.target.value,
-                                          )
-                                        }
-                                      />
-                                    </div>
-                                  </div>
-
-                                  <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="grid gap-2">
-                                      <Label>Campaign Start</Label>
-                                      <Input
-                                        type="datetime-local"
-                                        value={storage.campaignStart}
-                                        onChange={e =>
-                                          updateStorage(
-                                            region.id,
-                                            color.id,
-                                            storage.id,
-                                            'campaignStart',
-                                            e.target.value,
-                                          )
-                                        }
-                                      />
-                                    </div>
-                                    <div className="grid gap-2">
-                                      <Label>Campaign End</Label>
-                                      <Input
-                                        type="datetime-local"
-                                        value={storage.campaignEnd}
-                                        onChange={e =>
-                                          updateStorage(
-                                            region.id,
-                                            color.id,
-                                            storage.id,
-                                            'campaignEnd',
-                                            e.target.value,
-                                          )
-                                        }
-                                      />
-                                    </div>
-                                  </div>
-
-                                  <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="grid gap-2">
-                                      <Label>Stock Quantity *</Label>
-                                      <Input
-                                        type="number"
-                                        placeholder="0"
-                                        value={storage.stockQuantity}
-                                        onChange={e =>
-                                          updateStorage(
-                                            region.id,
-                                            color.id,
-                                            storage.id,
-                                            'stockQuantity',
-                                            e.target.value,
-                                          )
-                                        }
-                                        required
-                                      />
-                                    </div>
-                                    <div className="grid gap-2">
-                                      <Label>Low Stock Alert</Label>
-                                      <Input
-                                        type="number"
-                                        placeholder="5"
-                                        value={storage.lowStockAlert}
-                                        onChange={e =>
-                                          updateStorage(
-                                            region.id,
-                                            color.id,
-                                            storage.id,
-                                            'lowStockAlert',
-                                            e.target.value,
-                                          )
-                                        }
-                                      />
-                                    </div>
+                            {/* Toggle for using default storages */}
+                            {color.hasStorage && (
+                              <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                <div className="flex items-center gap-2">
+                                  <Switch
+                                    checked={color.useDefaultStorages}
+                                    onCheckedChange={checked => {
+                                      updateColor(
+                                        region.id,
+                                        color.id,
+                                        'useDefaultStorages',
+                                        checked,
+                                      );
+                                      // If switching to custom, add one empty storage
+                                      if (
+                                        !checked &&
+                                        color.storages.length === 0
+                                      ) {
+                                        addStorage(region.id, color.id);
+                                      }
+                                    }}
+                                  />
+                                  <div>
+                                    <Label className="text-blue-900">
+                                      Use Region Default Storages
+                                    </Label>
+                                    <p className="text-xs text-blue-700 mt-0.5">
+                                      {color.useDefaultStorages
+                                        ? 'This color will use the shared default storages defined above'
+                                        : 'This color has custom storage pricing'}
+                                    </p>
                                   </div>
                                 </div>
-                              ))}
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                              </div>
+                            )}
+
+                            {/* Color-only pricing (when hasStorage = false) */}
+                            {!color.hasStorage && (
+                              <div className="grid gap-4 sm:grid-cols-3 p-4 bg-muted rounded-lg">
+                                <div className="grid gap-2">
+                                  <Label>Price *</Label>
+                                  <Input
+                                    type="number"
+                                    placeholder="0"
+                                    value={color.singlePrice}
+                                    onChange={e =>
+                                      updateColor(
+                                        region.id,
+                                        color.id,
+                                        'singlePrice',
+                                        e.target.value,
+                                      )
+                                    }
+                                    required
+                                  />
+                                </div>
+                                <div className="grid gap-2">
+                                  <Label>Compare Price</Label>
+                                  <Input
+                                    type="number"
+                                    placeholder="0"
+                                    value={color.singleComparePrice}
+                                    onChange={e =>
+                                      updateColor(
+                                        region.id,
+                                        color.id,
+                                        'singleComparePrice',
+                                        e.target.value,
+                                      )
+                                    }
+                                  />
+                                </div>
+                                <div className="grid gap-2">
+                                  <Label>Stock Quantity</Label>
+                                  <Input
+                                    type="number"
+                                    placeholder="0"
+                                    value={color.singleStockQuantity}
+                                    onChange={e =>
+                                      updateColor(
+                                        region.id,
+                                        color.id,
+                                        'singleStockQuantity',
+                                        e.target.value,
+                                      )
+                                    }
+                                  />
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Custom Storages (only if hasStorage = true AND useDefaultStorages = false) */}
+                            {color.hasStorage && !color.useDefaultStorages && (
+                              <div className="space-y-2 p-4 bg-orange-50 rounded-lg border-2 border-orange-200">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <Label className="font-semibold text-orange-900">
+                                      Custom Storage Variants & Pricing
+                                    </Label>
+                                    <p className="text-xs text-orange-700 mt-1">
+                                      This color has custom pricing that differs
+                                      from the default
+                                    </p>
+                                  </div>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      addStorage(region.id, color.id)
+                                    }>
+                                    <Plus className="mr-2 h-3 w-3" /> Add
+                                    Storage
+                                  </Button>
+                                </div>
+
+                                {color.storages.map((storage, storageIdx) => (
+                                  <div
+                                    key={storage.id}
+                                    className="rounded border p-4 space-y-3">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <span className="text-sm font-medium">
+                                        Storage #{storageIdx + 1}
+                                      </span>
+                                      {color.storages.length > 1 && (
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={() =>
+                                            removeStorage(
+                                              region.id,
+                                              color.id,
+                                              storage.id,
+                                            )
+                                          }>
+                                          <X className="h-3 w-3" />
+                                        </Button>
+                                      )}
+                                    </div>
+
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                      <div className="grid gap-2">
+                                        <Label>Storage Size *</Label>
+                                        <Input
+                                          placeholder="e.g. 256GB"
+                                          value={storage.storageSize}
+                                          onChange={e =>
+                                            updateStorage(
+                                              region.id,
+                                              color.id,
+                                              storage.id,
+                                              'storageSize',
+                                              e.target.value,
+                                            )
+                                          }
+                                          required
+                                        />
+                                      </div>
+                                      <div className="grid gap-2">
+                                        <Label>Regular Price *</Label>
+                                        <Input
+                                          type="number"
+                                          placeholder="0"
+                                          value={storage.regularPrice}
+                                          onChange={e =>
+                                            updateStorage(
+                                              region.id,
+                                              color.id,
+                                              storage.id,
+                                              'regularPrice',
+                                              e.target.value,
+                                            )
+                                          }
+                                          required
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div className="grid gap-4 sm:grid-cols-3">
+                                      <div className="grid gap-2">
+                                        <Label>Discount %</Label>
+                                        <Input
+                                          type="number"
+                                          placeholder="0"
+                                          value={storage.discountPercent}
+                                          onChange={e =>
+                                            updateStorage(
+                                              region.id,
+                                              color.id,
+                                              storage.id,
+                                              'discountPercent',
+                                              e.target.value,
+                                            )
+                                          }
+                                        />
+                                      </div>
+                                      <div className="grid gap-2">
+                                        <Label>Discount Price (Auto)</Label>
+                                        <Input
+                                          type="number"
+                                          placeholder="0"
+                                          value={storage.discountPrice}
+                                          readOnly
+                                          className="bg-muted cursor-not-allowed"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                      <div className="grid gap-2">
+                                        <Label>Stock Quantity *</Label>
+                                        <Input
+                                          type="number"
+                                          placeholder="0"
+                                          value={storage.stockQuantity}
+                                          onChange={e =>
+                                            updateStorage(
+                                              region.id,
+                                              color.id,
+                                              storage.id,
+                                              'stockQuantity',
+                                              e.target.value,
+                                            )
+                                          }
+                                          required
+                                        />
+                                      </div>
+                                      <div className="grid gap-2">
+                                        <Label>Low Stock Alert</Label>
+                                        <Input
+                                          type="number"
+                                          placeholder="5"
+                                          value={storage.lowStockAlert}
+                                          onChange={e =>
+                                            updateStorage(
+                                              region.id,
+                                              color.id,
+                                              storage.id,
+                                              'lowStockAlert',
+                                              e.target.value,
+                                            )
+                                          }
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
           </div>
 
           {/* Videos */}
@@ -2266,101 +3161,43 @@ function NewProductPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">Specifications</h2>
-              <Button variant="outline" size="sm" onClick={addSpecGroup}>
-                <Plus className="mr-2 h-4 w-4" /> Add Group
+              <Button variant="outline" size="sm" onClick={addSpecification}>
+                <Plus className="mr-2 h-4 w-4" /> Add Specification
               </Button>
             </div>
 
-            {specificationGroups.map((group, groupIdx) => (
-              <Card key={group.id} className="border">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="text-base">
-                    Spec Group #{groupIdx + 1}
-                  </CardTitle>
-                  {specificationGroups.length > 1 && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeSpecGroup(group.id)}>
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="grid gap-2">
-                      <Label>Group Name *</Label>
-                      <Input
-                        placeholder="e.g. Display, Camera, Battery"
-                        value={group.groupName}
-                        onChange={e =>
-                          updateSpecGroup(group.id, 'groupName', e.target.value)
-                        }
-                        required
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Icon (optional)</Label>
-                      <Input
-                        placeholder="e.g. display-icon"
-                        value={group.icon}
-                        onChange={e =>
-                          updateSpecGroup(group.id, 'icon', e.target.value)
-                        }
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label className="font-semibold">Specifications</Label>
+            <Card className="border">
+              <CardContent className="space-y-2 pt-6">
+                {specifications.map((spec, idx) => (
+                  <div key={spec.id} className="flex items-center gap-2">
+                    <Input
+                      placeholder="Title (e.g. Brand, Model, Display Size)"
+                      value={spec.key}
+                      onChange={e =>
+                        updateSpecification(spec.id, 'key', e.target.value)
+                      }
+                      className="flex-1"
+                    />
+                    <Input
+                      placeholder="Value (e.g. Apple, MacBook Air M2, 13.6-inch)"
+                      value={spec.value}
+                      onChange={e =>
+                        updateSpecification(spec.id, 'value', e.target.value)
+                      }
+                      className="flex-1"
+                    />
+                    {specifications.length > 1 && (
                       <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => addSpecToGroup(group.id)}>
-                        <Plus className="mr-2 h-3 w-3" /> Add Spec
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeSpecification(spec.id)}>
+                        <X className="h-4 w-4" />
                       </Button>
-                    </div>
-
-                    {group.specs.map((spec, specIdx) => (
-                      <div key={spec.id} className="flex items-center gap-2">
-                        <Input
-                          placeholder="Key (e.g. Screen Size)"
-                          value={spec.key}
-                          onChange={e =>
-                            updateSpec(group.id, spec.id, 'key', e.target.value)
-                          }
-                          className="flex-1"
-                        />
-                        <Input
-                          placeholder="Value (e.g. 6.7 inches)"
-                          value={spec.value}
-                          onChange={e =>
-                            updateSpec(
-                              group.id,
-                              spec.id,
-                              'value',
-                              e.target.value,
-                            )
-                          }
-                          className="flex-1"
-                        />
-                        {group.specs.length > 1 && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() =>
-                              removeSpecFromGroup(group.id, spec.id)
-                            }>
-                            <X className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    ))}
+                    )}
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                ))}
+              </CardContent>
+            </Card>
           </div>
 
           {/* SEO Settings */}
@@ -2412,15 +3249,6 @@ function NewProductPage() {
                 placeholder="e.g. flagship, premium, 5G"
                 value={tags}
                 onChange={e => setTags(e.target.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="faqIds">FAQ IDs (comma separated)</Label>
-              <Input
-                id="faqIds"
-                placeholder="e.g. 507f1f77bcf86cd799439011, 507f191e810c19729de860ea"
-                value={faqIds}
-                onChange={e => setFaqIds(e.target.value)}
               />
             </div>
           </div>
