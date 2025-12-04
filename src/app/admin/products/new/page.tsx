@@ -83,9 +83,7 @@ function NewProductPage() {
   const [seoCanonical, setSeoCanonical] = useState('');
   const [tags, setTags] = useState('');
 
-  // Direct Colors (region-independent for simple products like headphones, watches)
   interface DirectColorVariant {
-    // Default pricing (shared by all colors)
     defaultPrice: string;
     defaultComparePrice: string;
     defaultDiscountPercent: string;
@@ -93,7 +91,6 @@ function NewProductPage() {
     defaultStockQuantity: string;
     defaultLowStockAlert: string;
 
-    // Colors with shared pricing
     colors: Array<{
       id: string;
       colorName: string;
