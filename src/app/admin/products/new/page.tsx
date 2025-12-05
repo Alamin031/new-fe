@@ -33,6 +33,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../../components/ui/select';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '../../../components/ui/tabs';
 import {withProtectedRoute} from '../../../lib/auth/protected-route';
 
 type ProductType = 'basic' | 'network' | 'region';
@@ -89,6 +95,19 @@ function NewProductPage() {
     }>
   >([]);
 
+  // Basic product colors
+  const [basicColors, setBasicColors] = useState<
+    Array<{
+      id: string;
+      colorName: string;
+      colorImage: string;
+      colorImageFile: File | null;
+      regularPrice: string;
+      discountPrice: string;
+      stockQuantity: string;
+    }>
+  >([]);
+
   // Videos
   const [videos, setVideos] = useState<
     Array<{
@@ -113,6 +132,7 @@ function NewProductPage() {
       id: string;
       networkName: string;
       priceAdjustment: string;
+      defaultStorageSize: string;
       isDefault: boolean;
       colors: Array<{
         id: string;
@@ -293,6 +313,66 @@ function NewProductPage() {
     setGalleryImagePreviews(prev => prev.filter((_, i) => i !== index));
   };
 
+  // Basic color management
+  const addBasicColor = () => {
+    setBasicColors([
+      ...basicColors,
+      {
+        id: `color-${Date.now()}`,
+        colorName: '',
+        colorImage: '',
+        colorImageFile: null,
+        regularPrice: '',
+        discountPrice: '',
+        stockQuantity: '',
+      },
+    ]);
+  };
+
+  const removeBasicColor = (colorId: string) => {
+    setBasicColors(basicColors.filter(c => c.id !== colorId));
+  };
+
+  const updateBasicColor = (colorId: string, field: string, value: any) => {
+    setBasicColors(
+      basicColors.map(c => (c.id === colorId ? {...c, [field]: value} : c)),
+    );
+  };
+
+  const handleBasicColorImageUpload = (
+    colorId: string,
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setBasicColors(
+          basicColors.map(c =>
+            c.id === colorId
+              ? {
+                  ...c,
+                  colorImage: reader.result as string,
+                  colorImageFile: file,
+                }
+              : c,
+          ),
+        );
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeBasicColorImage = (colorId: string) => {
+    setBasicColors(
+      basicColors.map(c =>
+        c.id === colorId
+          ? {...c, colorImage: '', colorImageFile: null}
+          : c,
+      ),
+    );
+  };
+
   // Specification management
   const addSpecification = () => {
     setSpecifications([
@@ -321,27 +401,19 @@ function NewProductPage() {
         id: `network-${Date.now()}`,
         networkName: '',
         priceAdjustment: '0',
+        defaultStorageSize: '',
         isDefault: false,
         colors: [
           {
             id: `color-${Date.now()}`,
             colorName: '',
             colorImage: '',
-            hasStorage: true,
+            colorImageFile: null,
+            hasStorage: false,
             singlePrice: '',
             singleComparePrice: '',
             singleStockQuantity: '',
-            storages: [
-              {
-                id: `storage-${Date.now()}`,
-                storageSize: '',
-                regularPrice: '',
-                discountPrice: '',
-                discountPercent: '',
-                stockQuantity: '',
-                lowStockAlert: '5',
-              },
-            ],
+            storages: [],
           },
         ],
       },
@@ -355,6 +427,56 @@ function NewProductPage() {
   const updateNetwork = (networkId: string, field: string, value: any) => {
     setNetworks(
       networks.map(n => (n.id === networkId ? {...n, [field]: value} : n)),
+    );
+  };
+
+  // Color image upload for network colors
+  const handleNetworkColorImageUpload = (
+    networkId: string,
+    colorId: string,
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNetworks(
+          networks.map(n =>
+            n.id === networkId
+              ? {
+                  ...n,
+                  colors: n.colors.map(c =>
+                    c.id === colorId
+                      ? {
+                          ...c,
+                          colorImage: reader.result as string,
+                          colorImageFile: file,
+                        }
+                      : c,
+                  ),
+                }
+              : n,
+          ),
+        );
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeNetworkColorImage = (networkId: string, colorId: string) => {
+    setNetworks(
+      networks.map(n =>
+        n.id === networkId
+          ? {
+              ...n,
+              colors: n.colors.map(c =>
+                c.id === colorId
+                  ? {...c, colorImage: '', colorImageFile: null}
+                  : c,
+              ),
+            }
+          : n,
+      ),
     );
   };
 
@@ -763,6 +885,12 @@ function NewProductPage() {
         formData.append('galleryImages', file);
       });
 
+      basicColors.forEach((color, idx) => {
+        if (color.colorImageFile) {
+          formData.append(`colors[${idx}][colorImage]`, color.colorImageFile);
+        }
+      });
+
       const payload: any = {
         name: productName,
         slug,
@@ -803,6 +931,16 @@ function NewProductPage() {
             specValue: s.value,
             displayOrder: idx,
           })),
+        colors:
+          basicColors.length > 0
+            ? basicColors.map((c, idx) => ({
+                colorName: c.colorName,
+                regularPrice: c.regularPrice ? Number(c.regularPrice) : undefined,
+                discountPrice: c.discountPrice ? Number(c.discountPrice) : undefined,
+                stockQuantity: c.stockQuantity ? Number(c.stockQuantity) : undefined,
+                displayOrder: idx,
+              }))
+            : undefined,
       };
 
       Object.keys(payload).forEach(key => {
@@ -997,60 +1135,23 @@ function NewProductPage() {
         <p className="mt-2 text-gray-600">Create a new product listing</p>
       </div>
 
-      <div className="mb-6 grid grid-cols-3 gap-4">
-        <button
-          onClick={() => setProductType('basic')}
-          className={`rounded-lg border-2 p-4 text-left transition-colors ${
+      <Tabs value={productType} onValueChange={(value) => setProductType(value as ProductType)} className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="basic">Basic Product</TabsTrigger>
+          <TabsTrigger value="network">Network Product</TabsTrigger>
+          <TabsTrigger value="region">Region Product</TabsTrigger>
+        </TabsList>
+
+        <form
+          onSubmit={
             productType === 'basic'
-              ? 'border-blue-600 bg-blue-50'
-              : 'border-gray-200 bg-white hover:border-gray-300'
-          }`}
+              ? handleBasicProductSubmit
+              : productType === 'network'
+                ? handleNetworkProductSubmit
+                : handleRegionProductSubmit
+          }
+          className="space-y-6 pt-6"
         >
-          <h3 className={`font-semibold ${productType === 'basic' ? 'text-blue-600' : 'text-gray-900'}`}>
-            Basic Product
-          </h3>
-          <p className="mt-1 text-sm text-gray-600">Simple product with basic info only</p>
-        </button>
-
-        <button
-          onClick={() => setProductType('network')}
-          className={`rounded-lg border-2 p-4 text-left transition-colors ${
-            productType === 'network'
-              ? 'border-blue-600 bg-blue-50'
-              : 'border-gray-200 bg-white hover:border-gray-300'
-          }`}
-        >
-          <h3 className={`font-semibold ${productType === 'network' ? 'text-blue-600' : 'text-gray-900'}`}>
-            Network Product
-          </h3>
-          <p className="mt-1 text-sm text-gray-600">Product with network variants & pricing</p>
-        </button>
-
-        <button
-          onClick={() => setProductType('region')}
-          className={`rounded-lg border-2 p-4 text-left transition-colors ${
-            productType === 'region'
-              ? 'border-blue-600 bg-blue-50'
-              : 'border-gray-200 bg-white hover:border-gray-300'
-          }`}
-        >
-          <h3 className={`font-semibold ${productType === 'region' ? 'text-blue-600' : 'text-gray-900'}`}>
-            Region Product
-          </h3>
-          <p className="mt-1 text-sm text-gray-600">Product with regional variants & pricing</p>
-        </button>
-      </div>
-
-      <form
-        onSubmit={
-          productType === 'basic'
-            ? handleBasicProductSubmit
-            : productType === 'network'
-              ? handleNetworkProductSubmit
-              : handleRegionProductSubmit
-        }
-        className="space-y-6"
-      >
         <Card>
           <CardHeader>
             <CardTitle>Basic Information</CardTitle>
@@ -1463,7 +1564,134 @@ function NewProductPage() {
           </CardContent>
         </Card>
 
-        {productType === 'network' && (
+        <TabsContent value="basic" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Colors</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {basicColors.map((color, idx) => (
+                <div key={color.id} className="space-y-4 rounded border p-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Color Name</Label>
+                      <Input
+                        value={color.colorName}
+                        onChange={e =>
+                          updateBasicColor(color.id, 'colorName', e.target.value)
+                        }
+                        placeholder="e.g., Midnight Black"
+                      />
+                    </div>
+                    <div>
+                      <Label>Stock Quantity</Label>
+                      <Input
+                        type="number"
+                        value={color.stockQuantity}
+                        onChange={e =>
+                          updateBasicColor(
+                            color.id,
+                            'stockQuantity',
+                            e.target.value,
+                          )
+                        }
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>Color Image</Label>
+                    <div className="mt-2 rounded border-2 border-dashed border-gray-300 p-4">
+                      {color.colorImage ? (
+                        <div className="relative inline-block">
+                          <img
+                            src={color.colorImage}
+                            alt={color.colorName}
+                            className="h-24 w-24 rounded object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeBasicColorImage(color.id)}
+                            className="absolute -right-2 -top-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="flex cursor-pointer flex-col items-center justify-center gap-2">
+                          <Upload className="h-6 w-6 text-gray-400" />
+                          <span className="text-sm text-gray-600">
+                            Click to upload color image
+                          </span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={e =>
+                              handleBasicColorImageUpload(color.id, e)
+                            }
+                            className="hidden"
+                          />
+                        </label>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Regular Price</Label>
+                      <Input
+                        type="number"
+                        value={color.regularPrice}
+                        onChange={e =>
+                          updateBasicColor(
+                            color.id,
+                            'regularPrice',
+                            e.target.value,
+                          )
+                        }
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <Label>Discount Price</Label>
+                      <Input
+                        type="number"
+                        value={color.discountPrice}
+                        onChange={e =>
+                          updateBasicColor(
+                            color.id,
+                            'discountPrice',
+                            e.target.value,
+                          )
+                        }
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => removeBasicColor(color.id)}
+                    className="rounded bg-red-100 px-4 py-2 text-red-600 hover:bg-red-200"
+                  >
+                    Remove Color
+                  </button>
+                </div>
+              ))}
+
+              <button
+                type="button"
+                onClick={addBasicColor}
+                className="rounded bg-blue-100 px-4 py-2 text-blue-600 hover:bg-blue-200"
+              >
+                + Add Color
+              </button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="network" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Networks & Colors</CardTitle>
@@ -1480,17 +1708,6 @@ function NewProductPage() {
                           updateNetwork(network.id, 'networkName', e.target.value)
                         }
                         placeholder="e.g., Retail Partner A"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <Label>Price Adjustment</Label>
-                      <Input
-                        type="number"
-                        value={network.priceAdjustment}
-                        onChange={e =>
-                          updateNetwork(network.id, 'priceAdjustment', e.target.value)
-                        }
-                        placeholder="0"
                       />
                     </div>
                     <button
@@ -1520,6 +1737,39 @@ function NewProductPage() {
                             placeholder="e.g., Midnight Black"
                           />
                         </div>
+                        <div className="flex-1">
+                          <Label className="text-sm">Color Image</Label>
+                          {color.colorImage ? (
+                            <div className="relative inline-block">
+                              <img
+                                src={color.colorImage}
+                                alt={color.colorName}
+                                className="h-12 w-12 rounded object-cover"
+                              />
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  removeNetworkColorImage(network.id, color.id)
+                                }
+                                className="absolute -right-2 -top-2 rounded-full bg-red-500 p-0.5 text-white hover:bg-red-600"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <label className="flex cursor-pointer items-center justify-center rounded border-2 border-dashed border-gray-300 p-2">
+                              <Upload className="h-4 w-4 text-gray-400" />
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={e =>
+                                  handleNetworkColorImageUpload(network.id, color.id, e)
+                                }
+                                className="hidden"
+                              />
+                            </label>
+                          )}
+                        </div>
                         <button
                           type="button"
                           onClick={() =>
@@ -1536,7 +1786,7 @@ function NewProductPage() {
                           key={storage.id}
                           className="space-y-2 rounded bg-white p-2"
                         >
-                          <div className="grid grid-cols-3 gap-2">
+                          <div className="grid grid-cols-4 gap-2">
                             <div>
                               <Label className="text-xs">Storage Size</Label>
                               <Input
@@ -1567,6 +1817,33 @@ function NewProductPage() {
                                     e.target.value,
                                   )
                                 }
+                                placeholder="0"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Discount %</Label>
+                              <Input
+                                type="number"
+                                value={storage.discountPercent}
+                                onChange={e => {
+                                  const percent = parseFloat(e.target.value) || 0;
+                                  const regularPrice = parseFloat(storage.regularPrice) || 0;
+                                  const discountPrice = regularPrice - (regularPrice * percent) / 100;
+                                  updateStorageInNetwork(
+                                    network.id,
+                                    color.id,
+                                    storage.id,
+                                    'discountPercent',
+                                    e.target.value,
+                                  );
+                                  updateStorageInNetwork(
+                                    network.id,
+                                    color.id,
+                                    storage.id,
+                                    'discountPrice',
+                                    discountPrice.toString(),
+                                  );
+                                }}
                                 placeholder="0"
                               />
                             </div>
@@ -1654,9 +1931,9 @@ function NewProductPage() {
               </button>
             </CardContent>
           </Card>
-        )}
+        </TabsContent>
 
-        {productType === 'region' && (
+        <TabsContent value="region" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Regions</CardTitle>
@@ -1986,7 +2263,7 @@ function NewProductPage() {
               </button>
             </CardContent>
           </Card>
-        )}
+        </TabsContent>
 
         <div className="flex gap-4">
           <Button
@@ -2006,7 +2283,8 @@ function NewProductPage() {
             </Button>
           </Link>
         </div>
-      </form>
+        </form>
+      </Tabs>
     </div>
   );
 }
