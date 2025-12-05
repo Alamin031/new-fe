@@ -205,37 +205,7 @@ function NewProductPage() {
         }>;
       }>;
     }>
-  >([
-    {
-      id: 'region-1',
-      regionName: 'International',
-      isDefault: true,
-      defaultStorages: [
-        {
-          id: 'default-storage-1',
-          storageSize: '256GB',
-          regularPrice: '',
-          discountPrice: '',
-          discountPercent: '',
-          stockQuantity: '',
-          lowStockAlert: '5',
-        },
-      ],
-      colors: [
-        {
-          id: 'color-1',
-          colorName: 'Midnight',
-          colorImage: '',
-          hasStorage: true,
-          useDefaultStorages: true,
-          singlePrice: '',
-          singleComparePrice: '',
-          singleStockQuantity: '',
-          storages: [],
-        },
-      ],
-    },
-  ]);
+  >([]);
 
   // Specifications (flat list)
   const [specifications, setSpecifications] = useState<
@@ -300,7 +270,7 @@ function NewProductPage() {
       {
         id: `network-${Date.now()}`,
         networkName: '',
-        priceAdjustment: '0',
+        priceAdjustment: '',
         isDefault: false,
         colors: [
           {
@@ -319,7 +289,7 @@ function NewProductPage() {
                 discountPrice: '',
                 discountPercent: '',
                 stockQuantity: '',
-                lowStockAlert: '5',
+                lowStockAlert: '',
               },
             ],
           },
@@ -363,7 +333,7 @@ function NewProductPage() {
                       discountPrice: '',
                       discountPercent: '',
                       stockQuantity: '',
-                      lowStockAlert: '5',
+                      lowStockAlert: '',
                     },
                   ],
                 },
@@ -424,7 +394,7 @@ function NewProductPage() {
                           discountPrice: '',
                           discountPercent: '',
                           stockQuantity: '',
-                          lowStockAlert: '5',
+                          lowStockAlert: '',
                         },
                       ],
                     }
@@ -599,7 +569,7 @@ function NewProductPage() {
           discountPercent: '',
           discountPrice: '',
           stockQuantity: '',
-          lowStockAlert: '5',
+          lowStockAlert: '',
         },
       ],
     });
@@ -669,7 +639,7 @@ function NewProductPage() {
             discountPrice: '',
             discountPercent: '',
             stockQuantity: '',
-            lowStockAlert: '5',
+            lowStockAlert: '',
           },
         ],
         colors: [
@@ -705,7 +675,7 @@ function NewProductPage() {
                   discountPrice: '',
                   discountPercent: '',
                   stockQuantity: '',
-                  lowStockAlert: '5',
+                  lowStockAlert: '',
                 },
               ],
             }
@@ -899,7 +869,7 @@ function NewProductPage() {
                           campaignStart: '',
                           campaignEnd: '',
                           stockQuantity: '',
-                          lowStockAlert: '5',
+                          lowStockAlert: '',
                         },
                       ],
                     }
@@ -1073,7 +1043,6 @@ function NewProductPage() {
       alert('❌ Please upload a product thumbnail image.');
       return;
     }
-
     // Validate no duplicate color names within direct color variants
     if (directColorVariant.colors.length > 0) {
       const colorNames = directColorVariant.colors.map(c =>
