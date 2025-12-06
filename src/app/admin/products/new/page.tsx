@@ -40,6 +40,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '../../../components/ui/tabs';
+import {Checkbox} from '../../../components/ui/checkbox';
 import {withProtectedRoute} from '../../../lib/auth/protected-route';
 
 type ProductType = 'basic' | 'network' | 'region';
