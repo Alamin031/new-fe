@@ -318,7 +318,10 @@ function AdminProductsPage() {
               </div>
               <Select
                 value={selectedCategory}
-                onValueChange={setSelectedCategory}>
+                onValueChange={cat => {
+                  setSelectedCategory(cat);
+                  setCurrentPage(1);
+                }}>
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
