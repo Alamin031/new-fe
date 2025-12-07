@@ -4,7 +4,7 @@
 
 import {useState, useEffect, useRef} from 'react';
 import { toast } from 'sonner';
-import { X, Plus, Upload, ImageIcon } from 'lucide-react';
+import { X, Plus, Upload } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
