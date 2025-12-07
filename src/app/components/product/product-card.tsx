@@ -14,7 +14,6 @@ import { useCompareStore } from "@/app/store/compare-store";
 import {
   formatPrice,
   calculateDiscount,
-  formatEMI,
 } from "@/app/lib/utils/format";
 import { cn } from "@/app/lib/utils";
 import { Product } from "@/app/types";
