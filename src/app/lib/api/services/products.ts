@@ -10,6 +10,23 @@ import { API_ENDPOINTS } from "../config"
 
 export const productsService = {
   /**
+   * Get all products with optional filters (lightweight version for admin list)
+   * Only fetches essential fields for better performance
+   */
+  getAllLite: async (filters?: ProductFilters, page = 1, limit = 20): Promise<ProductListResponse> => {
+    const offset = (page - 1) * limit;
+    const response = await apiClient.get<ProductListResponse>(API_ENDPOINTS.PRODUCTS_GET, {
+      params: {
+        offset,
+        limit,
+        fields: 'id,name,sku,categoryId,price,stockQuantity,isActive,images,productType,description',
+        ...filters,
+      },
+    })
+    return response.data
+  },
+
+  /**
    * Get all products with optional filters
    */
   getAll: async (filters?: ProductFilters, page = 1, limit = 20): Promise<ProductListResponse> => {
