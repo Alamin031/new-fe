@@ -231,9 +231,19 @@ function AdminProductsPage() {
     fetchProducts();
   }, [selectedCategory, currentPage, activeTab, pageSize, categories]);
 
-  const handleViewClick = (product: UIProduct) => {
-    setSelectedProduct(product);
-    setViewOpen(true);
+  const handleViewClick = async (product: UIProduct) => {
+    try {
+      setViewLoading(true);
+      const fullProduct = await productsService.getById(product.id);
+      setSelectedProduct(fullProduct);
+      setViewOpen(true);
+    } catch (error) {
+      console.error('Failed to fetch product details:', error);
+      setSelectedProduct(product);
+      setViewOpen(true);
+    } finally {
+      setViewLoading(false);
+    }
   };
 
   const handleEditClick = (product: UIProduct) => {
