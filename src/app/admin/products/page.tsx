@@ -178,7 +178,8 @@ function AdminProductsPage() {
           // Handle images - they should come from API response
           let imageUrl = '/placeholder.svg';
           if (Array.isArray(p.images) && p.images.length > 0) {
-            imageUrl = p.images.find((img: any) => img.isThumbnail)?.url || p.images[0]?.url || '/placeholder.svg';
+            const thumbnail = p.images.find((img: any) => img.isThumbnail);
+            imageUrl = thumbnail?.imageUrl || thumbnail?.url || p.images[0]?.imageUrl || p.images[0]?.url || '/placeholder.svg';
           } else if (p.image) {
             // fallback for single image field
             imageUrl = p.image;
