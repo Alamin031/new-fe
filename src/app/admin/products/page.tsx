@@ -47,7 +47,8 @@ import {
   AlertDialogTitle,
 } from '../../components/ui/alert-dialog';
 import {formatPrice} from '../../lib/utils/format';
-import {transformProductForModal} from '../../lib/utils/product-transformer';
+// Note: transformProductForModal removed - backend returns correct format
+// import {transformProductForModal} from '../../lib/utils/product-transformer';
 
 import productsService from '../../lib/api/services/products';
 import categoriesService from '../../lib/api/services/categories';
@@ -133,8 +134,13 @@ function AdminProductsPage() {
           pageSize,
         );
 
-        const apiProducts = Array.isArray(res) ? res : (res?.data || []);
-        const total = res?.total || (Array.isArray(res) ? res.length : apiProducts.length);
+        const apiProducts = Array.isArray(res) ? res : res?.data || [];
+        const total =
+          (typeof res === 'object' && 'data' in res && Array.isArray(res.data) && typeof res.data.length === 'number'
+            ? res.data.length
+            : Array.isArray(res)
+            ? res.length
+            : apiProducts.length);
 
         // Find missing category IDs
         const missingCategoryIds = [
@@ -179,7 +185,12 @@ function AdminProductsPage() {
           let imageUrl = '/placeholder.svg';
           if (Array.isArray(p.images) && p.images.length > 0) {
             const thumbnail = p.images.find((img: any) => img.isThumbnail);
-            imageUrl = thumbnail?.imageUrl || thumbnail?.url || p.images[0]?.imageUrl || p.images[0]?.url || '/placeholder.svg';
+            imageUrl =
+              thumbnail?.imageUrl ||
+              thumbnail?.url ||
+              p.images[0]?.imageUrl ||
+              p.images[0]?.url ||
+              '/placeholder.svg';
           } else if (p.image) {
             // fallback for single image field
             imageUrl = p.image;
@@ -237,8 +248,7 @@ function AdminProductsPage() {
     try {
       setViewLoading(true);
       const fullProduct = await productsService.getById(product.id);
-      const transformedProduct = transformProductForModal(fullProduct);
-      setSelectedProduct(transformedProduct);
+      setSelectedProduct(fullProduct);
       setViewOpen(true);
     } catch (error) {
       console.error('Failed to fetch product details:', error);
@@ -501,7 +511,8 @@ function AdminProductsPage() {
           <div className="mt-6 flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
               Showing {Math.max(1, (currentPage - 1) * pageSize + 1)}-
-              {Math.min(currentPage * pageSize, totalCount)} of {totalCount} products
+              {Math.min(currentPage * pageSize, totalCount)} of {totalCount}{' '}
+              products
             </p>
             <div className="flex gap-2">
               <Button
@@ -514,9 +525,7 @@ function AdminProductsPage() {
               <Button
                 variant="outline"
                 size="sm"
-                disabled={
-                  currentPage * pageSize >= totalCount || loading
-                }
+                disabled={currentPage * pageSize >= totalCount || loading}
                 onClick={() => setCurrentPage(prev => prev + 1)}>
                 Next
               </Button>
@@ -571,7 +580,6 @@ function AdminProductsPage() {
     </div>
   );
 }
-// End of AdminProductsPage function
 
 export default withProtectedRoute(AdminProductsPage, {
   requiredRoles: ['admin'],

@@ -54,6 +54,10 @@ interface Product {
     keywords?: string[];
     canonical?: string | null;
   };
+  seoTitle?: string;
+  seoDescription?: string;
+  seoKeywords?: string[];
+  seoCanonical?: string | null;
   
   // Tags
   tags?: string[];
@@ -173,6 +177,8 @@ interface Product {
   specifications?: Array<{
     key?: string;
     value?: string;
+    specKey?: string;
+    specValue?: string;
     displayOrder?: number;
   }>;
   
@@ -1099,31 +1105,31 @@ export function ViewProductModal({
                   <CardTitle>SEO Information</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {product.seo?.title && (
+                  {(product.seo?.title || product.seoTitle) && (
                     <div>
                       <label className="text-xs font-semibold text-muted-foreground uppercase">
                         SEO Title
                       </label>
-                      <p className="mt-1 text-sm">{product.seo.title}</p>
+                      <p className="mt-1 text-sm">{product.seo?.title || product.seoTitle}</p>
                     </div>
                   )}
 
-                  {product.seo?.description && (
+                  {(product.seo?.description || product.seoDescription) && (
                     <div>
                       <label className="text-xs font-semibold text-muted-foreground uppercase">
                         SEO Description
                       </label>
-                      <p className="mt-1 text-sm">{product.seo.description}</p>
+                      <p className="mt-1 text-sm">{product.seo?.description || product.seoDescription}</p>
                     </div>
                   )}
 
-                  {product.seo?.keywords && product.seo.keywords.length > 0 && (
+                  {((product.seo?.keywords && product.seo.keywords.length > 0) || (product.seoKeywords && product.seoKeywords.length > 0)) && (
                     <div>
                       <label className="text-xs font-semibold text-muted-foreground uppercase">
                         Keywords
                       </label>
                       <div className="mt-2 flex flex-wrap gap-2">
-                        {product.seo.keywords.map((keyword, idx) => (
+                        {(product.seo?.keywords || product.seoKeywords || []).map((keyword, idx) => (
                           <Badge key={idx} variant="outline">
                             {keyword}
                           </Badge>
@@ -1132,13 +1138,13 @@ export function ViewProductModal({
                     </div>
                   )}
 
-                  {product.seo?.canonical && (
+                  {(product.seo?.canonical || product.seoCanonical) && (
                     <div>
                       <label className="text-xs font-semibold text-muted-foreground uppercase">
                         Canonical URL
                       </label>
                       <p className="mt-1 text-sm font-mono break-all">
-                        {product.seo.canonical}
+                        {product.seo?.canonical || product.seoCanonical}
                       </p>
                     </div>
                   )}
@@ -1168,21 +1174,28 @@ export function ViewProductModal({
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
-                      {product.specifications.map((spec, idx) => (
-                        <div
-                          key={idx}
-                          className="flex justify-between border-b pb-2 last:border-0"
-                        >
-                          <span className="font-semibold text-sm">
-                            {spec.key}
-                          </span>
-                          <span className="text-sm text-muted-foreground">
-                            {Array.isArray(spec.value)
-                              ? spec.value.join(", ")
-                              : spec.value}
-                          </span>
-                        </div>
-                      ))}
+                      {product.specifications.map((spec, idx) => {
+                        const key = spec.key || spec.specKey;
+                        const value = spec.value || spec.specValue;
+                        
+                        if (!key || !value) return null;
+
+                        return (
+                          <div
+                            key={idx}
+                            className="flex justify-between border-b pb-2 last:border-0"
+                          >
+                            <span className="font-semibold text-sm">
+                              {key}
+                            </span>
+                            <span className="text-sm text-muted-foreground">
+                              {Array.isArray(value)
+                                ? value.join(", ")
+                                : value}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </CardContent>
                 </Card>
