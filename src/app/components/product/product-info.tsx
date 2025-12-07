@@ -10,9 +10,8 @@ import { Separator } from "../ui/separator"
 import { useCartStore } from "@/app/store/cart-store"
 import { useWishlistStore } from "@/app/store/wishlist-store"
 import { useCompareStore } from "@/app/store/compare-store"
-import { formatPrice, calculateDiscount, formatEMI } from "@/app/lib/utils/format"
+import { formatPrice, calculateDiscount } from "@/app/lib/utils/format"
 import { cn } from "@/app/lib/utils"
-import { EMICalculator } from "./emi-calculator"
 import { CarePlusAddon } from "./care-plus-addon"
 import { NotifyProductDialog } from "./notify-product-dialog"
 import type { Product } from "@/app/types"
@@ -26,7 +25,6 @@ export function ProductInfo({ product }: ProductInfoProps) {
   const [quantity, setQuantity] = useState(1)
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({})
   const [carePlusSelected, setCarePlusSelected] = useState(false)
-  const [showEMI, setShowEMI] = useState(false)
   const [notifyDialogOpen, setNotifyDialogOpen] = useState(false)
 
   const addToCart = useCartStore((state) => state.addItem)
@@ -35,9 +33,14 @@ export function ProductInfo({ product }: ProductInfoProps) {
 
   const inWishlist = isInWishlist(product.id)
   const inCompare = isInCompare(product.id)
-  const hasDiscount = product.originalPrice && product.originalPrice > product.price
-  const discount = hasDiscount ? calculateDiscount(product.originalPrice!, product.price) : 0
-  const isOutOfStock = product.stock === 0
+
+  // Handle multiple price field possibilities from API
+  // Priority: discountPrice (sale) > price, regularPrice (base)
+  const regularPrice = product.basePrice || (product as any).regularPrice || product.price || 0
+  const salePrice = product.discountPrice || product.price || regularPrice
+  const hasDiscount = regularPrice > 0 && salePrice > 0 && salePrice < regularPrice
+  const discount = hasDiscount ? calculateDiscount(regularPrice, salePrice) : product.discountPercent || 0
+  const isOutOfStock = (product.stock || 0) === 0
 
   // Group variants by type
   const variantsByType = product.variants.reduce(
@@ -57,8 +60,8 @@ export function ProductInfo({ product }: ProductInfoProps) {
     return total + (variant?.priceModifier || 0)
   }, 0)
 
-  const carePlusPrice = carePlusSelected ? Math.round(product.price * 0.08) : 0
-  const totalPrice = product.price + variantPriceModifier + carePlusPrice
+  const carePlusPrice = carePlusSelected ? Math.round(salePrice * 0.08) : 0
+  const totalPrice = salePrice + variantPriceModifier + carePlusPrice
 
   const handleAddToCart = () => {
     if (!isOutOfStock) {
@@ -142,20 +145,13 @@ export function ProductInfo({ product }: ProductInfoProps) {
           <span className="text-3xl font-bold">{formatPrice(totalPrice)}</span>
           {hasDiscount && (
             <>
-              <span className="text-lg text-muted-foreground line-through">{formatPrice(product.originalPrice!)}</span>
+              <span className="text-lg text-muted-foreground line-through">{formatPrice(regularPrice)}</span>
               <Badge className="bg-[oklch(0.55_0.2_25)] text-[oklch(1_0_0)] hover:bg-[oklch(0.55_0.2_25)]">
                 Save {discount}%
               </Badge>
             </>
           )}
         </div>
-        <button
-          onClick={() => setShowEMI(!showEMI)}
-          className="text-sm text-muted-foreground underline-offset-2 hover:underline"
-        >
-          EMI from {formatEMI(totalPrice)} • View options
-        </button>
-        {showEMI && <EMICalculator price={totalPrice} onClose={() => setShowEMI(false)} />}
       </div>
 
       {/* Stock Status */}

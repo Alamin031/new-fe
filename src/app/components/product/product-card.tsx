@@ -14,7 +14,6 @@ import { useCompareStore } from "@/app/store/compare-store";
 import {
   formatPrice,
   calculateDiscount,
-  formatEMI,
 } from "@/app/lib/utils/format";
 import { cn } from "@/app/lib/utils";
 import { Product } from "@/app/types";
@@ -42,12 +41,16 @@ export function ProductCard({ product, className }: ProductCardProps) {
 
   const inWishlist = isInWishlist(product.id);
   const inCompare = isInCompare(product.id);
-  const hasDiscount =
-    product.originalPrice && product.originalPrice > product.price;
+
+  // Handle multiple price field possibilities from API
+  // Priority: discountPrice (sale) > price, regularPrice (base)
+  const regularPrice = product.basePrice || (product as any).regularPrice || product.price || 0;
+  const salePrice = product.discountPrice || product.price || regularPrice;
+  const hasDiscount = regularPrice > 0 && salePrice > 0 && salePrice < regularPrice;
   const discount = hasDiscount
-    ? calculateDiscount(product.originalPrice!, product.price)
-    : 0;
-  const isOutOfStock = product.stock === 0;
+    ? calculateDiscount(regularPrice, salePrice)
+    : product.discountPercent || 0;
+  const isOutOfStock = (product.stock || 0) === 0;
 
   const handleWishlistToggle = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -262,17 +265,14 @@ export function ProductCard({ product, className }: ProductCardProps) {
         <div className="mt-auto pt-3">
           <div className="flex items-baseline gap-2">
             <span className="text-lg font-bold">
-              {formatPrice(product.price)}
+              {formatPrice(salePrice)}
             </span>
             {hasDiscount && (
               <span className="text-sm text-muted-foreground line-through">
-                {formatPrice(product.originalPrice!)}
+                {formatPrice(regularPrice)}
               </span>
             )}
           </div>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            EMI: {formatEMI(product.price)}
-          </p>
         </div>
 
         {/* Stock Indicator */}
