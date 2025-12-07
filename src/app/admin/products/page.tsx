@@ -466,13 +466,24 @@ function AdminProductsPage() {
 
           <div className="mt-6 flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
-              Showing 1-5 of 456 products
+              Showing {Math.max(1, (currentPage - 1) * pageSize + 1)}-
+              {Math.min(currentPage * pageSize, totalCount)} of {totalCount} products
             </p>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" disabled>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === 1 || loading}
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}>
                 Previous
               </Button>
-              <Button variant="outline" size="sm">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={
+                  currentPage * pageSize >= totalCount || loading
+                }
+                onClick={() => setCurrentPage(prev => prev + 1)}>
                 Next
               </Button>
             </div>
