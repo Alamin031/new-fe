@@ -148,7 +148,7 @@ export default function BlogPage() {
       <section className="grid gap-8 lg:grid-cols-2 lg:items-stretch">
         <div className="relative aspect-video overflow-hidden rounded-2xl bg-muted lg:aspect-auto">
           <Image
-            src={blogPosts[0].image}
+            src={blogPosts[0].image || "/placeholder.svg"}
             alt={blogPosts[0].title}
             fill
             className="object-cover"
