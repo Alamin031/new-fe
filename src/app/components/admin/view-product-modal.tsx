@@ -167,6 +167,7 @@ interface ViewProductModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   product?: Product | null;
+  loading?: boolean;
 }
 
 export function ViewProductModal({
