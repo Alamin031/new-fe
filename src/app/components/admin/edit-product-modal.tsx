@@ -26,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+
 import productsService from '../../lib/api/services/products';
 import categoriesService from '../../lib/api/services/categories';
 import brandsService from '../../lib/api/services/brands';
@@ -605,18 +605,10 @@ export function EditProductModal({
           <DialogDescription>Update product information</DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto p-1">
-          <Tabs defaultValue="general" className="w-full">
-            <TabsList className="grid w-full grid-cols-6">
-              <TabsTrigger value="general">General</TabsTrigger>
-              <TabsTrigger value="media">Media</TabsTrigger>
-              <TabsTrigger value="configuration">Configuration</TabsTrigger>
-              <TabsTrigger value="seo">SEO</TabsTrigger>
-              <TabsTrigger value="specs">Specs</TabsTrigger>
-              <TabsTrigger value="extra">Extra</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="general" className="space-y-4 pt-4">
+        <div className="flex-1 overflow-y-auto">
+          <div className="space-y-6 p-6">
+            {/* General Information */}
+            <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Product Name</Label>
@@ -684,9 +676,10 @@ export function EditProductModal({
                 <div className="flex items-center justify-between"><Label>Free Shipping</Label><Switch checked={freeShipping} onCheckedChange={setFreeShipping} /></div>
                 <div className="flex items-center justify-between"><Label>EMI</Label><Switch checked={isEmi} onCheckedChange={setIsEmi} /></div>
               </div>
-            </TabsContent>
+            </div>
 
-            <TabsContent value="media" className="space-y-4 pt-4">
+            {/* Media */}
+            <div className="space-y-4">
               <div>
                 <Label>Thumbnail</Label>
                 <div className="mt-2 rounded border-2 border-dashed border-gray-300 p-6">
@@ -735,9 +728,10 @@ export function EditProductModal({
                 ))}
                 <Button variant="outline" size="sm" onClick={addVideo} className="mt-2">+ Add Video</Button>
               </div>
-            </TabsContent>
+            </div>
 
-            <TabsContent value="configuration" className="space-y-4 pt-4">
+            {/* Configuration/Colors */}
+            <div className="space-y-4">
               {productType === 'basic' && (
                 <div className="space-y-4">
                   {basicColors.map((color) => (
@@ -785,16 +779,18 @@ export function EditProductModal({
                   (Partial implementation available in code but UI simplified for brevity)
                 </div>
               )}
-            </TabsContent>
+            </div>
 
-            <TabsContent value="seo" className="space-y-4 pt-4">
+            {/* SEO Settings */}
+            <div className="space-y-4">
               <div><Label>SEO Title</Label><Input value={seoTitle} onChange={e => setSeoTitle(e.target.value)} /></div>
               <div><Label>SEO Description</Label><Textarea value={seoDescription} onChange={e => setSeoDescription(e.target.value)} /></div>
               <div><Label>SEO Keywords</Label><Input value={seoKeywords} onChange={e => setSeoKeywords(e.target.value)} /></div>
               <div><Label>Canonical URL</Label><Input value={seoCanonical} onChange={e => setSeoCanonical(e.target.value)} /></div>
-            </TabsContent>
+            </div>
 
-            <TabsContent value="specs" className="space-y-4 pt-4">
+            {/* Specifications */}
+            <div className="space-y-4">
               {specifications.map((spec) => (
                 <div key={spec.id} className="flex gap-2">
                   <Input placeholder="Key" value={spec.key} onChange={e => updateSpecification(spec.id, 'key', e.target.value)} />
@@ -803,16 +799,17 @@ export function EditProductModal({
                 </div>
               ))}
               <Button onClick={addSpecification}>+ Add Specification</Button>
-            </TabsContent>
+            </div>
 
-            <TabsContent value="extra" className="space-y-4 pt-4">
+            {/* Extra / Additional Info */}
+            <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div><Label>Reward Points</Label><Input type="number" value={rewardPoints} onChange={e => setRewardPoints(e.target.value)} /></div>
                 <div><Label>Min Booking Price</Label><Input type="number" value={minBookingPrice} onChange={e => setMinBookingPrice(e.target.value)} /></div>
               </div>
               <div><Label>Tags</Label><Input value={tags} onChange={e => setTags(e.target.value)} /></div>
-            </TabsContent>
-          </Tabs>
+            </div>
+          </div>
         </div>
 
         <DialogFooter>

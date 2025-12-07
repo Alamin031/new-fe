@@ -10,7 +10,6 @@ import {
   DialogTitle,
 } from "../ui/dialog";
 import { Badge } from "../ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { formatPrice } from "../../lib/utils/format";
 import { Button } from "../ui/button";
@@ -22,6 +21,7 @@ interface Product {
   slug?: string;
   productType?: string;
   description?: string;
+  shortDescription?: string;
   productCode?: string;
   warranty?: string;
   rewardPoints?: string | number;
@@ -57,7 +57,20 @@ interface Product {
   stockQuantity?: number | string;
   lowStockAlert?: number | string;
   
-  // Basic Product Specific
+  // Basic Product Specific - Colors array (matching create form structure)
+  colors?: Array<{
+    id?: string;
+    colorName?: string;
+    colorImage?: string;
+    image?: string;
+    regularPrice?: number;
+    discountPrice?: number;
+    discountPercent?: number;
+    stockQuantity?: number;
+    displayOrder?: number;
+  }>;
+  
+  // Legacy support
   directColors?: Array<{
     id?: string;
     name?: string;
@@ -66,6 +79,7 @@ interface Product {
     colorImage?: string;
     regularPrice?: number;
     discountPrice?: number;
+    discountPercent?: number;
     stockQuantity?: number;
   }>;
   
@@ -75,6 +89,15 @@ interface Product {
     value?: string;
     specKey?: string;
     specValue?: string;
+    displayOrder?: number;
+  }>;
+  
+  // Videos
+  videos?: Array<{
+    id?: string;
+    videoUrl?: string;
+    videoType?: string;
+    displayOrder?: number;
   }>;
 }
 
@@ -108,6 +131,16 @@ export function ViewProductModalBasic({
     return "N/A";
   };
 
+  // Get colors array - support both new 'colors' and legacy 'directColors'
+  const getColors = () => {
+    return product?.colors || product?.directColors || [];
+  };
+
+  const calculateDiscount = (regularPrice?: number, discountPrice?: number) => {
+    if (!regularPrice || !discountPrice || regularPrice === 0) return 0;
+    return Math.round(((regularPrice - discountPrice) / regularPrice) * 100);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
@@ -119,7 +152,7 @@ export function ViewProductModalBasic({
             <DialogDescription className="flex flex-wrap gap-4 text-xs pt-2">
               <span>ID: {product.id}</span>
               <span>SKU: {product.sku || "N/A"}</span>
-              <span>Type: Basic</span>
+              <span>Product Type: {product.productType || "Basic"}</span>
             </DialogDescription>
           )}
         </DialogHeader>
@@ -137,40 +170,39 @@ export function ViewProductModalBasic({
               <p className="text-muted-foreground">No product data available</p>
             </div>
           ) : (
-          <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="grid w-full grid-cols-6">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="pricing">Pricing</TabsTrigger>
-              <TabsTrigger value="variants">Variants</TabsTrigger>
-              <TabsTrigger value="status">Status</TabsTrigger>
-              <TabsTrigger value="inventory">Inventory</TabsTrigger>
-              <TabsTrigger value="seo">SEO</TabsTrigger>
-            </TabsList>
-
-            {/* Overview Tab */}
-            <TabsContent value="overview" className="space-y-4">
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <h3 className="font-semibold">Product Image</h3>
-                  <div className="relative rounded-lg bg-muted p-4 flex items-center justify-center min-h-80">
-                    <Image
-                      src={getThumbnailImage()}
-                      alt={product.name ?? "Product"}
-                      fill
-                      className="object-contain p-4"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-4">
+          <div className="space-y-6 p-6">
+            {/* Basic Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Basic Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs font-semibold text-muted-foreground uppercase">Product Name</label>
-                    <p className="mt-1 text-lg font-semibold">{product.name}</p>
+                    <p className="mt-1 text-base font-medium">{product.name}</p>
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-muted-foreground uppercase">URL Slug</label>
-                    <p className="mt-1 font-mono text-sm">{product.slug || "N/A"}</p>
+                    <p className="mt-1 font-mono text-sm text-muted-foreground">{product.slug || "N/A"}</p>
                   </div>
+                </div>
+
+                {product.description && (
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase">Description</label>
+                    <div className="mt-2 text-sm whitespace-pre-wrap bg-muted/30 p-3 rounded-lg">{product.description}</div>
+                  </div>
+                )}
+
+                {product.shortDescription && (
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase">Short Description</label>
+                    <div className="mt-2 text-sm bg-muted/30 p-3 rounded-lg" dangerouslySetInnerHTML={{ __html: product.shortDescription }} />
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs font-semibold text-muted-foreground uppercase">Categories</label>
                     <div className="mt-2 flex flex-wrap gap-2">
@@ -191,210 +223,300 @@ export function ViewProductModalBasic({
                       ) : <span className="text-sm text-muted-foreground">N/A</span>}
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs font-semibold text-muted-foreground uppercase">Product Code</label>
-                      <p className="mt-1 text-sm">{product.productCode || "N/A"}</p>
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-muted-foreground uppercase">Warranty</label>
-                      <p className="mt-1 text-sm">{product.warranty || "N/A"}</p>
-                    </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase">Product Code</label>
+                    <p className="mt-1 text-sm">{product.productCode || "N/A"}</p>
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-muted-foreground uppercase">Reward Points</label>
-                    <p className="mt-1 text-sm">{product.rewardPoints || "N/A"}</p>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase">SKU</label>
+                    <p className="mt-1 text-sm">{product.sku || "N/A"}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase">Warranty</label>
+                    <p className="mt-1 text-sm">{product.warranty || "N/A"}</p>
                   </div>
                 </div>
-              </div>
+              </CardContent>
+            </Card>
 
-              {product.description && (
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase">Description</label>
-                  <p className="mt-2 text-sm whitespace-pre-wrap">{product.description}</p>
-                </div>
-              )}
-
-              {product.tags && product.tags.length > 0 && (
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase">Tags</label>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {product.tags.map((tag, idx) => (
-                      <Badge key={idx} variant="outline">{tag}</Badge>
-                    ))}
+            {/* Product Status */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Product Status</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="flex items-center justify-between border rounded-lg p-3">
+                    <label className="text-sm font-medium">Active</label>
+                    <Badge variant={product.isActive ? "default" : "secondary"}>{formatBoolean(product.isActive)}</Badge>
+                  </div>
+                  <div className="flex items-center justify-between border rounded-lg p-3">
+                    <label className="text-sm font-medium">Online</label>
+                    <Badge variant={product.isOnline ? "default" : "secondary"}>{formatBoolean(product.isOnline)}</Badge>
+                  </div>
+                  <div className="flex items-center justify-between border rounded-lg p-3">
+                    <label className="text-sm font-medium">POS</label>
+                    <Badge variant={product.isPos ? "default" : "secondary"}>{formatBoolean(product.isPos)}</Badge>
+                  </div>
+                  <div className="flex items-center justify-between border rounded-lg p-3">
+                    <label className="text-sm font-medium">Pre-Order</label>
+                    <Badge variant={product.isPreOrder ? "default" : "secondary"}>{formatBoolean(product.isPreOrder)}</Badge>
+                  </div>
+                  <div className="flex items-center justify-between border rounded-lg p-3">
+                    <label className="text-sm font-medium">Official</label>
+                    <Badge variant={product.isOfficial ? "default" : "secondary"}>{formatBoolean(product.isOfficial)}</Badge>
+                  </div>
+                  <div className="flex items-center justify-between border rounded-lg p-3">
+                    <label className="text-sm font-medium">Free Shipping</label>
+                    <Badge variant={product.freeShipping ? "default" : "secondary"}>{formatBoolean(product.freeShipping)}</Badge>
+                  </div>
+                  <div className="flex items-center justify-between border rounded-lg p-3">
+                    <label className="text-sm font-medium">EMI</label>
+                    <Badge variant={product.isEmi ? "default" : "secondary"}>{formatBoolean(product.isEmi)}</Badge>
                   </div>
                 </div>
-              )}
+              </CardContent>
+            </Card>
 
-              {getGalleryImages().length > 0 && (
+            {/* Media */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Media</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Thumbnail */}
                 <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase">Gallery Images ({getGalleryImages().length})</label>
-                  <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-                    {getGalleryImages().map((img, idx) => (
-                      <div key={img.id || idx} className="rounded-lg border bg-muted p-2 flex items-center justify-center aspect-square" title={img.altText}>
-                        <Image
-                          src={img.imageUrl || img.url || "/placeholder.svg"}
-                          alt={img.altText || `Gallery ${idx + 1}`}
-                          width={150}
-                          height={150}
-                          className="max-w-full max-h-full object-contain"
-                        />
+                  <label className="text-xs font-semibold text-muted-foreground uppercase mb-2 block">Thumbnail Image</label>
+                  <div className="w-32 h-32 rounded-lg border bg-muted p-2 flex items-center justify-center">
+                    <Image
+                      src={getThumbnailImage()}
+                      alt="Thumbnail"
+                      width={128}
+                      height={128}
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  </div>
+                </div>
+
+                {/* Gallery */}
+                {getGalleryImages().length > 0 && (
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase mb-2 block">Gallery Images</label>
+                    <div className="grid grid-cols-4 gap-3">
+                      {getGalleryImages().map((img, idx) => (
+                        <div key={img.id || idx} className="rounded-lg border bg-muted p-2 flex items-center justify-center aspect-square" title={img.altText}>
+                          <Image
+                            src={img.imageUrl || img.url || "/placeholder.svg"}
+                            alt={img.altText || `Gallery ${idx + 1}`}
+                            width={100}
+                            height={100}
+                            className="max-w-full max-h-full object-contain"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              </CardContent>
+            </Card>
+
+            {/* Videos */}
+            {product.videos && product.videos.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Videos</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {product.videos.map((video, idx) => (
+                      <div key={video.id || idx} className="flex items-center gap-3 border rounded-lg p-3 bg-muted/30">
+                        <Badge variant="outline">{video.videoType || "youtube"}</Badge>
+                        <span className="text-sm font-mono truncate flex-1">{video.videoUrl}</span>
+                        {video.videoUrl && (
+                          <a 
+                            href={video.videoUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-600 hover:underline"
+                          >
+                            Open
+                          </a>
+                        )}
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
-              
-              {product.specifications && product.specifications.length > 0 && (
+                </CardContent>
+              </Card>
+            )}
+
+            {/* SEO Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle>SEO Settings</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase">Specifications</label>
-                  <div className="mt-2 border rounded-lg overflow-hidden">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase">SEO Title</label>
+                  <p className="mt-1 text-sm">{product.seoTitle || "N/A"}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground uppercase">SEO Description</label>
+                  <p className="mt-1 text-sm">{product.seoDescription || "N/A"}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground uppercase">SEO Keywords</label>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {product.seoKeywords && product.seoKeywords.length > 0 ? (
+                      product.seoKeywords.map((kw, i) => <Badge key={i} variant="outline">{kw}</Badge>)
+                    ) : (
+                      <span className="text-sm text-muted-foreground">N/A</span>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground uppercase">Canonical URL</label>
+                  <p className="mt-1 text-sm font-mono">{product.seoCanonical || "N/A"}</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Specifications */}
+            {product.specifications && product.specifications.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Specifications</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="border rounded-lg overflow-hidden">
                     <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-muted/50 border-b">
+                          <th className="text-left px-4 py-3 font-semibold">Key</th>
+                          <th className="text-left px-4 py-3 font-semibold">Value</th>
+                        </tr>
+                      </thead>
                       <tbody className="divide-y">
                         {product.specifications.map((spec, idx) => (
-                          <tr key={idx} className="bg-white">
-                            <td className="px-4 py-2 font-medium bg-muted/30 w-1/3">{spec.specKey || spec.key}</td>
+                          <tr key={idx} className="hover:bg-muted/20">
+                            <td className="px-4 py-2 font-medium">{spec.specKey || spec.key}</td>
                             <td className="px-4 py-2">{spec.specValue || spec.value}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Additional Info */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Additional Info</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase">Reward Points</label>
+                    <p className="mt-1 text-sm">{product.rewardPoints || "0"}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase">Min Booking Price</label>
+                    <p className="mt-1 text-sm">{product.minBookingPrice ? formatPrice(Number(product.minBookingPrice)) : "N/A"}</p>
+                  </div>
                 </div>
-              )}
-            </TabsContent>
-
-            {/* Pricing Tab */}
-            <TabsContent value="pricing" className="space-y-4">
-              {product.minBookingPrice && (
-                <Card>
-                  <CardHeader><CardTitle>Min Booking Price</CardTitle></CardHeader>
-                  <CardContent><p className="text-2xl font-bold">{formatPrice(Number(product.minBookingPrice))}</p></CardContent>
-                </Card>
-              )}
-
-              {product.directColors && product.directColors.length > 0 && (
-                <Card>
-                  <CardHeader><CardTitle>Color Pricing</CardTitle></CardHeader>
-                  <CardContent>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b">
-                            <th className="text-left py-2 px-2 font-semibold">Color</th>
-                            <th className="text-right py-2 px-2 font-semibold">Regular Price</th>
-                            <th className="text-right py-2 px-2 font-semibold">Discount Price</th>
-                            <th className="text-right py-2 px-2 font-semibold">Stock</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {product.directColors.map((color) => (
-                            <tr key={color.id} className="border-b hover:bg-muted/50">
-                              <td className="py-2 px-2 font-medium">{color.colorName || color.name}</td>
-                              <td className="text-right py-2 px-2">{formatPrice(color.regularPrice || 0)}</td>
-                              <td className="text-right py-2 px-2 font-semibold">{formatPrice(color.discountPrice || 0)}</td>
-                              <td className="text-right py-2 px-2">{color.stockQuantity || 0}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                {product.tags && product.tags.length > 0 && (
+                  <div className="mt-4">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase">Tags</label>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {product.tags.map((tag, idx) => (
+                        <Badge key={idx} variant="outline">{tag}</Badge>
+                      ))}
                     </div>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-            {/* Variants Tab */}
-            <TabsContent value="variants" className="space-y-4">
-              {product.directColors && product.directColors.length > 0 ? (
-                <Card>
-                  <CardHeader><CardTitle>Color Variants</CardTitle></CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {product.directColors.map((color) => (
-                        <div key={color.id} className="border rounded-lg p-4 space-y-3 hover:shadow-md transition-shadow">
-                          {(color.colorImage || color.image) && (
-                            <div className="w-full aspect-square overflow-hidden rounded-lg bg-muted">
-                              <Image
-                                src={color.colorImage || color.image || "/placeholder.svg"}
-                                alt={color.colorName || color.name || "Color"}
-                                width={200}
-                                height={200}
-                                className="w-full h-full object-cover"
-                              />
+            {/* Colors */}
+            {getColors().length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Colors</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {getColors().map((color, idx) => (
+                      <div key={color.id || idx} className="border rounded-lg p-4">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          {/* Color Image */}
+                          <div className="flex flex-col items-center">
+                            {(color.colorImage || color.image) ? (
+                              <div className="w-24 h-24 rounded-lg overflow-hidden border bg-muted">
+                                <Image
+                                  src={color.colorImage || color.image || "/placeholder.svg"}
+                                  alt={color.colorName || "Color"}
+                                  width={96}
+                                  height={96}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            ) : (
+                              <div className="w-24 h-24 rounded-lg border bg-muted flex items-center justify-center">
+                                <span className="text-xs text-muted-foreground">No Image</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Color Details */}
+                          <div className="md:col-span-3 grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div>
+                              <label className="text-xs font-semibold text-muted-foreground uppercase">Color Name</label>
+                              <p className="mt-1 text-sm font-medium">{color.colorName || (color as any).name || "N/A"}</p>
                             </div>
-                          )}
-                          <div>
-                            <h4 className="font-semibold text-sm">{color.colorName || color.name}</h4>
-                            <div className="mt-2 space-y-1 text-xs">
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Regular:</span>
-                                <span className="font-medium">{formatPrice(color.regularPrice || 0)}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Discount:</span>
-                                <span className="font-medium">{formatPrice(color.discountPrice || 0)}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Stock:</span>
-                                <span className="font-medium">{color.stockQuantity || 0}</span>
-                              </div>
+                            <div>
+                              <label className="text-xs font-semibold text-muted-foreground uppercase">Regular Price</label>
+                              <p className="mt-1 text-sm">{formatPrice(color.regularPrice || 0)}</p>
+                            </div>
+                            <div>
+                              <label className="text-xs font-semibold text-muted-foreground uppercase">Discount Price</label>
+                              <p className="mt-1 text-sm font-semibold text-green-600">{formatPrice(color.discountPrice || 0)}</p>
+                            </div>
+                            <div>
+                              <label className="text-xs font-semibold text-muted-foreground uppercase">Discount %</label>
+                              <p className="mt-1 text-sm">
+                                {(color as any).discountPercent 
+                                  ? `${(color as any).discountPercent}%` 
+                                  : `${calculateDiscount(color.regularPrice, color.discountPrice)}%`}
+                              </p>
+                            </div>
+                            <div>
+                              <label className="text-xs font-semibold text-muted-foreground uppercase">Stock Quantity</label>
+                              <p className="mt-1">
+                                <Badge variant={
+                                  (color.stockQuantity || 0) > 10 
+                                    ? "default" 
+                                    : (color.stockQuantity || 0) > 0 
+                                    ? "secondary" 
+                                    : "destructive"
+                                }>
+                                  {color.stockQuantity || 0} units
+                                </Badge>
+                              </p>
                             </div>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">No variants available for this product.</div>
-              )}
-            </TabsContent>
-
-            {/* Status Tab */}
-            <TabsContent value="status" className="space-y-4">
-              <Card>
-                <CardHeader><CardTitle>Product Status</CardTitle></CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                    <div><label className="text-xs font-semibold text-muted-foreground uppercase">Active</label><p className="mt-1 font-medium">{formatBoolean(product.isActive)}</p></div>
-                    <div><label className="text-xs font-semibold text-muted-foreground uppercase">Online</label><p className="mt-1 font-medium">{formatBoolean(product.isOnline)}</p></div>
-                    <div><label className="text-xs font-semibold text-muted-foreground uppercase">POS Available</label><p className="mt-1 font-medium">{formatBoolean(product.isPos)}</p></div>
-                    <div><label className="text-xs font-semibold text-muted-foreground uppercase">Pre-Order</label><p className="mt-1 font-medium">{formatBoolean(product.isPreOrder)}</p></div>
-                    <div><label className="text-xs font-semibold text-muted-foreground uppercase">Official</label><p className="mt-1 font-medium">{formatBoolean(product.isOfficial)}</p></div>
-                    <div><label className="text-xs font-semibold text-muted-foreground uppercase">Free Shipping</label><p className="mt-1 font-medium">{formatBoolean(product.freeShipping)}</p></div>
-                    <div><label className="text-xs font-semibold text-muted-foreground uppercase">EMI Available</label><p className="mt-1 font-medium">{formatBoolean(product.isEmi)}</p></div>
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
-            </TabsContent>
-
-            {/* Inventory Tab */}
-            <TabsContent value="inventory" className="space-y-4">
-              <Card>
-                <CardHeader><CardTitle>Inventory Status</CardTitle></CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-6">
-                    <div><label className="text-xs font-semibold text-muted-foreground uppercase">Total Stock</label><p className="mt-1 text-2xl font-bold">{product.totalStock || product.stockQuantity || 0}</p></div>
-                    <div><label className="text-xs font-semibold text-muted-foreground uppercase">Low Stock Alert</label><p className="mt-1 text-2xl font-bold">{product.lowStockAlert || 5}</p></div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* SEO Tab */}
-            <TabsContent value="seo" className="space-y-4">
-              <Card>
-                <CardHeader><CardTitle>SEO Information</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
-                  <div><label className="text-xs font-semibold text-muted-foreground uppercase">SEO Title</label><p className="mt-1 text-sm">{product.seoTitle || "N/A"}</p></div>
-                  <div><label className="text-xs font-semibold text-muted-foreground uppercase">SEO Description</label><p className="mt-1 text-sm">{product.seoDescription || "N/A"}</p></div>
-                  <div><label className="text-xs font-semibold text-muted-foreground uppercase">Keywords</label><div className="mt-2 flex flex-wrap gap-2">{product.seoKeywords && product.seoKeywords.length > 0 ? product.seoKeywords.map((kw, i) => <Badge key={i} variant="outline">{kw}</Badge>) : <span className="text-sm text-muted-foreground">N/A</span>}</div></div>
-                  <div><label className="text-xs font-semibold text-muted-foreground uppercase">Canonical URL</label><p className="mt-1 text-sm font-mono">{product.seoCanonical || "N/A"}</p></div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+            )}
+          </div>
           )}
         </div>
         <div className="p-4 border-t flex justify-end">

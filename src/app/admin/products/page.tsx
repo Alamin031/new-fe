@@ -264,9 +264,23 @@ function AdminProductsPage() {
     }
   };
 
-  const handleEditClick = (product: UIProduct) => {
-    setSelectedProduct(product);
-    setEditOpen(true);
+  const handleEditClick = async (product: UIProduct) => {
+    try {
+      setViewLoading(true);
+      const fullProduct = await productsService.getById(product.id);
+      setSelectedProduct(fullProduct);
+      setEditOpen(true);
+    } catch (error) {
+      console.error('Failed to fetch product details for editing:', error);
+      // Fallback: pass the UI product with proper type mapping
+      setSelectedProduct({
+        ...product,
+        productType: product.type, // Ensure productType is set
+      });
+      setEditOpen(true);
+    } finally {
+      setViewLoading(false);
+    }
   };
 
   const handleDeleteClick = (product: UIProduct) => {
