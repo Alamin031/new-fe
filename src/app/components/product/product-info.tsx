@@ -61,8 +61,8 @@ export function ProductInfo({ product }: ProductInfoProps) {
     return total + (variant?.priceModifier || 0)
   }, 0)
 
-  const carePlusPrice = carePlusSelected ? Math.round(product.price * 0.08) : 0
-  const totalPrice = product.price + variantPriceModifier + carePlusPrice
+  const carePlusPrice = carePlusSelected ? Math.round(salePrice * 0.08) : 0
+  const totalPrice = salePrice + variantPriceModifier + carePlusPrice
 
   const handleAddToCart = () => {
     if (!isOutOfStock) {
