@@ -79,6 +79,28 @@ function DialogContent({
   )
 }
 
+/**
+ * Simple Dialog wrapper for cases where you want a minimal dialog.
+ * Automatically includes a visually hidden DialogTitle for accessibility.
+ */
+function SimpleDialogContent({
+  className,
+  children,
+  title = "Dialog",
+  showCloseButton = true,
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Content> & {
+  showCloseButton?: boolean
+  title?: string
+}) {
+  return (
+    <DialogContent className={className} showCloseButton={showCloseButton} {...props}>
+      <DialogPrimitive.Title className="sr-only">{title}</DialogPrimitive.Title>
+      {children}
+    </DialogContent>
+  )
+}
+
 function DialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
