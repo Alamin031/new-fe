@@ -440,22 +440,13 @@ export function ProductInfoRegion({product}: ProductInfoRegionProps) {
 
       <Separator className="my-4" />
 
-      {/* EMI Payment Table */}
-      {rawProduct?.isEmi && (
-        <div className="space-y-3 bg-muted/30 p-4 rounded-lg">
-          <h3 className="font-semibold flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            EMI Payment Options
-          </h3>
-          {loadingEmiPlans ? (
-            <div className="text-center py-4">
-              <p className="text-sm text-muted-foreground">Loading EMI options...</p>
-            </div>
-          ) : (
-            <EmiTable price={priceData.discountPrice} plans={emiPlans} />
-          )}
-        </div>
-      )}
+      {/* EMI Options Modal Trigger */}
+      <EmiOptionsModal
+        open={emiModalOpen}
+        onOpenChange={setEmiModalOpen}
+        plans={emiPlans}
+        price={priceData.regularPrice}
+      />
 
       {/* Care Plans */}
       {rawProduct?.isCare && (
