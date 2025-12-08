@@ -176,6 +176,7 @@ export function ProductInfoRegion({product}: ProductInfoRegionProps) {
         colorName: selectedColor.name,
         storage: selectedStorage.id,
         storageName: selectedStorage.size,
+        priceType: selectedPriceType,
       })
     }
   }
