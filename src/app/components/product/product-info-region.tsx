@@ -445,7 +445,13 @@ export function ProductInfoRegion({product}: ProductInfoRegionProps) {
             <BarChart3 className="h-5 w-5" />
             EMI Payment Options
           </h3>
-          <EmiTable price={priceData.discountPrice} />
+          {loadingEmiPlans ? (
+            <div className="text-center py-4">
+              <p className="text-sm text-muted-foreground">Loading EMI options...</p>
+            </div>
+          ) : (
+            <EmiTable price={priceData.discountPrice} plans={emiPlans} />
+          )}
         </div>
       )}
 
