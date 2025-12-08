@@ -45,6 +45,27 @@ export function ProductInfoRegion({product}: ProductInfoRegionProps) {
   const {addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist} = useWishlistStore()
   const {addItem: addToCompare, isInCompare} = useCompareStore()
 
+  // Fetch care plans if isCare is true
+  useEffect(() => {
+    const fetchCarePlans = async () => {
+      if (rawProduct?.isCare && product.id) {
+        try {
+          setLoadingCarePlans(true)
+          const plans = await careService.getByProduct(product.id)
+          setCarePlans(plans)
+          if (plans.length > 0) {
+            setSelectedCarePlanId(plans[0].id)
+          }
+        } catch (error) {
+          console.error("Error fetching care plans:", error)
+        } finally {
+          setLoadingCarePlans(false)
+        }
+      }
+    }
+    fetchCarePlans()
+  }, [product.id, rawProduct?.isCare])
+
   const inWishlist = isInWishlist(product.id)
   const inCompare = isInCompare(product.id)
 
