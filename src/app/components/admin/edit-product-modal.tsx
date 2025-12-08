@@ -724,14 +724,14 @@ export function EditProductModal({
       setSelectedCategories(product.categoryIds || (product.categoryId ? [product.categoryId] : []));
       setSelectedBrands(product.brandIds || (product.brandId ? [product.brandId] : []));
 
-      setIsActive(product.isActive !== false);
-      setIsOnline(product.isOnline !== false);
-      setIsPos(product.isPos !== false);
-      setIsPreOrder(product.isPreOrder === true);
-      setIsOfficial(product.isOfficial === true);
-      setFreeShipping(product.freeShipping === true);
-      setIsEmi(product.isEmi === true);
-      setIsCare(product.isCare !== false);
+      setIsActive(!!product.isActive);
+      setIsOnline(!!product.isOnline);
+      setIsPos(!!product.isPos);
+      setIsPreOrder(!!product.isPreOrder);
+      setIsOfficial(!!product.isOfficial);
+      setFreeShipping(!!product.freeShipping);
+      setIsEmi(!!product.isEmi);
+      setIsCare(!!product.isCare);
       setDelivery(product.delivery || '');
       setEasyReturns(product.easyReturns || '');
 
@@ -1043,14 +1043,14 @@ export function EditProductModal({
         productCode: productCode || undefined,
         sku: sku || undefined,
         warranty: warranty || undefined,
-        isActive,
-        isOnline,
-        isPos,
-        isPreOrder,
-        isOfficial,
-        freeShipping,
-        isEmi,
-        isCare,
+        isActive: !!isActive,
+        isOnline: !!isOnline,
+        isPos: !!isPos,
+        isPreOrder: !!isPreOrder,
+        isOfficial: !!isOfficial,
+        freeShipping: !!freeShipping,
+        isEmi: !!isEmi,
+        isCare: !!isCare,
         delivery: delivery || undefined,
         easyReturns: easyReturns || undefined,
         rewardPoints: rewardPoints ? Number(rewardPoints) : undefined,

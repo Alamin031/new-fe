@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
 import {useState, useMemo, useEffect} from "react"
 import {useRouter} from "next/navigation"
-import {Heart, BarChart3, ShoppingCart, Share2, Shield, Truck, RotateCcw, Check, AlertCircle, ChevronDown} from "lucide-react"
+import {Heart, BarChart3, ShoppingCart, Share2, Shield, Truck, RotateCcw, Check, AlertCircle} from "lucide-react"
 import {Button} from "../ui/button"
 import {Badge} from "../ui/badge"
 import {Separator} from "../ui/separator"
@@ -13,20 +14,26 @@ import {formatPrice} from "@/app/lib/utils/format"
 import {cn} from "@/app/lib/utils"
 import {CarePlusAddon} from "./care-plus-addon"
 import {NotifyProductDialog} from "./notify-product-dialog"
-import {EmiTable} from "./emi-table"
 import {CarePlansDisplay} from "./care-plans-display"
 import {careService, type ProductCarePlan} from "@/app/lib/api/services/care"
+import {emiService, type EmiPlan} from "@/app/lib/api/services/emi"
 import type {Product} from "@/app/types"
 import Image from "next/image"
 
-interface ProductInfoRegionProps {
-  product: Product & {rawProduct?: any; productType?: string}
-}
+type Region = {
+  id: string;
+  name: string;
+  colors?: Array<{id: string; name: string; image?: string}>;
+  defaultStorages?: Array<{id: string; size: string; price: any; stock?: number}>;
+};
+type ProductInfoRegionProps = {
+  product: Product & {rawProduct?: {regions?: Region[]; [key: string]: any}; productType?: string};
+};
 
 export function ProductInfoRegion({product}: ProductInfoRegionProps) {
   const router = useRouter()
   const rawProduct = product.rawProduct
-  const productType = product.productType || 'basic'
+  // const productType = product.productType || 'basic' // unused
 
   const [quantity, setQuantity] = useState(1)
   const [carePlusSelected, setCarePlusSelected] = useState(false)
@@ -34,12 +41,14 @@ export function ProductInfoRegion({product}: ProductInfoRegionProps) {
   const [carePlans, setCarePlans] = useState<ProductCarePlan[]>([])
   const [selectedCarePlanId, setSelectedCarePlanId] = useState<string>("")
   const [loadingCarePlans, setLoadingCarePlans] = useState(false)
+  const [emiPlans, setEmiPlans] = useState<EmiPlan[]>([])
+  const [loadingEmiPlans, setLoadingEmiPlans] = useState(false)
 
   // Region-based state
   const [selectedRegionId, setSelectedRegionId] = useState<string>('')
   const [selectedColorId, setSelectedColorId] = useState<string>('')
   const [selectedStorageId, setSelectedStorageId] = useState<string>('')
-  const [showRegionDropdown, setShowRegionDropdown] = useState(false)
+  // Removed unused showRegionDropdown
 
   const addToCart = useCartStore((state) => state.addItem)
   const {addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist} = useWishlistStore()
@@ -66,24 +75,42 @@ export function ProductInfoRegion({product}: ProductInfoRegionProps) {
     fetchCarePlans()
   }, [product.id, rawProduct?.isCare])
 
+  // Fetch EMI plans if isEmi is true
+  useEffect(() => {
+    const fetchEmiPlans = async () => {
+      if (rawProduct?.isEmi) {
+        try {
+          setLoadingEmiPlans(true)
+          const plans = await emiService.getPlans()
+          setEmiPlans(Array.isArray(plans) ? plans : [])
+        } catch (error) {
+          console.error("Error fetching EMI plans:", error)
+        } finally {
+          setLoadingEmiPlans(false)
+        }
+      }
+    }
+    fetchEmiPlans()
+  }, [rawProduct?.isEmi])
+
   const inWishlist = isInWishlist(product.id)
   const inCompare = isInCompare(product.id)
 
   // Region-based logic
-  const regions = rawProduct?.regions || []
+  const regions: Region[] = rawProduct?.regions || [];
   const selectedRegion = selectedRegionId
-    ? regions.find((r: any) => r.id === selectedRegionId)
-    : regions[0]
+    ? regions.find((r: Region) => r.id === selectedRegionId)
+    : regions[0];
 
-  const colors = selectedRegion?.colors || []
+  const colors: Array<{id: string; name: string; image?: string}> = selectedRegion?.colors || [];
   const selectedColor = selectedColorId
-    ? colors.find((c: any) => c.id === selectedColorId)
-    : colors[0]
+    ? colors.find((c: {id: string; name: string; image?: string}) => c.id === selectedColorId)
+    : colors[0];
 
-  const storages = selectedRegion?.defaultStorages || []
+  const storages: Array<{id: string; size: string; price: any; stock?: number}> = selectedRegion?.defaultStorages || [];
   const selectedStorage = selectedStorageId
-    ? storages.find((s: any) => s.id === selectedStorageId)
-    : storages[0]
+    ? storages.find((s: {id: string; size: string; price: any; stock?: number}) => s.id === selectedStorageId)
+    : storages[0];
 
   // Price and stock calculation
   const priceData = useMemo(() => {
@@ -116,33 +143,32 @@ export function ProductInfoRegion({product}: ProductInfoRegionProps) {
     }
   }, [selectedStorage])
 
-  const carePlusPrice = carePlusSelected ? Math.round(priceData.discountPrice * 0.08) : 0
-  const totalPrice = priceData.discountPrice + carePlusPrice
   const isOutOfStock = !priceData.inStock
 
   // Initialize selections
-  if (!selectedRegionId && regions.length > 0) {
-    setSelectedRegionId(regions[0].id)
-  }
+  useEffect(() => {
+    if (!selectedRegionId && regions.length > 0) {
+      setSelectedRegionId(regions[0].id)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [regions])
 
-  if (!selectedColorId && colors.length > 0) {
-    setSelectedColorId(colors[0].id)
-  }
+  useEffect(() => {
+    if (!selectedColorId && colors.length > 0) {
+      setSelectedColorId(colors[0].id)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [colors])
 
-  if (!selectedStorageId && storages.length > 0) {
-    setSelectedStorageId(storages[0].id)
-  }
+  useEffect(() => {
+    if (!selectedStorageId && storages.length > 0) {
+      setSelectedStorageId(storages[0].id)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storages])
 
   const handleAddToCart = () => {
     if (!isOutOfStock && selectedRegion && selectedColor && selectedStorage) {
-      const cartItem = {
-        ...product,
-        selectedVariants: {
-          region: selectedRegion.name,
-          color: selectedColor.name,
-          storage: selectedStorage.size,
-        },
-      }
       addToCart(product, quantity, {
         region: selectedRegion.id,
         regionName: selectedRegion.name,
@@ -242,7 +268,7 @@ export function ProductInfoRegion({product}: ProductInfoRegionProps) {
             Color: <span className="text-foreground">{selectedColor?.name || 'Select'}</span>
           </label>
           <div className="flex flex-wrap gap-3">
-            {colors.map((color: any) => (
+            {colors.map((color: {id: string; name: string; image?: string}) => (
               <button
                 key={color.id}
                 onClick={() => setSelectedColorId(color.id)}
@@ -273,7 +299,7 @@ export function ProductInfoRegion({product}: ProductInfoRegionProps) {
         <div className="space-y-3 bg-muted/50 p-4 rounded-lg">
           <label className="text-sm font-bold uppercase tracking-wide">Region/Variant:</label>
           <div className="flex flex-wrap gap-2">
-            {regions.map((region: any) => (
+            {regions.map((region: Region) => (
               <button
                 key={region.id}
                 onClick={() => {
@@ -300,7 +326,7 @@ export function ProductInfoRegion({product}: ProductInfoRegionProps) {
         <div className="space-y-3 bg-muted/50 p-4 rounded-lg">
           <label className="text-sm font-bold uppercase tracking-wide">Storage:</label>
           <div className="flex flex-wrap gap-2">
-            {storages.map((storage: any) => (
+            {storages.map((storage: {id: string; size: string; price: any; stock?: number}) => (
               <button
                 key={storage.id}
                 onClick={() => setSelectedStorageId(storage.id)}
@@ -423,7 +449,38 @@ export function ProductInfoRegion({product}: ProductInfoRegionProps) {
             <BarChart3 className="h-5 w-5" />
             EMI Payment Options
           </h3>
-          <EmiTable price={priceData.discountPrice} />
+          {loadingEmiPlans ? (
+            <div className="text-center py-4">
+              <p className="text-sm text-muted-foreground">Loading EMI plans...</p>
+            </div>
+          ) : emiPlans.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr>
+                    <th className="text-left py-2">Bank</th>
+                    <th className="text-left py-2">Plan</th>
+                    <th className="text-right py-2">Months</th>
+                    <th className="text-right py-2">Interest Rate</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {emiPlans.map(plan => (
+                    <tr key={plan.id} className="border-b">
+                      <td className="py-2">{plan.bank?.bankname || plan.bankId}</td>
+                      <td className="py-2">{plan.planName}</td>
+                      <td className="py-2 text-right">{plan.months}</td>
+                      <td className="py-2 text-right">{plan.interestRate}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-4">
+              <p className="text-sm text-muted-foreground">No EMI plans available.</p>
+            </div>
+          )}
         </div>
       )}
 
