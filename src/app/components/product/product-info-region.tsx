@@ -69,6 +69,25 @@ export function ProductInfoRegion({product}: ProductInfoRegionProps) {
     fetchCarePlans()
   }, [product.id, rawProduct?.isCare])
 
+  // Fetch EMI plans if isEmi is true
+  useEffect(() => {
+    const fetchEmiPlans = async () => {
+      if (rawProduct?.isEmi) {
+        try {
+          setLoadingEmiPlans(true)
+          const plans = await emiService.getPlans()
+          setEmiPlans(plans)
+        } catch (error) {
+          console.error("Error fetching EMI plans:", error)
+          setEmiPlans([])
+        } finally {
+          setLoadingEmiPlans(false)
+        }
+      }
+    }
+    fetchEmiPlans()
+  }, [rawProduct?.isEmi])
+
   const inWishlist = isInWishlist(product.id)
   const inCompare = isInCompare(product.id)
 
