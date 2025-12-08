@@ -35,21 +35,18 @@ export interface UpdateProductCarePlanRequest {
   features?: string[];
 }
 export const careService = {
-  // Create a care plan for a product
+  // Create a care plan
   create: async (
     data: CreateProductCarePlanRequest,
   ): Promise<ProductCarePlan> => {
-    const endpoint = API_ENDPOINTS.PRODUCT_CARE_CREATE; // should be '/products/cares'
+    const endpoint = API_ENDPOINTS.PRODUCT_CARE_CREATE;
     const response = await apiClient.post(endpoint, data);
     return response.data;
   },
 
-  // Get all care plans for a product
-  list: async (productId: string): Promise<ProductCarePlan[]> => {
-    const endpoint = API_ENDPOINTS.PRODUCT_CARE_LIST.replace(
-      '{productId}',
-      productId,
-    );
+  // Get all care plans
+  getAll: async (): Promise<ProductCarePlan[]> => {
+    const endpoint = API_ENDPOINTS.PRODUCT_CARE_GET_ALL;
     const response = await apiClient.get(endpoint);
     return response.data;
   },
@@ -76,9 +73,13 @@ export const careService = {
     const endpoint = API_ENDPOINTS.PRODUCT_CARE_DELETE.replace('{id}', id);
     await apiClient.delete(endpoint);
   },
-  // Get all care plans (across all products)
-  getAll: async (): Promise<ProductCarePlan[]> => {
-    const endpoint = API_ENDPOINTS.ALL_CARE_GET;
+
+  // Get care plans for a specific product
+  getByProduct: async (productId: string): Promise<ProductCarePlan[]> => {
+    const endpoint = API_ENDPOINTS.PRODUCT_CARE_BY_PRODUCT.replace(
+      '{productId}',
+      productId,
+    );
     const response = await apiClient.get(endpoint);
     return response.data;
   },

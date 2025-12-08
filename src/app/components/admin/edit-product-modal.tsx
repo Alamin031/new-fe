@@ -73,6 +73,9 @@ export function EditProductModal({
   const [isOfficial, setIsOfficial] = useState(false);
   const [freeShipping, setFreeShipping] = useState(false);
   const [isEmi, setIsEmi] = useState(false);
+  const [isCare, setIsCare] = useState(true);
+  const [delivery, setDelivery] = useState('');
+  const [easyReturns, setEasyReturns] = useState('');
 
   // Reward & Booking
   const [rewardPoints, setRewardPoints] = useState('');
@@ -728,6 +731,9 @@ export function EditProductModal({
       setIsOfficial(product.isOfficial === true);
       setFreeShipping(product.freeShipping === true);
       setIsEmi(product.isEmi === true);
+      setIsCare(product.isCare !== false);
+      setDelivery(product.delivery || '');
+      setEasyReturns(product.easyReturns || '');
 
       setRewardPoints(product.rewardPoints?.toString() || '');
       setMinBookingPrice(product.minBookingPrice?.toString() || '');
@@ -1044,6 +1050,9 @@ export function EditProductModal({
         isOfficial,
         freeShipping,
         isEmi,
+        isCare,
+        delivery: delivery || undefined,
+        easyReturns: easyReturns || undefined,
         rewardPoints: rewardPoints ? Number(rewardPoints) : undefined,
         minBookingPrice: minBookingPrice ? Number(minBookingPrice) : undefined,
         seoTitle: seoTitle || undefined,
@@ -1287,6 +1296,22 @@ export function EditProductModal({
                 <div className="flex items-center justify-between"><Label>Official</Label><Switch checked={isOfficial} onCheckedChange={setIsOfficial} /></div>
                 <div className="flex items-center justify-between"><Label>Free Shipping</Label><Switch checked={freeShipping} onCheckedChange={setFreeShipping} /></div>
                 <div className="flex items-center justify-between"><Label>EMI</Label><Switch checked={isEmi} onCheckedChange={setIsEmi} /></div>
+                <div className="flex items-center justify-between"><Label>Care Available</Label><Switch checked={isCare} onCheckedChange={setIsCare} /></div>
+              </div>
+            </div>
+
+            {/* Delivery & Returns */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Delivery & Returns</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Delivery</Label>
+                  <Input value={delivery} onChange={e => setDelivery(e.target.value)} placeholder="e.g., 2-3 business days" />
+                </div>
+                <div>
+                  <Label>Easy Returns</Label>
+                  <Input value={easyReturns} onChange={e => setEasyReturns(e.target.value)} placeholder="e.g., 7 days return policy" />
+                </div>
               </div>
             </div>
 

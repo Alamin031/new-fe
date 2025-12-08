@@ -85,12 +85,12 @@ export const API_ENDPOINTS = {
   PRODUCTS_UPDATE_REGION: '/products-new/region/{id}',
 
   // Product Care Plans
-  PRODUCT_CARE_CREATE: '/products/cares',
-  PRODUCT_CARE_LIST: '/products/{productId}/cares',
-  PRODUCT_CARE_UPDATE: '/products/cares/{id}',
-  PRODUCT_CARE_GET: '/products/cares/{id}',
-  PRODUCT_CARE_DELETE: '/products/cares/{id}',
-  ALL_CARE_GET: '/products/cares',
+  PRODUCT_CARE_CREATE: '/products-new/care',
+  PRODUCT_CARE_GET_ALL: '/products-new/care',
+  PRODUCT_CARE_UPDATE: '/products-new/care/{id}',
+  PRODUCT_CARE_GET: '/products-new/care/{id}',
+  PRODUCT_CARE_DELETE: '/products-new/care/{id}',
+  PRODUCT_CARE_BY_PRODUCT: '/products-new/care/product/{productId}',
 
   // Product Notification Requests
   PRODUCT_NOTIFY_CREATE: '/products/{productId}/notify',
