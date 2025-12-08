@@ -16,6 +16,7 @@ import {NotifyProductDialog} from "./notify-product-dialog"
 import {EmiTable} from "./emi-table"
 import {CarePlansDisplay} from "./care-plans-display"
 import {careService, type ProductCarePlan} from "@/app/lib/api/services/care"
+import {emiService, type EmiPlan} from "@/app/lib/api/services/emi"
 import type {Product} from "@/app/types"
 import Image from "next/image"
 
