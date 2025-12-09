@@ -466,7 +466,7 @@ export function ProductInfoRegion({product, onColorChange}: ProductInfoRegionPro
           </label>
           <div className="flex flex-wrap gap-2">
             {storages.map((storage: any) => {
-              const storageSize = storage.size || storage.storageSize;
+              const storageSize = storage.storageSize || storage.size;
               return (
               <button
                 key={storage.id}
@@ -478,7 +478,7 @@ export function ProductInfoRegion({product, onColorChange}: ProductInfoRegionPro
                     : "border-border hover:border-foreground/30 hover:bg-muted/50",
                 )}
               >
-                {storageSize}
+                {storageSize || 'Storage'}
               </button>
             );
             })}
