@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { categoriesService } from "@/app/lib/api/services/categories";
-import { productsService } from "@/app/lib/api/services/products";
 import { CategoryFilters } from "@/app/components/category/category-filters";
 import { CategoryProductsClient } from "@/app/components/category/category-products-client";
 import { CategoryFAQ } from "@/app/components/category/category-faq";
@@ -169,7 +168,7 @@ export default async function Page({ params }: CategoryPageProps) {
 
       {/* FAQ Section */}
       <div className="mt-16">
-        <CategoryFAQ categoryName={category?.name ?? slug} categorySlug={slug} />
+        <CategoryFAQ categoryId={category.id} />
       </div>
     </div>
   );
