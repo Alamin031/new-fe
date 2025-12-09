@@ -161,11 +161,6 @@ export default async function Page({ params }: CategoryPageProps) {
 
       {/* Content */}
       <div className="flex flex-col gap-8 lg:flex-row">
-        {/* Filters - Sidebar */}
-        <aside className="w-full shrink-0 lg:w-64">
-          <CategoryFilters />
-        </aside>
-
         {/* Products Grid */}
         <main className="flex-1">
           <CategoryProductsClient
