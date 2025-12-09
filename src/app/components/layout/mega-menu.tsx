@@ -3,44 +3,16 @@
 import { useEffect, useRef } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { ArrowRight } from "lucide-react"
 import { cn } from "@/app/lib/utils"
-const megaMenuData = {
-  categories: [
-    { name: "Smartphones", slug: "smartphones", image: "/modern-smartphone.png" },
-    { name: "Laptops", slug: "laptops", image: "/modern-laptop-workspace.png" },
-    { name: "Tablets", slug: "tablets", image: "/modern-tablet-display.png" },
-    { name: "Audio", slug: "audio", image: "/diverse-people-listening-headphones.png" },
-    { name: "Wearables", slug: "wearables", image: "/modern-smartwatch.png" },
-    { name: "Accessories", slug: "accessories", image: "/fashion-accessories-flatlay.png" },
-  ],
-  brands: [
-    { name: "Apple", slug: "apple", logo: "/apple-logo-minimalist.png" },
-    { name: "Samsung", slug: "samsung", logo: "/samsung-logo.png" },
-    { name: "Google", slug: "google", logo: "/google-logo.png" },
-    { name: "OnePlus", slug: "oneplus", logo: "/oneplus-logo.jpg" },
-    { name: "Sony", slug: "sony", logo: "/sony-logo.png" },
-    { name: "Xiaomi", slug: "xiaomi", logo: "/xiaomi-logo.png" },
-  ],
-  trending: [
-    { name: "iPhone 15 Pro Max", slug: "iphone-15-pro-max" },
-    { name: "Samsung Galaxy S24 Ultra", slug: "samsung-galaxy-s24-ultra" },
-    { name: "MacBook Pro M3", slug: "macbook-pro-m3" },
-    { name: "AirPods Pro 2", slug: "airpods-pro-2" },
-  ],
-  deals: [
-    { name: "Flash Sale - Up to 50% Off", slug: "flash-sale" },
-    { name: "Bundle Deals", slug: "bundle-deals" },
-    { name: "Clearance Sale", slug: "clearance" },
-  ],
-}
+import type { Category } from "@/app/types"
 
 interface MegaMenuProps {
   isOpen: boolean
   onClose: () => void
+  categories: Category[]
 }
 
-export function MegaMenu({ isOpen, onClose }: MegaMenuProps) {
+export function MegaMenu({ isOpen, onClose, categories }: MegaMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -59,6 +31,18 @@ export function MegaMenu({ isOpen, onClose }: MegaMenuProps) {
     }
   }, [isOpen, onClose])
 
+  // Sort categories by priority
+  const sortedCategories = [...categories].sort((a, b) => {
+    const priorityA = a.priority ? Number(a.priority) : Infinity
+    const priorityB = b.priority ? Number(b.priority) : Infinity
+    return priorityA - priorityB
+  })
+
+  // Display max 30 categories (3 rows × 10 columns)
+  const maxCategoriesPerView = 30
+  const displayCategories = sortedCategories.slice(0, maxCategoriesPerView)
+  const hasMoreCategories = sortedCategories.length > maxCategoriesPerView
+
   return (
     <div
       ref={menuRef}
@@ -69,110 +53,47 @@ export function MegaMenu({ isOpen, onClose }: MegaMenuProps) {
       )}
     >
       <div className="mx-auto max-w-7xl px-4 py-8">
-        <div className="grid gap-8 lg:grid-cols-4">
-          {/* Categories */}
-          <div>
-            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Categories</h3>
-            <div className="space-y-1">
-              {megaMenuData.categories.map((category) => (
-                <Link
-                  key={category.slug}
-                  href={`/category/${category.slug}`}
-                  onClick={onClose}
-                  className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-accent"
-                >
-                  <div className="relative h-10 w-10 overflow-hidden rounded-lg bg-muted">
-                    <Image
-                      src={category.image || "/placeholder.svg"}
-                      alt={category.name}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                  <span className="text-sm font-medium">{category.name}</span>
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          {/* Brands */}
-          <div>
-            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Top Brands</h3>
-            <div className="grid grid-cols-2 gap-2">
-              {megaMenuData.brands.map((brand) => (
-                <Link
-                  key={brand.slug}
-                  href={`/brand/${brand.slug}`}
-                  onClick={onClose}
-                  className="flex items-center gap-2 rounded-lg p-2 transition-colors hover:bg-accent"
-                >
-                  <div className="relative h-8 w-8 overflow-hidden rounded bg-muted">
-                    <Image
-                      src={brand.logo || "/placeholder.svg"}
-                      alt={brand.name}
-                      fill
-                      className="object-contain p-1"
-                    />
-                  </div>
-                  <span className="text-sm font-medium">{brand.name}</span>
-                </Link>
-              ))}
-            </div>
-            <Link
-              href="/brands"
-              onClick={onClose}
-              className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground"
-            >
-              View All Brands
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-
-          {/* Trending */}
-          <div>
-            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Trending Now</h3>
-            <div className="space-y-1">
-              {megaMenuData.trending.map((item) => (
-                <Link
-                  key={item.slug}
-                  href={`/product/${item.slug}`}
-                  onClick={onClose}
-                  className="block rounded-lg p-2 text-sm font-medium transition-colors hover:bg-accent"
-                >
-                  {item.name}
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          {/* Hot Deals */}
-          <div>
-            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-[oklch(0.55_0.2_25)]">Hot Deals</h3>
-            <div className="space-y-2">
-              {megaMenuData.deals.map((deal) => (
-                <Link
-                  key={deal.slug}
-                  href={`/deals/${deal.slug}`}
-                  onClick={onClose}
-                  className="block rounded-lg border border-[oklch(0.55_0.2_25)]/20 bg-[oklch(0.55_0.2_25)]/5 p-3 text-sm font-medium transition-colors hover:bg-[oklch(0.55_0.2_25)]/10"
-                >
-                  {deal.name}
-                </Link>
-              ))}
-            </div>
-            <div className="mt-6 rounded-xl bg-foreground p-4 text-background">
-              <p className="text-xs uppercase tracking-wider">Limited Time</p>
-              <p className="mt-1 text-lg font-bold">Flash Sale</p>
-              <p className="text-sm opacity-80">Up to 50% off selected items</p>
-              <Link
-                href="/deals/flash-sale"
-                onClick={onClose}
-                className="mt-3 inline-flex items-center gap-1 text-sm font-medium"
-              >
-                Shop Now
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
+        <div>
+          {/* Categories Only */}
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Categories</h3>
+          <div className="grid gap-3 grid-cols-10">
+            {displayCategories.length > 0 ? (
+              <>
+                {displayCategories.map((category) => (
+                  <Link
+                    key={category.slug}
+                    href={`/category/${category.slug}`}
+                    onClick={onClose}
+                    className="flex flex-col items-center gap-2 rounded-lg p-3 transition-colors hover:bg-accent"
+                  >
+                    <div className="relative h-12 w-12 overflow-hidden rounded-lg bg-muted flex-shrink-0">
+                      <Image
+                        src={category.banner || category.image || "/placeholder.svg"}
+                        alt={category.name}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    <span className="text-xs font-medium text-center line-clamp-2">{category.name}</span>
+                  </Link>
+                ))}
+                {/* View All button appears after categories if there are more */}
+                {hasMoreCategories && (
+                  <Link
+                    href="/all-products"
+                    onClick={onClose}
+                    className="flex flex-col items-center justify-center gap-2 rounded-lg p-3 transition-colors hover:bg-accent"
+                  >
+                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-foreground text-background text-xl font-bold flex-shrink-0">
+                      +
+                    </div>
+                    <span className="text-xs font-medium text-center">View All</span>
+                  </Link>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">Loading categories...</p>
+            )}
           </div>
         </div>
       </div>

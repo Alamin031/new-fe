@@ -61,6 +61,7 @@ import {categoriesService} from '../../lib/api/services/categories';
 import type {Product, Category} from '../../lib/api/types';
 import {toast} from 'sonner';
 import type { FAQ as FAQBase } from '../../lib/api/types';
+import { withProtectedRoute } from '../../lib/auth/protected-route';
 // Extend FAQ type locally to include isPublished
 type FAQ = FAQBase;
 
@@ -194,7 +195,7 @@ function MultiSelect({
   );
 }
 
-export default function ProductFAQsPage() {
+function ProductFAQsPage() {
   const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [filteredFaqs, setFilteredFaqs] = useState<FAQ[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -643,3 +644,9 @@ export default function ProductFAQsPage() {
     </div>
   );
 }
+
+export default withProtectedRoute(ProductFAQsPage, {
+  requiredRoles: ["admin"],
+  fallbackTo: "/login",
+  showLoader: true,
+});

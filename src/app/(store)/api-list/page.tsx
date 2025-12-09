@@ -52,16 +52,6 @@ const modules = {
         "getPlaceholderUrl(path) - Get placeholder image URL",
       ],
     },
-    {
-      name: "mock-data.ts",
-      path: "src/app/lib/mock-data.ts",
-      description: "Mock data for development and testing",
-      exports: [
-        "mockBrands - Brand data",
-        "mockCategories - Category data",
-        "mockProducts - Product data",
-      ],
-    },
   ],
   hooks: [
     {

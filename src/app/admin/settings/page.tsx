@@ -9,8 +9,9 @@ import { Switch } from "../../components/ui/switch"
 import { Separator } from "../../components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select"
+import { withProtectedRoute } from "../../lib/auth/protected-route"
 
-export default function AdminSettingsPage() {
+function AdminSettingsPage() {
   return (
     <div className="space-y-6">
       <div>
@@ -70,7 +71,7 @@ export default function AdminSettingsPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="inr">INR (₹)</SelectItem>
+                      <SelectItem value="inr">INR (৳)</SelectItem>
                       <SelectItem value="usd">USD ($)</SelectItem>
                       <SelectItem value="eur">EUR (€)</SelectItem>
                     </SelectContent>
@@ -110,7 +111,7 @@ export default function AdminSettingsPage() {
                 <Switch defaultChecked />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="freeShippingThreshold">Free Shipping Threshold (₹)</Label>
+                <Label htmlFor="freeShippingThreshold">Free Shipping Threshold (৳)</Label>
                 <Input id="freeShippingThreshold" type="number" defaultValue="999" />
               </div>
               <Separator />
@@ -123,7 +124,7 @@ export default function AdminSettingsPage() {
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-2">
-                  <Label htmlFor="expressCharge">Express Delivery Charge (₹)</Label>
+                  <Label htmlFor="expressCharge">Express Delivery Charge (৳)</Label>
                   <Input id="expressCharge" type="number" defaultValue="99" />
                 </div>
                 <div className="grid gap-2">
@@ -164,7 +165,7 @@ export default function AdminSettingsPage() {
                 <Switch defaultChecked />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="codLimit">COD Order Limit (₹)</Label>
+                <Label htmlFor="codLimit">COD Order Limit (৳)</Label>
                 <Input id="codLimit" type="number" defaultValue="50000" />
               </div>
               <Button>Save Changes</Button>
@@ -235,3 +236,9 @@ export default function AdminSettingsPage() {
     </div>
   )
 }
+
+export default withProtectedRoute(AdminSettingsPage, {
+  requiredRoles: ["admin"],
+  fallbackTo: "/login",
+  showLoader: true,
+});

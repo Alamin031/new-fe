@@ -8,8 +8,10 @@ import { Button } from "../../../components/ui/button"
 import { useWishlistStore } from "../../../store/wishlist-store"
 import { useCartStore } from "../../../store/cart-store"
 import { formatPrice } from "../../../lib/utils/format"
+import { withProtectedRoute } from "../../../lib/auth/protected-route"
+import { getDefaultProductPrice } from "../../../lib/utils/product"
 
-export default function WishlistPage() {
+function WishlistPage() {
   const { items, removeItem, clearWishlist } = useWishlistStore()
   const addToCart = useCartStore((state) => state.addItem)
 
@@ -59,7 +61,7 @@ export default function WishlistPage() {
                 <Link href={`/product/${item.slug}`}>
                   <div className="relative aspect-square overflow-hidden bg-muted">
                     <Image
-                      src={Array.isArray(item.images) ? item.images[0] || "/placeholder.svg" : item.images || "/placeholder.svg"}
+                      src={Array.isArray(item.images) && item.images.length > 0 ? item.images[0] : "/placeholder.svg"}
                       alt={item.name}
                       fill
                       className="object-cover transition-transform group-hover:scale-105"
@@ -71,12 +73,19 @@ export default function WishlistPage() {
                     <h3 className="line-clamp-2 font-medium hover:underline">{item.name}</h3>
                   </Link>
                   <div className="mt-2 flex items-center gap-2">
-                    <span className="text-lg font-bold">{formatPrice(item.price)}</span>
-                    {item.originalPrice && (
-                      <span className="text-sm text-muted-foreground line-through">
-                        {formatPrice(item.originalPrice)}
-                      </span>
-                    )}
+                    {(() => {
+                      const priceInfo = getDefaultProductPrice(item);
+                      return (
+                        <>
+                          <span className="text-lg font-bold">{formatPrice(priceInfo.discountPrice)}</span>
+                          {priceInfo.hasDiscount && (
+                            <span className="text-sm text-muted-foreground line-through">
+                              {formatPrice(priceInfo.regularPrice)}
+                            </span>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                   <div className="mt-4 flex gap-2">
                     <Button className="flex-1 gap-2" onClick={() => handleAddToCart(item)}>
@@ -101,3 +110,7 @@ export default function WishlistPage() {
     </div>
   )
 }
+
+export default withProtectedRoute(WishlistPage, {
+  requiredRoles: ["user"],
+})

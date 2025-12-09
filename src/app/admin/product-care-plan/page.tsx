@@ -30,6 +30,7 @@ import { careService, type ProductCarePlan } from '../../lib/api/services/care';
 import { productsService } from '../../lib/api/services/products';
 import { categoriesService } from '../../lib/api/services/categories';
 import type { Product, Category } from '../../lib/api/types';
+import { withProtectedRoute } from '../../lib/auth/protected-route';
 
 // Custom MultiSelect Component
 interface MultiSelectProps {
@@ -161,7 +162,7 @@ function MultiSelect({
   );
 }
 
-export default function ProductCarePlanPage() {
+function ProductCarePlanPage() {
   const [carePlans, setCarePlans] = useState<ProductCarePlan[]>([]);
   const [filteredPlans, setFilteredPlans] = useState<ProductCarePlan[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -212,21 +213,21 @@ export default function ProductCarePlanPage() {
     fetchDropdowns();
   }, []);
 
+  const fetchCarePlans = async () => {
+    setLoading(true);
+    try {
+      const plans = await careService.getAll();
+      setCarePlans(Array.isArray(plans) ? plans : []);
+    } catch (err) {
+      setCarePlans([]);
+      console.error('Failed to fetch care plans', err);
+      toast.error('Failed to load care plans');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    // Fetch all care plans from backend
-    const fetchCarePlans = async () => {
-      setLoading(true);
-      try {
-        const plans = await careService.getAll();
-        
-        setCarePlans(Array.isArray(plans) ? plans : []);
-      } catch (err) {
-        setCarePlans([]);
-        console.error('Failed to fetch care plans', err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchCarePlans();
   }, []);
 
@@ -293,6 +294,20 @@ export default function ProductCarePlanPage() {
   };
 
   const handleSavePlan = async () => {
+    // Validation
+    if (!formData.planName.trim()) {
+      toast.error('Plan name is required');
+      return;
+    }
+    if (formData.productIds.length === 0) {
+      toast.error('At least one product is required');
+      return;
+    }
+    if (!formData.price || parseFloat(formData.price) <= 0) {
+      toast.error('Valid price is required');
+      return;
+    }
+
     setLoading(true);
     try {
       const featuresArr = formData.features
@@ -304,21 +319,18 @@ export default function ProductCarePlanPage() {
         categoryIds: formData.categoryIds.length ? formData.categoryIds : undefined,
         planName: formData.planName,
         price: parseFloat(formData.price),
-        duration: formData.duration,
-        description: formData.description,
-        features: featuresArr,
+        duration: formData.duration || undefined,
+        description: formData.description || undefined,
+        features: featuresArr.length > 0 ? featuresArr : undefined,
       };
       if (selectedPlan) {
         await careService.update(selectedPlan.id, payload);
         toast.success('Care plan updated successfully');
-        setCarePlans(
-          carePlans.map(p =>
-            p.id === selectedPlan.id ? { ...p, ...payload } : p,
-          ),
-        );
+        await fetchCarePlans(); // Refresh the list
       } else {
         await careService.create(payload);
-        toast.success('Care plan(s) created successfully');
+        toast.success('Care plan created successfully');
+        await fetchCarePlans(); // Refresh the list
       }
       setIsModalOpen(false);
     } catch (error: unknown) {
@@ -346,8 +358,9 @@ export default function ProductCarePlanPage() {
     try {
       await careService.delete(selectedPlan.id);
       toast.success('Care plan deleted successfully');
-      setCarePlans(carePlans.filter(p => p.id !== selectedPlan.id));
+      await fetchCarePlans(); // Refresh the list
       setIsDeleteDialogOpen(false);
+      setSelectedPlan(null);
     } catch (error) {
       toast.error('Failed to delete care plan');
       console.error(error);
@@ -655,3 +668,9 @@ export default function ProductCarePlanPage() {
     </div>
   );
 }
+
+export default withProtectedRoute(ProductCarePlanPage, {
+  requiredRoles: ["admin"],
+  fallbackTo: "/login",
+  showLoader: true,
+});

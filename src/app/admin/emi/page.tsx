@@ -13,8 +13,9 @@ import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Plus, Trash2, Edit2, Percent } from "lucide-react";
 import { formatPrice } from "../../lib/utils/format";
+import { withProtectedRoute } from "../../lib/auth/protected-route";
 
-export default function AdminEMIPage() {
+function AdminEMIPage() {
   const [banks, setBanks] = useState<EmiBank[]>([]);
   const [plans, setPlans] = useState<EmiPlan[]>([]);
   const [isAddingBank, setIsAddingBank] = useState(false);
@@ -420,3 +421,9 @@ export default function AdminEMIPage() {
     </div>
   );
 }
+
+export default withProtectedRoute(AdminEMIPage, {
+  requiredRoles: ["admin"],
+  fallbackTo: "/login",
+  showLoader: true,
+});

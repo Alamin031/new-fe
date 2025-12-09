@@ -21,18 +21,18 @@ export function BrandSlider({ brands }: BrandSliderProps) {
 
     let rafId: number | null = null;
     let lastTime = performance.now();
-    const speed = 40; // pixels per second, tweak to taste
+    const speed = 50; // pixels per second
 
     const step = (now: number) => {
       const delta = now - lastTime;
       lastTime = now;
 
-      if (!isPaused && el.scrollWidth > el.clientWidth) {
+      if (!isPaused) {
         el.scrollLeft += (delta / 1000) * speed;
 
-        // loop back to start when reaching the end
-        if (el.scrollLeft >= el.scrollWidth - el.clientWidth - 1) {
-          // small delay before resetting to keep it smooth
+        // Seamless loop: reset when we've scrolled past half
+        const halfWidth = el.scrollWidth / 2;
+        if (el.scrollLeft >= halfWidth) {
           el.scrollLeft = 0;
         }
       }
@@ -55,7 +55,7 @@ export function BrandSlider({ brands }: BrandSliderProps) {
 
       <div
         ref={containerRef}
-        className="overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-muted/60"
+        className="overflow-hidden"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
         // allow touch to pause on mobile
@@ -68,16 +68,21 @@ export function BrandSlider({ brands }: BrandSliderProps) {
               key={brand.slug}
               href={`/brand/${brand.slug}`}
               aria-label={`Shop ${brand.name}`}
-              className="group relative flex h-36 w-44 shrink-0 items-center justify-center rounded-xl border border-border bg-card p-3 transition-transform duration-200 hover:scale-105 hover:shadow-lg"
+              className="group relative flex shrink-0 items-center justify-center rounded-xl border border-border bg-card p-3 transition-transform duration-200 hover:scale-105 hover:shadow-lg"
+              style={{ width: "200px", height: "72px" }}
             >
               <div className="flex h-full w-full items-center justify-center">
-                <Image
-                  src={brand.logo || "/placeholder.svg"}
-                  alt={brand.name}
-                  width={140}
-                  height={80}
-                  className="max-h-24 max-w-full object-contain opacity-95 transition-opacity duration-200 group-hover:opacity-100"
-                />
+                <div
+                  className="w-full h-full"
+                  style={{ aspectRatio: "1920/600", position: "relative" }}
+                >
+                  <Image
+                    src={brand.logo || "/placeholder.svg"}
+                    alt={brand.name}
+                    fill
+                    className="object-contain opacity-95 transition-opacity duration-200 group-hover:opacity-100 rounded"
+                  />
+                </div>
               </div>
             </Link>
           ))}
@@ -88,16 +93,21 @@ export function BrandSlider({ brands }: BrandSliderProps) {
               key={`${brand.slug}-dup`}
               href={`/brand/${brand.slug}`}
               aria-label={`Shop ${brand.name}`}
-              className="group relative flex h-36 w-44 shrink-0 items-center justify-center rounded-xl border border-border bg-card p-3 transition-transform duration-200 hover:scale-105 hover:shadow-lg"
+              className="group relative flex shrink-0 items-center justify-center rounded-xl border border-border bg-card p-3 transition-transform duration-200 hover:scale-105 hover:shadow-lg"
+              style={{ width: "200px", height: "72px" }}
             >
               <div className="flex h-full w-full items-center justify-center">
-                <Image
-                  src={brand.logo || "/placeholder.svg"}
-                  alt={brand.name}
-                  width={140}
-                  height={80}
-                  className="max-h-24 max-w-full object-contain opacity-95 transition-opacity duration-200 group-hover:opacity-100"
-                />
+                <div
+                  className="w-full h-full"
+                  style={{ aspectRatio: "1920/600", position: "relative" }}
+                >
+                  <Image
+                    src={brand.logo || "/placeholder.svg"}
+                    alt={brand.name}
+                    fill
+                    className="object-contain opacity-95 transition-opacity duration-200 group-hover:opacity-100 rounded"
+                  />
+                </div>
               </div>
             </Link>
           ))}

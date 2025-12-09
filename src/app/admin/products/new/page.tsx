@@ -1,1144 +1,3597 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @next/next/no-img-element */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import productsService from "../../../lib/api/services/products";
-import categoriesService from "../../../lib/api/services/categories";
-import brandsService from "../../../lib/api/services/brands";
-import Link from "next/link";
-import { ArrowLeft, Upload, X, Plus, GripVertical } from "lucide-react";
+import {useState, useEffect, useRef} from 'react';
+import {toast} from 'sonner';
+import productsService from '../../../lib/api/services/products';
+import categoriesService from '../../../lib/api/services/categories';
+import brandsService from '../../../lib/api/services/brands';
+import Link from 'next/link';
+import {ArrowLeft, Upload, X, Plus, Image as ImageIcon} from 'lucide-react';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "../../../components/ui/card";
-import { Button } from "../../../components/ui/button";
-import { Input } from "../../../components/ui/input";
-import { Label } from "../../../components/ui/label";
-import { Textarea } from "../../../components/ui/textarea";
-import { Switch } from "../../../components/ui/switch";
+} from '../../../components/ui/card';
+import {Button} from '../../../components/ui/button';
+import {Input} from '../../../components/ui/input';
+import {Label} from '../../../components/ui/label';
+import {Textarea} from '../../../components/ui/textarea';
+import {Switch} from '../../../components/ui/switch';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../../components/ui/select";
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '../../../components/ui/tabs';
+import {Checkbox} from '../../../components/ui/checkbox';
+import {withProtectedRoute} from '../../../lib/auth/protected-route';
 
-export default function NewProductPage() {
-  // Handle publish product
-  const handlePublish = async () => {
-    setIsSubmitting(true);
-    try {
-      // If you have imageUrls and galleryUrls from upload, use them. Otherwise, fallback to mainImageFile and galleryFiles (for demo purpose, send empty array if not set)
-      const payload: any = {
-        name: productName,
-        slug,
-        description,
-        categoryId: selectedCategory,
-        brandId: selectedBrand,
-        productCode,
-        sku,
-        averageRating: averageRating ? Number(averageRating) : undefined,
-        rewardsPoints: rewardPoints ? Number(rewardPoints) : undefined,
-        price: price ? Number(price) : undefined,
-        discountPrice: discountPrice ? Number(discountPrice) : undefined,
-        discountPercent: discountPercent ? Number(discountPercent) : undefined,
-        emiAvailable: emiAvailable === "yes" ? "true" : "false",
-        stock: stock ? Number(stock) : undefined,
-        lowStock: lowStock ? Number(lowStock) : undefined,
-        trackStock,
-        allowBackorder,
-        metaTitle,
-        metaDescription,
-        image: mainImageFile ? mainImageFile : null,
-        gallery: galleryFiles && galleryFiles.length > 0 ? galleryFiles : [],
-        regions: JSON.stringify(regions.map(({ id, ...rest }) => rest)),
-        colors: JSON.stringify(colors.map(({ id, ...rest }) => rest)),
-        networks: JSON.stringify(networks.map((n) => n.value).filter(Boolean)),
-        sizes: JSON.stringify(sizes.map((s) => s.value).filter(Boolean)),
-        plugs: JSON.stringify(plugs.map((p) => p.value).filter(Boolean)),
-        variants: JSON.stringify(variants.map(({ id, ...rest }) => rest)),
-        specifications: JSON.stringify(
-          specifications.map(({ id, ...rest }) => rest)
-        ),
-        metaKeywords: metaKeywords,
-        seoTitle,
-        seoDescription,
-        seoKeywords: seoKeywords,
-        model,
-        minBookingPrice: minBookingPrice ? Number(minBookingPrice) : null,
-        highlights: highlights,
-        status,
-      };
-      await productsService.create(payload);
-      alert("Product created successfully!");
-      // Optionally, redirect or reset form
-    } catch (err: any) {
-      alert("Failed to create product: " + (err?.message || "Unknown error"));
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+type ProductType = 'basic' | 'network' | 'region';
 
-  // Product form state
-  const [description, setDescription] = useState("");
-  const [productCode, setProductCode] = useState("");
-  const [sku, setSku] = useState("");
-  const [averageRating, setAverageRating] = useState("");
-  const [rewardPoints, setRewardPoints] = useState("");
-  const [price, setPrice] = useState("");
-  const [discountPrice, setDiscountPrice] = useState("");
-  const [discountPercent, setDiscountPercent] = useState("");
-  const [stock, setStock] = useState("");
-  const [lowStock, setLowStock] = useState("");
-  const [trackStock, setTrackStock] = useState(true);
-  const [allowBackorder, setAllowBackorder] = useState(false);
-  const [metaTitle, setMetaTitle] = useState("");
-  const [metaDescription, setMetaDescription] = useState("");
-  const [metaKeywords, setMetaKeywords] = useState("");
-  const [seoTitle, setSeoTitle] = useState<string | null>(null);
-  const [seoDescription, setSeoDescription] = useState<string | null>(null);
-  const [seoKeywords, setSeoKeywords] = useState("");
-  const [model, setModel] = useState<string | null>(null);
-  const [minBookingPrice, setMinBookingPrice] = useState<string>("");
-  const [highlights, setHighlights] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [status, setStatus] = useState<boolean>(true);
+function NewProductPage() {
+  const [productType, setProductType] = useState<ProductType>('basic');
 
-  // Main image and gallery files (for API)
-  const [mainImageFile, setMainImageFile] = useState<File | null>(null);
-  const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
+  // Basic product info (shared across all types)
+  const [productName, setProductName] = useState('');
+  const [slug, setSlug] = useState('');
+  const [description, setDescription] = useState('');
+  const [shortDescription, setShortDescription] = useState('');
+  const shortDescriptionRef = useRef<HTMLDivElement>(null);
+  const [productCode, setProductCode] = useState('');
+  const [sku, setSku] = useState('');
+  const [warranty, setWarranty] = useState('');
 
-  // Category and Brand state
-  const [categories, setCategories] = useState<{ id: string; name: string }[]>(
-    []
+  // Category and Brand
+  const [categories, setCategories] = useState<{id: string; name: string}[]>(
+    [],
   );
-  const [brands, setBrands] = useState<{ id: string; name: string }[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
-  const [selectedBrand, setSelectedBrand] = useState<string>("");
+  const [brands, setBrands] = useState<{id: string; name: string}[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
 
-  // Fetch categories and brands on mount
+  // Status flags
+  const [isActive, setIsActive] = useState(true);
+  const [isOnline, setIsOnline] = useState(true);
+  const [isPos, setIsPos] = useState(true);
+  const [isPreOrder, setIsPreOrder] = useState(false);
+  const [isOfficial, setIsOfficial] = useState(false);
+  const [freeShipping, setFreeShipping] = useState(false);
+  const [isEmi, setIsEmi] = useState(false);
+
+  // Reward & Booking
+  const [rewardPoints, setRewardPoints] = useState('');
+  const [minBookingPrice, setMinBookingPrice] = useState('');
+
+  // SEO
+  const [seoTitle, setSeoTitle] = useState('');
+  const [seoDescription, setSeoDescription] = useState('');
+  const [seoKeywords, setSeoKeywords] = useState('');
+  const [seoCanonical, setSeoCanonical] = useState('');
+  const [tags, setTags] = useState('');
+
+  // File uploads
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string>('');
+  const [galleryImageFiles, setGalleryImageFiles] = useState<File[]>([]);
+  const [galleryImagePreviews, setGalleryImagePreviews] = useState<
+    Array<{
+      url: string;
+      altText: string;
+      file: File;
+    }>
+  >([]);
+
+  // Basic product colors
+  const [basicColors, setBasicColors] = useState<
+    Array<{
+      id: string;
+      colorName: string;
+      colorImage: string;
+      colorImageFile: File | null;
+      isDefault: boolean;
+      regularPrice: string;
+      discountPrice: string;
+      discountPercent: string;
+      stockQuantity: string;
+    }>
+  >([]);
+
+  // Videos
+  const [videos, setVideos] = useState<
+    Array<{
+      id: string;
+      url: string;
+      type: string;
+    }>
+  >([{id: 'video-1', url: '', type: 'youtube'}]);
+
+  // Specifications
+  const [specifications, setSpecifications] = useState<
+    Array<{
+      id: string;
+      key: string;
+      value: string;
+    }>
+  >([{id: 'spec-1', key: '', value: ''}]);
+
+  // Networks (for network product type)
+  const [networks, setNetworks] = useState<
+    Array<{
+      id: string;
+      networkName: string;
+      priceAdjustment: string;
+      defaultStorageSize: string;
+      isDefault: boolean;
+      hasDefaultStorages: boolean;
+      defaultStorages: Array<{
+        id: string;
+        storageSize: string;
+        isDefault: boolean;
+        regularPrice: string;
+        discountPrice: string;
+        discountPercent: string;
+        stockQuantity: string;
+        lowStockAlert: string;
+      }>;
+      colors: Array<{
+        id: string;
+        colorName: string;
+        colorImage: string;
+        colorImageFile: File | null;
+        isDefault: boolean;
+        hasStorage: boolean;
+        useDefaultStorages: boolean;
+        singlePrice: string;
+        singleComparePrice: string;
+        singleStockQuantity: string;
+        storages: Array<{
+          id: string;
+          storageSize: string;
+          isDefault: boolean;
+          regularPrice: string;
+          discountPrice: string;
+          discountPercent: string;
+          stockQuantity: string;
+          lowStockAlert: string;
+        }>;
+      }>;
+    }>
+  >([]);
+
+  // Regions (for region product type)
+  const [regions, setRegions] = useState<
+    Array<{
+      id: string;
+      regionName: string;
+      isDefault: boolean;
+      defaultStorages: Array<{
+        id: string;
+        storageSize: string;
+        isDefault: boolean;
+        regularPrice: string;
+        discountPrice: string;
+        discountPercent: string;
+        stockQuantity: string;
+        lowStockAlert: string;
+      }>;
+      colors: Array<{
+        id: string;
+        colorName: string;
+        colorImage: string;
+        colorImageFile: File | null;
+        isDefault: boolean;
+        hasStorage: boolean;
+        useDefaultStorages: boolean;
+        singlePrice: string;
+        singleComparePrice: string;
+        singleStockQuantity: string;
+        storages: Array<{
+          id: string;
+          storageSize: string;
+          isDefault: boolean;
+          regularPrice: string;
+          discountPrice: string;
+          discountPercent: string;
+          stockQuantity: string;
+          lowStockAlert: string;
+        }>;
+      }>;
+    }>
+  >([
+    {
+      id: 'region-1',
+      regionName: 'International',
+      isDefault: true,
+      defaultStorages: [
+        {
+          id: 'default-storage-1',
+          storageSize: '256GB',
+          isDefault: false,
+          regularPrice: '',
+          discountPrice: '',
+          discountPercent: '',
+          stockQuantity: '',
+          lowStockAlert: '5',
+        },
+      ],
+      colors: [
+        {
+          id: 'color-1',
+          colorName: 'Midnight',
+          colorImage: '',
+          colorImageFile: null,
+          isDefault: true,
+          hasStorage: true,
+          useDefaultStorages: true,
+          singlePrice: '',
+          singleComparePrice: '',
+          singleStockQuantity: '',
+          storages: [],
+        },
+      ],
+    },
+  ]);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Fetch categories and brands
   useEffect(() => {
-    categoriesService.getAll().then((data) => {
+    categoriesService.getAll().then(data => {
       setCategories(
         data.map((c: any) => ({
           id: c.id,
           name: c.name,
-          // If you need banner, handle type inconsistency here
-          banner: typeof c.banner === 'string' ? c.banner : undefined,
-        }))
+        })),
       );
     });
-    brandsService.findAll().then((data) => {
-      setBrands(data.map((b: any) => ({ id: b.id, name: b.name })));
+    brandsService.findAll().then(data => {
+      setBrands(data.map((b: any) => ({id: b.id, name: b.name})));
     });
   }, []);
-
-  // Product Name and Slug state
-  const [productName, setProductName] = useState("");
-  const [slug, setSlug] = useState("");
 
   // Slugify helper
   const slugify = (text: string) =>
     text
       .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-")
-      .replace(/^-+|-+$/g, "");
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '');
 
-  // When product name changes, update slug if slug matches previous slugified name or is empty
+  const toggleCategory = (categoryId: string) => {
+    setSelectedCategories(prev =>
+      prev.includes(categoryId)
+        ? prev.filter(id => id !== categoryId)
+        : [...prev, categoryId],
+    );
+  };
+
+  const toggleBrand = (brandId: string) => {
+    setSelectedBrands(prev =>
+      prev.includes(brandId)
+        ? prev.filter(id => id !== brandId)
+        : [...prev, brandId],
+    );
+  };
+
   const handleProductNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newName = e.target.value;
     setProductName(newName);
-    // Only auto-update slug if user hasn't manually changed it
-    setSlug((prevSlug) => {
+    setSlug(prevSlug => {
       const prevAuto = slugify(productName);
       const newAuto = slugify(newName);
-      if (prevSlug === prevAuto || prevSlug === "") {
+      if (prevSlug === prevAuto || prevSlug === '') {
         return newAuto;
       }
       return prevSlug;
     });
   };
 
-  // Allow manual slug editing
   const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSlug(slugify(e.target.value));
   };
 
-  // Network, Size, and Plug state
-  const [networks, setNetworks] = useState([{ id: "network-1", value: "" }]);
-  const [sizes, setSizes] = useState([{ id: "size-1", value: "" }]);
-  const [plugs, setPlugs] = useState([{ id: "plug-1", value: "" }]);
-
-  const addPlug = () => {
-    setPlugs([...plugs, { id: `plug-${Date.now()}`, value: "" }]);
-  };
-  const removePlug = (id: string) => {
-    setPlugs(plugs.filter((p) => p.id !== id));
-  };
-  const updatePlug = (id: string, value: string) => {
-    setPlugs(plugs.map((p) => (p.id === id ? { ...p, value } : p)));
+  // Rich text editor
+  const formatText = (command: string, value?: string) => {
+    document.execCommand(command, false, value);
   };
 
-  const addNetwork = () => {
-    setNetworks([...networks, { id: `network-${Date.now()}`, value: "" }]);
-  };
-  const removeNetwork = (id: string) => {
-    setNetworks(networks.filter((n) => n.id !== id));
-  };
-  const updateNetwork = (id: string, value: string) => {
-    setNetworks(networks.map((n) => (n.id === id ? { ...n, value } : n)));
+  const handleShortDescriptionChange = (e: React.FormEvent<HTMLDivElement>) => {
+    setShortDescription(e.currentTarget.innerHTML);
   };
 
-  const addSize = () => {
-    setSizes([...sizes, { id: `size-${Date.now()}`, value: "" }]);
-  };
-  const removeSize = (id: string) => {
-    setSizes(sizes.filter((s) => s.id !== id));
-  };
-  const updateSize = (id: string, value: string) => {
-    setSizes(sizes.map((s) => (s.id === id ? { ...s, value } : s)));
-  };
-
-  // Dynamic region state: name, price, stock
-  const [regions, setRegions] = useState([
-    { id: "region-1", name: "E-Sim UAE", price: "", stock: "" },
-  ]);
-  const [selectedRegion, setSelectedRegion] = useState("region-1");
-
-  const addRegion = () => {
-    setRegions([
-      ...regions,
-      { id: `region-${Date.now()}`, name: "", price: "", stock: "" },
-    ]);
-  };
-
-  const removeRegion = (id: string) => {
-    setRegions(regions.filter((r) => r.id !== id));
-    if (selectedRegion === id && regions.length > 1) {
-      setSelectedRegion(regions[0].id);
+  // Thumbnail handling
+  const handleThumbnailUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setThumbnailFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setThumbnailPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
-  const updateRegion = (
-    id: string,
-    field: "name" | "price" | "stock",
-    value: string | number
-  ) => {
-    setRegions(
-      regions.map((r) => (r.id === id ? { ...r, [field]: value } : r))
-    );
+  const removeThumbnail = () => {
+    setThumbnailFile(null);
+    setThumbnailPreview('');
   };
 
-  const [images, setImages] = useState<string[]>([]);
-  const [galleryImages, setGalleryImages] = useState<string[]>([]);
-
-  // Handle gallery image upload
-  const handleGalleryImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const filesArray = Array.from(e.target.files);
-      setGalleryFiles((prev) => [...prev, ...filesArray]);
-      const newImages = filesArray.map((file) => URL.createObjectURL(file));
-      setGalleryImages((prev) => [...prev, ...newImages]);
-    }
-  };
-
-  // Handle product images upload (primary images grid)
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setMainImageFile(e.target.files[0]);
-      setImages([URL.createObjectURL(e.target.files[0])]);
-    }
+  // Gallery handling
+  const handleGalleryImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    files.forEach(file => {
+      setGalleryImageFiles(prev => [...prev, file]);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setGalleryImagePreviews(prev => [
+          ...prev,
+          {url: reader.result as string, altText: '', file},
+        ]);
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
   const removeGalleryImage = (index: number) => {
-    setGalleryImages(galleryImages.filter((_, i) => i !== index));
+    setGalleryImageFiles(prev => prev.filter((_, i) => i !== index));
+    setGalleryImagePreviews(prev => prev.filter((_, i) => i !== index));
   };
 
-  const [variants, setVariants] = useState([
-    { id: "1", name: "256GB", price: "", stock: "" },
-  ]);
-  const [emiAvailable, setEmiAvailable] = useState("no");
-  const [specifications, setSpecifications] = useState([
-    { id: "spec-1", key: "", value: "" },
-  ]);
-  // Removed single color selection, only using multiple color UI
-  const [colors, setColors] = useState([
-    { id: "color-1", name: "Midnight", code: "#53565A" },
-  ]);
-
-  const addColor = () => {
-    setColors([
-      ...colors,
-      { id: `color-${Date.now()}`, name: "", code: "#000000" },
+  // Basic color management
+  const addBasicColor = () => {
+    setBasicColors([
+      ...basicColors,
+      {
+        id: `color-${Date.now()}`,
+        colorName: '',
+        colorImage: '',
+        colorImageFile: null,
+        isDefault: false,
+        regularPrice: '',
+        discountPrice: '',
+        discountPercent: '',
+        stockQuantity: '',
+      },
     ]);
   };
 
-  const removeColor = (id: string) => {
-    setColors(colors.filter((c) => c.id !== id));
+  const removeBasicColor = (colorId: string) => {
+    setBasicColors(basicColors.filter(c => c.id !== colorId));
   };
 
-  const updateColor = (id: string, field: "name" | "code", value: string) => {
-    setColors(colors.map((c) => (c.id === id ? { ...c, [field]: value } : c)));
+  const updateBasicColor = (colorId: string, field: string, value: any) => {
+    setBasicColors(prev =>
+      prev.map(c => (c.id === colorId ? {...c, [field]: value} : c)),
+    );
   };
 
+  const handleBasicColorImageUpload = (
+    colorId: string,
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setBasicColors(
+          basicColors.map(c =>
+            c.id === colorId
+              ? {
+                  ...c,
+                  colorImage: reader.result as string,
+                  colorImageFile: file,
+                }
+              : c,
+          ),
+        );
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeBasicColorImage = (colorId: string) => {
+    setBasicColors(
+      basicColors.map(c =>
+        c.id === colorId ? {...c, colorImage: '', colorImageFile: null} : c,
+      ),
+    );
+  };
+
+  // Specification management
   const addSpecification = () => {
     setSpecifications([
       ...specifications,
-      { id: Date.now().toString(), key: "", value: "" },
+      {id: `spec-${Date.now()}`, key: '', value: ''},
     ]);
   };
 
-  const removeSpecification = (id: string) => {
-    setSpecifications(specifications.filter((s) => s.id !== id));
+  const removeSpecification = (specId: string) => {
+    setSpecifications(specifications.filter(s => s.id !== specId));
   };
 
   const updateSpecification = (
-    id: string,
-    field: "key" | "value",
-    value: string
+    specId: string,
+    field: string,
+    value: string,
   ) => {
     setSpecifications(
-      specifications.map((s) => (s.id === id ? { ...s, [field]: value } : s))
+      specifications.map(s => (s.id === specId ? {...s, [field]: value} : s)),
     );
   };
 
-  const addVariant = () => {
-    setVariants([
-      ...variants,
-      { id: Date.now().toString(), name: "", price: "", stock: "" },
+  // Network management
+  const addNetwork = () => {
+    setNetworks([
+      ...networks,
+      {
+        id: `network-${Date.now()}`,
+        networkName: '',
+        priceAdjustment: '0',
+        defaultStorageSize: '',
+        isDefault: false,
+        hasDefaultStorages: false,
+        defaultStorages: [
+          {
+            id: `default-storage-${Date.now()}`,
+            storageSize: '256GB',
+            isDefault: false,
+            regularPrice: '',
+            discountPrice: '',
+            discountPercent: '',
+            stockQuantity: '',
+            lowStockAlert: '5',
+          },
+        ],
+        colors: [
+          {
+            id: `color-${Date.now()}`,
+            colorName: '',
+            colorImage: '',
+            colorImageFile: null,
+            isDefault: false,
+            hasStorage: true,
+            useDefaultStorages: true,
+            singlePrice: '',
+            singleComparePrice: '',
+            singleStockQuantity: '',
+            storages: [],
+          },
+        ],
+      },
     ]);
   };
 
-  const removeVariant = (id: string) => {
-    setVariants(variants.filter((v) => v.id !== id));
+  const removeNetwork = (networkId: string) => {
+    setNetworks(networks.filter(n => n.id !== networkId));
   };
 
-  const updateVariant = (
-    id: string,
-    field: "name" | "price" | "stock",
-    value: string
-  ) => {
-    setVariants(
-      variants.map((v) => (v.id === id ? { ...v, [field]: value } : v))
+  const updateNetwork = (networkId: string, field: string, value: any) => {
+    setNetworks(prev =>
+      prev.map(n => (n.id === networkId ? {...n, [field]: value} : n)),
     );
   };
 
+  // Color image upload for network colors
+  const handleNetworkColorImageUpload = (
+    networkId: string,
+    colorId: string,
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNetworks(
+          networks.map(n =>
+            n.id === networkId
+              ? {
+                  ...n,
+                  colors: n.colors.map(c =>
+                    c.id === colorId
+                      ? {
+                          ...c,
+                          colorImage: reader.result as string,
+                          colorImageFile: file,
+                        }
+                      : c,
+                  ),
+                }
+              : n,
+          ),
+        );
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeNetworkColorImage = (networkId: string, colorId: string) => {
+    setNetworks(
+      networks.map(n =>
+        n.id === networkId
+          ? {
+              ...n,
+              colors: n.colors.map(c =>
+                c.id === colorId
+                  ? {...c, colorImage: '', colorImageFile: null}
+                  : c,
+              ),
+            }
+          : n,
+      ),
+    );
+  };
+
+  // Color image upload for region colors
+  const handleRegionColorImageUpload = (
+    regionId: string,
+    colorId: string,
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setRegions(prev =>
+          prev.map(r =>
+            r.id === regionId
+              ? {
+                  ...r,
+                  colors: r.colors.map(c =>
+                    c.id === colorId
+                      ? {
+                          ...c,
+                          colorImage: reader.result as string,
+                          colorImageFile: file,
+                        }
+                      : c,
+                  ),
+                }
+              : r,
+          ),
+        );
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeRegionColorImage = (regionId: string, colorId: string) => {
+    setRegions(prev =>
+      prev.map(r =>
+        r.id === regionId
+          ? {
+              ...r,
+              colors: r.colors.map(c =>
+                c.id === colorId
+                  ? {...c, colorImage: '', colorImageFile: null}
+                  : c,
+              ),
+            }
+          : r,
+      ),
+    );
+  };
+
+  const addColorToNetwork = (networkId: string) => {
+    setNetworks(
+      networks.map(n =>
+        n.id === networkId
+          ? {
+              ...n,
+              colors: [
+                ...n.colors,
+                {
+                  id: `color-${Date.now()}`,
+                  colorName: '',
+                  colorImage: '',
+                  colorImageFile: null,
+                  isDefault: false,
+                  hasStorage: true,
+                  useDefaultStorages: true,
+                  singlePrice: '',
+                  singleComparePrice: '',
+                  singleStockQuantity: '',
+                  storages: [],
+                },
+              ],
+            }
+          : n,
+      ),
+    );
+  };
+
+  const removeColorFromNetwork = (networkId: string, colorId: string) => {
+    setNetworks(
+      networks.map(n =>
+        n.id === networkId
+          ? {...n, colors: n.colors.filter(c => c.id !== colorId)}
+          : n,
+      ),
+    );
+  };
+
+  const updateColorInNetwork = (
+    networkId: string,
+    colorId: string,
+    field: string,
+    value: any,
+  ) => {
+    setNetworks(prev =>
+      prev.map(n =>
+        n.id === networkId
+          ? {
+              ...n,
+              colors: n.colors.map(c =>
+                c.id === colorId ? {...c, [field]: value} : c,
+              ),
+            }
+          : n,
+      ),
+    );
+  };
+
+  const addStorageToNetwork = (networkId: string, colorId: string) => {
+    setNetworks(
+      networks.map(n =>
+        n.id === networkId
+          ? {
+              ...n,
+              colors: n.colors.map(c =>
+                c.id === colorId
+                  ? {
+                      ...c,
+                      storages: [
+                        ...c.storages,
+                        {
+                          id: `storage-${Date.now()}`,
+                          storageSize: '',
+                          isDefault: false,
+                          regularPrice: '',
+                          discountPrice: '',
+                          discountPercent: '',
+                          stockQuantity: '',
+                          lowStockAlert: '5',
+                        },
+                      ],
+                    }
+                  : c,
+              ),
+            }
+          : n,
+      ),
+    );
+  };
+
+  const removeStorageFromNetwork = (
+    networkId: string,
+    colorId: string,
+    storageId: string,
+  ) => {
+    setNetworks(
+      networks.map(n =>
+        n.id === networkId
+          ? {
+              ...n,
+              colors: n.colors.map(c =>
+                c.id === colorId
+                  ? {
+                      ...c,
+                      storages: c.storages.filter(s => s.id !== storageId),
+                    }
+                  : c,
+              ),
+            }
+          : n,
+      ),
+    );
+  };
+
+  const updateStorageInNetwork = (
+    networkId: string,
+    colorId: string,
+    storageId: string,
+    field: string,
+    value: any,
+  ) => {
+    setNetworks(prev =>
+      prev.map(n =>
+        n.id === networkId
+          ? {
+              ...n,
+              colors: n.colors.map(c =>
+                c.id === colorId
+                  ? {
+                      ...c,
+                      storages: c.storages.map(s =>
+                        s.id === storageId ? {...s, [field]: value} : s,
+                      ),
+                    }
+                  : c,
+              ),
+            }
+          : n,
+      ),
+    );
+  };
+
+  // Network default storage management
+  const addDefaultStorageToNetwork = (networkId: string) => {
+    setNetworks(
+      networks.map(n =>
+        n.id === networkId
+          ? {
+              ...n,
+              defaultStorages: [
+                ...n.defaultStorages,
+                {
+                  id: `default-storage-${Date.now()}`,
+                  storageSize: '',
+                  isDefault: false,
+                  regularPrice: '',
+                  discountPrice: '',
+                  discountPercent: '',
+                  stockQuantity: '',
+                  lowStockAlert: '5',
+                },
+              ],
+            }
+          : n,
+      ),
+    );
+  };
+
+  const removeDefaultStorageFromNetwork = (
+    networkId: string,
+    storageId: string,
+  ) => {
+    setNetworks(
+      networks.map(n =>
+        n.id === networkId
+          ? {
+              ...n,
+              defaultStorages: n.defaultStorages.filter(
+                s => s.id !== storageId,
+              ),
+            }
+          : n,
+      ),
+    );
+  };
+
+  const updateDefaultStorageInNetwork = (
+    networkId: string,
+    storageId: string,
+    field: string,
+    value: any,
+  ) => {
+    setNetworks(prev =>
+      prev.map(n =>
+        n.id === networkId
+          ? {
+              ...n,
+              defaultStorages: n.defaultStorages.map(s =>
+                s.id === storageId ? {...s, [field]: value} : s,
+              ),
+            }
+          : n,
+      ),
+    );
+  };
+
+  // Region management
+  const addRegion = () => {
+    setRegions([
+      ...regions,
+      {
+        id: `region-${Date.now()}`,
+        regionName: '',
+        isDefault: false,
+        defaultStorages: [
+          {
+            id: `default-storage-${Date.now()}`,
+            storageSize: '',
+            isDefault: false,
+            regularPrice: '',
+            discountPrice: '',
+            discountPercent: '',
+            stockQuantity: '',
+            lowStockAlert: '5',
+          },
+        ],
+        colors: [
+          {
+            id: `color-${Date.now()}`,
+            colorName: '',
+            colorImage: '',
+            colorImageFile: null,
+            isDefault: false,
+            hasStorage: true,
+            useDefaultStorages: true,
+            singlePrice: '',
+            singleComparePrice: '',
+            singleStockQuantity: '',
+            storages: [],
+          },
+        ],
+      },
+    ]);
+  };
+
+  const removeRegion = (regionId: string) => {
+    setRegions(regions.filter(r => r.id !== regionId));
+  };
+
+  const updateRegion = (regionId: string, field: string, value: any) => {
+    setRegions(prev =>
+      prev.map(r => (r.id === regionId ? {...r, [field]: value} : r)),
+    );
+  };
+
+  const addColorToRegion = (regionId: string) => {
+    setRegions(
+      regions.map(r =>
+        r.id === regionId
+          ? {
+              ...r,
+              colors: [
+                ...r.colors,
+                {
+                  id: `color-${Date.now()}`,
+                  colorName: '',
+                  colorImage: '',
+                  colorImageFile: null,
+                  isDefault: false,
+                  hasStorage: true,
+                  useDefaultStorages: true,
+                  singlePrice: '',
+                  singleComparePrice: '',
+                  singleStockQuantity: '',
+                  storages: [],
+                },
+              ],
+            }
+          : r,
+      ),
+    );
+  };
+
+  const removeColorFromRegion = (regionId: string, colorId: string) => {
+    setRegions(
+      regions.map(r =>
+        r.id === regionId
+          ? {...r, colors: r.colors.filter(c => c.id !== colorId)}
+          : r,
+      ),
+    );
+  };
+
+  const updateColorInRegion = (
+    regionId: string,
+    colorId: string,
+    field: string,
+    value: any,
+  ) => {
+    setRegions(prev =>
+      prev.map(r =>
+        r.id === regionId
+          ? {
+              ...r,
+              colors: r.colors.map(c =>
+                c.id === colorId ? {...c, [field]: value} : c,
+              ),
+            }
+          : r,
+      ),
+    );
+  };
+
+  const addStorageToRegion = (regionId: string, colorId: string) => {
+    setRegions(
+      regions.map(r =>
+        r.id === regionId
+          ? {
+              ...r,
+              colors: r.colors.map(c =>
+                c.id === colorId
+                  ? {
+                      ...c,
+                      storages: [
+                        ...c.storages,
+                        {
+                          id: `storage-${Date.now()}`,
+                          storageSize: '',
+                          isDefault: false,
+                          regularPrice: '',
+                          discountPrice: '',
+                          discountPercent: '',
+                          stockQuantity: '',
+                          lowStockAlert: '5',
+                        },
+                      ],
+                    }
+                  : c,
+              ),
+            }
+          : r,
+      ),
+    );
+  };
+
+  const removeStorageFromRegion = (
+    regionId: string,
+    colorId: string,
+    storageId: string,
+  ) => {
+    setRegions(
+      regions.map(r =>
+        r.id === regionId
+          ? {
+              ...r,
+              colors: r.colors.map(c =>
+                c.id === colorId
+                  ? {
+                      ...c,
+                      storages: c.storages.filter(s => s.id !== storageId),
+                    }
+                  : c,
+              ),
+            }
+          : r,
+      ),
+    );
+  };
+
+  const updateStorageInRegion = (
+    regionId: string,
+    colorId: string,
+    storageId: string,
+    field: string,
+    value: any,
+  ) => {
+    setRegions(prev =>
+      prev.map(r =>
+        r.id === regionId
+          ? {
+              ...r,
+              colors: r.colors.map(c =>
+                c.id === colorId
+                  ? {
+                      ...c,
+                      storages: c.storages.map(s =>
+                        s.id === storageId ? {...s, [field]: value} : s,
+                      ),
+                    }
+                  : c,
+              ),
+            }
+          : r,
+      ),
+    );
+  };
+
+  const addDefaultStorageToRegion = (regionId: string) => {
+    setRegions(
+      regions.map(r =>
+        r.id === regionId
+          ? {
+              ...r,
+              defaultStorages: [
+                ...r.defaultStorages,
+                {
+                  id: `default-storage-${Date.now()}`,
+                  storageSize: '',
+                  isDefault: false,
+                  regularPrice: '',
+                  discountPrice: '',
+                  discountPercent: '',
+                  stockQuantity: '',
+                  lowStockAlert: '5',
+                },
+              ],
+            }
+          : r,
+      ),
+    );
+  };
+
+  const removeDefaultStorageFromRegion = (
+    regionId: string,
+    storageId: string,
+  ) => {
+    setRegions(
+      regions.map(r =>
+        r.id === regionId
+          ? {
+              ...r,
+              defaultStorages: r.defaultStorages.filter(
+                s => s.id !== storageId,
+              ),
+            }
+          : r,
+      ),
+    );
+  };
+
+  const updateDefaultStorageInRegion = (
+    regionId: string,
+    storageId: string,
+    field: string,
+    value: any,
+  ) => {
+    setRegions(prev =>
+      prev.map(r =>
+        r.id === regionId
+          ? {
+              ...r,
+              defaultStorages: r.defaultStorages.map(s =>
+                s.id === storageId ? {...s, [field]: value} : s,
+              ),
+            }
+          : r,
+      ),
+    );
+  };
+
+  const resetForm = () => {
+    setProductName('');
+    setSlug('');
+    setDescription('');
+    setShortDescription('');
+    if (shortDescriptionRef.current) {
+      shortDescriptionRef.current.innerHTML = '';
+    }
+    setProductCode('');
+    setSku('');
+    setWarranty('');
+    setSelectedCategories([]);
+    setSelectedBrands([]);
+    setIsActive(true);
+    setIsOnline(true);
+    setIsPos(true);
+    setIsPreOrder(false);
+    setIsOfficial(false);
+    setFreeShipping(false);
+    setIsEmi(false);
+    setRewardPoints('');
+    setMinBookingPrice('');
+    setSeoTitle('');
+    setSeoDescription('');
+    setSeoKeywords('');
+    setSeoCanonical('');
+    setTags('');
+    setThumbnailFile(null);
+    setThumbnailPreview('');
+    setGalleryImageFiles([]);
+    setGalleryImagePreviews([]);
+    setBasicColors([]);
+    setVideos([{id: 'video-1', url: '', type: 'youtube'}]);
+    setSpecifications([{id: 'spec-1', key: '', value: ''}]);
+    setNetworks([]);
+    setRegions([
+      {
+        id: 'region-1',
+        regionName: 'International',
+        isDefault: true,
+        defaultStorages: [
+          {
+            id: 'default-storage-1',
+            storageSize: '256GB',
+            isDefault: false,
+            regularPrice: '',
+            discountPrice: '',
+            discountPercent: '',
+            stockQuantity: '',
+            lowStockAlert: '5',
+          },
+        ],
+        colors: [
+          {
+            id: 'color-1',
+            colorName: 'Midnight',
+            colorImage: '',
+            colorImageFile: null,
+            isDefault: false,
+            hasStorage: true,
+            useDefaultStorages: true,
+            singlePrice: '',
+            singleComparePrice: '',
+            singleStockQuantity: '',
+            storages: [],
+          },
+        ],
+      },
+    ]);
+  };
+
+  // SUBMIT FUNCTIONS
+  const handleBasicProductSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData();
+
+      if (thumbnailFile) {
+        formData.append('thumbnail', thumbnailFile);
+      }
+
+      galleryImageFiles.forEach(file => {
+        formData.append('galleryImages', file);
+      });
+
+      basicColors.forEach((color, idx) => {
+        if (color.colorImageFile) {
+          formData.append(`colors[${idx}][colorImage]`, color.colorImageFile);
+        }
+      });
+
+      const payload: any = {
+        productType: 'basic',
+        name: productName,
+        slug,
+        description: description || undefined,
+        shortDescription: shortDescription || undefined,
+        categoryIds:
+          selectedCategories.length > 0 ? selectedCategories : undefined,
+        brandIds: selectedBrands.length > 0 ? selectedBrands : undefined,
+        productCode: productCode || undefined,
+        sku: sku || undefined,
+        warranty: warranty || undefined,
+        isActive,
+        isOnline,
+        isPos,
+        isPreOrder,
+        isOfficial,
+        freeShipping,
+        isEmi,
+        rewardPoints: rewardPoints ? Number(rewardPoints) : undefined,
+        minBookingPrice: minBookingPrice ? Number(minBookingPrice) : undefined,
+        seoTitle: seoTitle || undefined,
+        seoDescription: seoDescription || undefined,
+        seoKeywords: seoKeywords
+          ? seoKeywords.split(',').map(k => k.trim())
+          : undefined,
+        seoCanonical: seoCanonical || undefined,
+        tags: tags ? tags.split(',').map(t => t.trim()) : undefined,
+        videos: videos
+          .filter(v => v.url)
+          .map((v, idx) => ({
+            videoUrl: v.url,
+            videoType: v.type,
+            displayOrder: idx,
+          })),
+        specifications: specifications
+          .filter(s => s.key && s.value)
+          .map((s, idx) => ({
+            specKey: s.key,
+            specValue: s.value,
+            displayOrder: idx,
+          })),
+        colors:
+          basicColors.length > 0
+            ? basicColors.map((c, idx) => ({
+                colorName: c.colorName,
+                isDefault: c.isDefault,
+                regularPrice: c.regularPrice
+                  ? Number(c.regularPrice)
+                  : undefined,
+                discountPrice: c.discountPrice
+                  ? Number(c.discountPrice)
+                  : undefined,
+                discountPercent: c.discountPercent
+                  ? Number(c.discountPercent)
+                  : undefined,
+                stockQuantity: c.stockQuantity
+                  ? Number(c.stockQuantity)
+                  : undefined,
+                displayOrder: idx,
+              }))
+            : undefined,
+      };
+
+      Object.keys(payload).forEach(key => {
+        const value = payload[key];
+        if (value !== undefined) {
+          if (typeof value === 'object') {
+            formData.append(key, JSON.stringify(value));
+          } else {
+            formData.append(key, String(value));
+          }
+        }
+      });
+
+      const response =
+        productType === 'basic'
+          ? await productsService.createBasic(formData)
+          : productType === 'network'
+          ? await productsService.createNetwork(formData)
+          : await productsService.createRegion(formData);
+      toast.success('Basic product created successfully!');
+      resetForm();
+    } catch (err: any) {
+      console.error('Error creating basic product:', err);
+      toast.error(
+        `Error: ${
+          err?.response?.data?.message || err?.message || 'Unknown error'
+        }`,
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleNetworkProductSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData();
+
+      if (thumbnailFile) {
+        formData.append('thumbnail', thumbnailFile);
+      }
+
+      galleryImageFiles.forEach(file => {
+        formData.append('galleryImages', file);
+      });
+
+      const networkColorImages: File[] = [];
+
+      // Format networks data properly for backend
+      const formattedNetworks = networks.map((network, netIdx) => ({
+        networkName: network.networkName,
+        isDefault: network.isDefault,
+        hasDefaultStorages: network.hasDefaultStorages,
+        displayOrder: netIdx,
+        // Default storages for this network
+        defaultStorages: network.hasDefaultStorages
+          ? network.defaultStorages.map((storage, storIdx) => ({
+              storageSize: storage.storageSize,
+              isDefault: storage.isDefault,
+              regularPrice: storage.regularPrice
+                ? Number(storage.regularPrice)
+                : 0,
+              comparePrice: storage.regularPrice
+                ? Number(storage.regularPrice)
+                : 0,
+              discountPrice: storage.discountPrice
+                ? Number(storage.discountPrice)
+                : 0,
+              discountPercent: storage.discountPercent
+                ? Number(storage.discountPercent)
+                : 0,
+              stockQuantity: storage.stockQuantity
+                ? Number(storage.stockQuantity)
+                : 0,
+              lowStockAlert: storage.lowStockAlert
+                ? Number(storage.lowStockAlert)
+                : 5,
+              displayOrder: storIdx,
+            }))
+          : undefined,
+        // Colors in this network
+        colors: network.colors.map((color, colorIdx) => {
+          let imageIndex = -1;
+          if (color.colorImageFile) {
+            networkColorImages.push(color.colorImageFile);
+            imageIndex = networkColorImages.length - 1;
+          }
+
+          return {
+            colorName: color.colorName,
+            isDefault: color.isDefault,
+            hasStorage: color.hasStorage,
+            useDefaultStorages: color.useDefaultStorages,
+            displayOrder: colorIdx,
+            colorImageIndex: imageIndex > -1 ? imageIndex : undefined,
+            // If no storage, use single price
+            singlePrice: !color.hasStorage
+              ? Number(color.singlePrice) || 0
+              : undefined,
+            singleComparePrice: !color.hasStorage
+              ? Number(color.singleComparePrice) || 0
+              : undefined,
+            singleStockQuantity: !color.hasStorage
+              ? Number(color.singleStockQuantity) || 0
+              : undefined,
+            // Custom storages (only if has storage and not using defaults)
+            storages:
+              color.hasStorage && !color.useDefaultStorages
+                ? color.storages.map((storage, storIdx) => ({
+                    storageSize: storage.storageSize,
+                    isDefault: storage.isDefault,
+                    regularPrice: storage.regularPrice
+                      ? Number(storage.regularPrice)
+                      : 0,
+                    comparePrice: storage.regularPrice
+                      ? Number(storage.regularPrice)
+                      : 0,
+                    discountPrice: storage.discountPrice
+                      ? Number(storage.discountPrice)
+                      : 0,
+                    discountPercent: storage.discountPercent
+                      ? Number(storage.discountPercent)
+                      : 0,
+                    stockQuantity: storage.stockQuantity
+                      ? Number(storage.stockQuantity)
+                      : 0,
+                    lowStockAlert: storage.lowStockAlert
+                      ? Number(storage.lowStockAlert)
+                      : 5,
+                    displayOrder: storIdx,
+                  }))
+                : undefined,
+          };
+        }),
+      }));
+
+      // Append network color images
+      networkColorImages.forEach(file => {
+        formData.append('colors', file);
+      });
+
+      const payload: any = {
+        productType: 'network',
+        name: productName,
+        slug,
+        description: description || undefined,
+        shortDescription: shortDescription || undefined,
+        categoryIds:
+          selectedCategories.length > 0 ? selectedCategories : undefined,
+        brandIds: selectedBrands.length > 0 ? selectedBrands : undefined,
+        productCode: productCode || undefined,
+        sku: sku || undefined,
+        warranty: warranty || undefined,
+        isActive,
+        isOnline,
+        isPos,
+        isPreOrder,
+        isOfficial,
+        freeShipping,
+        isEmi,
+        rewardPoints: rewardPoints ? Number(rewardPoints) : undefined,
+        minBookingPrice: minBookingPrice ? Number(minBookingPrice) : undefined,
+        seoTitle: seoTitle || undefined,
+        seoDescription: seoDescription || undefined,
+        seoKeywords: seoKeywords
+          ? seoKeywords.split(',').map(k => k.trim())
+          : undefined,
+        seoCanonical: seoCanonical || undefined,
+        tags: tags ? tags.split(',').map(t => t.trim()) : undefined,
+        videos: videos
+          .filter(v => v.url)
+          .map((v, idx) => ({
+            videoUrl: v.url,
+            videoType: v.type,
+            displayOrder: idx,
+          })),
+        specifications: specifications
+          .filter(s => s.key && s.value)
+          .map((s, idx) => ({
+            specKey: s.key,
+            specValue: s.value,
+            displayOrder: idx,
+          })),
+        networks: formattedNetworks.length > 0 ? formattedNetworks : undefined,
+      };
+
+      Object.keys(payload).forEach(key => {
+        const value = payload[key];
+        if (value !== undefined) {
+          if (typeof value === 'object') {
+            formData.append(key, JSON.stringify(value));
+          } else {
+            formData.append(key, String(value));
+          }
+        }
+      });
+
+      const response =
+        productType === 'basic'
+          ? await productsService.createBasic(formData)
+          : productType === 'network'
+          ? await productsService.createNetwork(formData)
+          : await productsService.createRegion(formData);
+      toast.success('Network product created successfully!');
+      resetForm();
+    } catch (err: any) {
+      console.error('Error creating network product:', err);
+      toast.error(
+        `Error: ${
+          err?.response?.data?.message || err?.message || 'Unknown error'
+        }`,
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRegionProductSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData();
+
+      if (thumbnailFile) {
+        formData.append('thumbnail', thumbnailFile);
+      }
+
+      galleryImageFiles.forEach(file => {
+        formData.append('galleryImages', file);
+      });
+
+      const regionColorImages: File[] = [];
+
+      // Format regions data properly for backend
+      const formattedRegions = regions.map((region, regIdx) => ({
+        regionName: region.regionName,
+        isDefault: region.isDefault,
+        displayOrder: regIdx,
+        // Default storages for this region (always present)
+        defaultStorages: region.defaultStorages.map((storage, storIdx) => ({
+          storageSize: storage.storageSize,
+          isDefault: storage.isDefault,
+          regularPrice: storage.regularPrice ? Number(storage.regularPrice) : 0,
+          comparePrice: storage.regularPrice ? Number(storage.regularPrice) : 0,
+          discountPrice: storage.discountPrice
+            ? Number(storage.discountPrice)
+            : 0,
+          discountPercent: storage.discountPercent
+            ? Number(storage.discountPercent)
+            : 0,
+          stockQuantity: storage.stockQuantity
+            ? Number(storage.stockQuantity)
+            : 0,
+          lowStockAlert: storage.lowStockAlert
+            ? Number(storage.lowStockAlert)
+            : 5,
+          displayOrder: storIdx,
+        })),
+        // Colors in this region
+        colors: region.colors.map((color, colorIdx) => {
+          let imageIndex = -1;
+          if (color.colorImageFile) {
+            regionColorImages.push(color.colorImageFile);
+            imageIndex = regionColorImages.length - 1;
+          }
+
+          return {
+            colorName: color.colorName,
+            isDefault: color.isDefault,
+            hasStorage: color.hasStorage,
+            useDefaultStorages: color.useDefaultStorages,
+            displayOrder: colorIdx,
+            colorImageIndex: imageIndex > -1 ? imageIndex : undefined,
+            // If no storage, use single price
+            singlePrice: !color.hasStorage
+              ? Number(color.singlePrice) || 0
+              : undefined,
+            singleComparePrice: !color.hasStorage
+              ? Number(color.singleComparePrice) || 0
+              : undefined,
+            singleStockQuantity: !color.hasStorage
+              ? Number(color.singleStockQuantity) || 0
+              : undefined,
+            // Custom storages (only if has storage and not using defaults)
+            storages:
+              color.hasStorage && !color.useDefaultStorages
+                ? color.storages.map((storage, storIdx) => ({
+                    storageSize: storage.storageSize,
+                    isDefault: storage.isDefault,
+                    regularPrice: storage.regularPrice
+                      ? Number(storage.regularPrice)
+                      : 0,
+                    comparePrice: storage.regularPrice
+                      ? Number(storage.regularPrice)
+                      : 0,
+                    discountPrice: storage.discountPrice
+                      ? Number(storage.discountPrice)
+                      : 0,
+                    discountPercent: storage.discountPercent
+                      ? Number(storage.discountPercent)
+                      : 0,
+                    stockQuantity: storage.stockQuantity
+                      ? Number(storage.stockQuantity)
+                      : 0,
+                    lowStockAlert: storage.lowStockAlert
+                      ? Number(storage.lowStockAlert)
+                      : 5,
+                    displayOrder: storIdx,
+                  }))
+                : undefined,
+          };
+        }),
+      }));
+
+      // Append region color images
+      regionColorImages.forEach(file => {
+        formData.append('colors', file);
+      });
+
+      const payload: any = {
+        productType: 'region',
+        name: productName,
+        slug,
+        description: description || undefined,
+        shortDescription: shortDescription || undefined,
+        categoryIds:
+          selectedCategories.length > 0 ? selectedCategories : undefined,
+        brandIds: selectedBrands.length > 0 ? selectedBrands : undefined,
+        productCode: productCode || undefined,
+        sku: sku || undefined,
+        warranty: warranty || undefined,
+        isActive,
+        isOnline,
+        isPos,
+        isPreOrder,
+        isOfficial,
+        freeShipping,
+        isEmi,
+        rewardPoints: rewardPoints ? Number(rewardPoints) : undefined,
+        minBookingPrice: minBookingPrice ? Number(minBookingPrice) : undefined,
+        seoTitle: seoTitle || undefined,
+        seoDescription: seoDescription || undefined,
+        seoKeywords: seoKeywords
+          ? seoKeywords.split(',').map(k => k.trim())
+          : undefined,
+        seoCanonical: seoCanonical || undefined,
+        tags: tags ? tags.split(',').map(t => t.trim()) : undefined,
+        videos: videos
+          .filter(v => v.url)
+          .map((v, idx) => ({
+            videoUrl: v.url,
+            videoType: v.type,
+            displayOrder: idx,
+          })),
+        specifications: specifications
+          .filter(s => s.key && s.value)
+          .map((s, idx) => ({
+            specKey: s.key,
+            specValue: s.value,
+            displayOrder: idx,
+          })),
+        regions: formattedRegions.length > 0 ? formattedRegions : undefined,
+      };
+
+      Object.keys(payload).forEach(key => {
+        const value = payload[key];
+        if (value !== undefined) {
+          if (typeof value === 'object') {
+            formData.append(key, JSON.stringify(value));
+          } else {
+            formData.append(key, String(value));
+          }
+        }
+      });
+
+      const response =
+        productType === 'basic'
+          ? await productsService.createBasic(formData)
+          : productType === 'network'
+          ? await productsService.createNetwork(formData)
+          : await productsService.createRegion(formData);
+      toast.success('Region product created successfully!');
+      resetForm();
+    } catch (err: any) {
+      console.error('Error creating region product:', err);
+      toast.error(
+        `Error: ${
+          err?.response?.data?.message || err?.message || 'Unknown error'
+        }`,
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href="/admin/products">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Add New Product</h1>
-          <p className="text-muted-foreground">Create a new product listing.</p>
-        </div>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <Link
+        href="/admin/products"
+        className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900">
+        <ArrowLeft className="h-4 w-4" />
+        Back to Products
+      </Link>
+
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">Add New Product</h1>
+        <p className="mt-2 text-gray-600">Create a new product listing</p>
       </div>
 
-      {/* Single tab: Product Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Product Info</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-8">
-          {/* Basic Information */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Basic Information</h2>
-            <div className="grid gap-2">
-              <Label htmlFor="name">Product Name</Label>
-              <Input
-                id="name"
-                placeholder="Enter product name"
-                value={productName}
-                onChange={handleProductNameChange}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="description">Descriptions</Label>
-              <Textarea
-                id="description"
-                placeholder={
-                  "You can use headings, bullet points, and links. Example:\n\n## MacBook Air M2 13.6-inch 16/256GB 8 Core CPU 8 Core GPU\n\n- Feature 1\n- Feature 2\n\n[Apple Gadgets](https://applegadgets.com.bd)"
-                }
-                rows={12}
-                className="font-mono"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-              <span className="text-xs text-muted-foreground">
-                Supports headings, bullet points, and links (Markdown allowed).
-              </span>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="grid gap-2">
-                <Label htmlFor="category">Category</Label>
-                <Select
-                  value={selectedCategory}
-                  onValueChange={setSelectedCategory}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="brand">Brand</Label>
-                <Select value={selectedBrand} onValueChange={setSelectedBrand}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select brand" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {brands.map((brand) => (
-                      <SelectItem key={brand.id} value={brand.id}>
-                        {brand.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+      <Tabs
+        value={productType}
+        onValueChange={value => {
+          setProductType(value as ProductType);
+          resetForm();
+        }}
+        className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="basic">Basic Product</TabsTrigger>
+          <TabsTrigger value="network">Network Product</TabsTrigger>
+          <TabsTrigger value="region">Region Product</TabsTrigger>
+        </TabsList>
 
-            {/* Combine Product Code, SKU, Review Star, Reward Points into one responsive row */}
-            <div className="grid gap-4 sm:grid-cols-4">
-              <div className="grid gap-2">
-                <Label htmlFor="productCode">Product Code</Label>
-                <Input
-                  id="productCode"
-                  placeholder="Enter product code"
-                  value={productCode}
-                  onChange={(e) => setProductCode(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="sku">SKU</Label>
-                <Input
-                  id="sku"
-                  placeholder="Enter SKU"
-                  value={sku}
-                  onChange={(e) => setSku(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="reviewStar">Review Star Point</Label>
-                <Input
-                  id="averageRating"
-                  type="number"
-                  min="0"
-                  max="5"
-                  step="0.1"
-                  placeholder="e.g. 4.5"
-                  value={averageRating}
-                  onChange={(e) => setAverageRating(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="rewardPoints">Reward Points</Label>
-                <Input
-                  id="rewardPoints"
-                  type="number"
-                  min="0"
-                  placeholder="e.g. 100"
-                  value={rewardPoints}
-                  onChange={(e) => setRewardPoints(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Regions and Colors side-by-side on small+ screens */}
-          <div className="grid gap-6 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label className="font-semibold">Regions:</Label>
-              <div className="rounded-lg border p-4 space-y-2">
-                {regions.map((r, idx) => (
-                  <div
-                    key={r.id}
-                    className="flex flex-wrap items-center gap-2 mb-2"
-                  >
-                    <Input
-                      placeholder="Region name (e.g. E-Sim USA)"
-                      value={r.name}
-                      className="w-40"
-                      onChange={(e) =>
-                        updateRegion(r.id, "name", e.target.value)
-                      }
-                    />
-                    <Input
-                      placeholder="Price"
-                      value={r.price}
-                      className="w-28"
-                      onChange={(e) =>
-                        updateRegion(r.id, "price", e.target.value)
-                      }
-                    />
-                    <Input
-                      placeholder="Stock"
-                      value={r.stock}
-                      className="w-24"
-                      onChange={(e) =>
-                        updateRegion(r.id, "stock", e.target.value)
-                      }
-                    />
-                    {regions.length > 1 && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeRegion(r.id)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  type="button"
-                  onClick={addRegion}
-                >
-                  <Plus className="mr-2 h-4 w-4" /> Add Region
-                </Button>
-              </div>
-              {/* Region selection for price/stock display */}
-              <div className="rounded-lg border p-4 flex flex-wrap gap-4 mt-2">
-                {regions.map((r) => (
-                  <button
-                    key={r.id}
-                    type="button"
-                    className={`flex items-center gap-2 px-6 py-2 rounded-full border transition-colors focus:outline-none ${
-                      selectedRegion === r.id
-                        ? "border-orange-400 ring-2 ring-orange-200 font-semibold"
-                        : "border-transparent"
-                    } bg-muted`}
-                    onClick={() => setSelectedRegion(r.id)}
-                  >
-                    {r.name || "Unnamed"}
-                  </button>
-                ))}
-              </div>
-              {/* Show price and stock for selected region */}
-              <div className="mt-2 text-sm text-muted-foreground">
-                {regions.length > 0 && (
-                  <>
-                    <span>
-                      Price:{" "}
-                      <b>
-                        {regions.find((r) => r.id === selectedRegion)?.price ||
-                          ""}
-                      </b>
-                    </span>
-                    <span className="ml-6">
-                      Stock:{" "}
-                      <b>
-                        {regions.find((r) => r.id === selectedRegion)?.stock ||
-                          ""}
-                      </b>
-                    </span>
-                  </>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="font-semibold">Colors:</Label>
-              <div className="rounded-lg border p-4 space-y-2">
-                {colors.map((c, idx) => (
-                  <div key={c.id} className="flex items-center gap-2 mb-2">
-                    <Input
-                      placeholder="Color name (e.g. Midnight)"
-                      value={c.name}
-                      className="w-40"
-                      onChange={(e) =>
-                        updateColor(c.id, "name", e.target.value)
-                      }
-                    />
-                    <input
-                      type="color"
-                      value={c.code}
-                      className="w-10 h-10 border rounded"
-                      onChange={(e) =>
-                        updateColor(c.id, "code", e.target.value)
-                      }
-                    />
-                    {colors.length > 1 && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeColor(c.id)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  type="button"
-                  onClick={addColor}
-                >
-                  <Plus className="mr-2 h-4 w-4" /> Add Color
-                </Button>
-              </div>
-              {/* Show color swatches */}
-              <div className="flex flex-wrap gap-4 mt-2">
-                {colors.map((c) => (
-                  <div key={c.id} className="flex flex-col items-center">
-                    <span
-                      className="inline-block w-7 h-7 rounded-full border mb-1"
-                      style={{
-                        backgroundColor: c.code,
-                        borderColor: "#bbb",
-                      }}
-                    ></span>
-                    <span className="text-xs text-muted-foreground">
-                      {c.name}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Network, Size, and Plug side-by-side on small+ screens */}
-          <div className="grid gap-6 sm:grid-cols-3">
-            <div className="space-y-2">
-              <Label className="font-semibold">Network:</Label>
-              <div className="rounded-lg border p-4 space-y-2">
-                {networks.map((n, idx) => (
-                  <div key={n.id} className="flex items-center gap-2 mb-2">
-                    <Input
-                      placeholder="Network (e.g. 5G, LTE, GSM)"
-                      value={n.value}
-                      className="w-48"
-                      onChange={(e) => updateNetwork(n.id, e.target.value)}
-                    />
-                    {networks.length > 1 && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeNetwork(n.id)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  type="button"
-                  onClick={addNetwork}
-                >
-                  <Plus className="mr-2 h-4 w-4" /> Add Network
-                </Button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="font-semibold">Size:</Label>
-              <div className="rounded-lg border p-4 space-y-2">
-                {sizes.map((s, idx) => (
-                  <div key={s.id} className="flex items-center gap-2 mb-2">
-                    <Input
-                      placeholder="Size (e.g. 6.1-inch, Large)"
-                      value={s.value}
-                      className="w-48"
-                      onChange={(e) => updateSize(s.id, e.target.value)}
-                    />
-                    {sizes.length > 1 && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeSize(s.id)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  type="button"
-                  onClick={addSize}
-                >
-                  <Plus className="mr-2 h-4 w-4" /> Add Size
-                </Button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="font-semibold">Plug:</Label>
-              <div className="rounded-lg border p-4 space-y-2">
-                {plugs.map((p, idx) => (
-                  <div key={p.id} className="flex items-center gap-2 mb-2">
-                    <Input
-                      placeholder="Plug (e.g. US, EU, UK)"
-                      value={p.value}
-                      className="w-48"
-                      onChange={(e) => updatePlug(p.id, e.target.value)}
-                    />
-                    {plugs.length > 1 && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removePlug(p.id)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  type="button"
-                  onClick={addPlug}
-                >
-                  <Plus className="mr-2 h-4 w-4" /> Add Plug
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Product Images */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Product Images</h2>
-            <div className="grid gap-4 sm:grid-cols-4">
-              {images.map((image, index) => (
-                <div
-                  key={index}
-                  className="relative aspect-square rounded-lg border border-border bg-muted"
-                >
-                  <button
-                    className="absolute -right-2 -top-2 rounded-full bg-destructive p-1 text-destructive-foreground"
-                    onClick={() =>
-                      setImages(images.filter((_, i) => i !== index))
-                    }
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                  <div className="absolute left-2 top-2 cursor-grab text-muted-foreground">
-                    <GripVertical className="h-4 w-4" />
-                  </div>
-                  {image && (
-                    <img
-                      src={image}
-                      alt={`Image ${index + 1}`}
-                      className="w-full h-full object-cover rounded-lg"
-                    />
-                  )}
-                </div>
-              ))}
-              <label className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/50 hover:bg-muted">
-                <Upload className="mb-2 h-8 w-8 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Upload</span>
-                <input
-                  type="file"
-                  className="hidden"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImageChange}
-                />
-              </label>
-            </div>
-            <p className="mt-4 text-sm text-muted-foreground">
-              Drag images to reorder. First image will be the primary image.
-            </p>
-          </div>
-
-          {/* Gallery Images */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Gallery Images</h2>
-            <div className="grid gap-4 sm:grid-cols-4">
-              {galleryImages.map((image, index) => (
-                <div
-                  key={index}
-                  className="relative aspect-square rounded-lg border border-border bg-muted"
-                >
-                  <button
-                    className="absolute -right-2 -top-2 rounded-full bg-destructive p-1 text-destructive-foreground"
-                    onClick={() => removeGalleryImage(index)}
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                  <img
-                    src={image}
-                    alt={`Gallery ${index + 1}`}
-                    className="w-full h-full object-cover rounded-lg"
+        <form
+          onSubmit={
+            productType === 'basic'
+              ? handleBasicProductSubmit
+              : productType === 'network'
+              ? handleNetworkProductSubmit
+              : handleRegionProductSubmit
+          }
+          className="space-y-6 pt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Basic Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="name">Product Name *</Label>
+                  <Input
+                    id="name"
+                    value={productName}
+                    onChange={handleProductNameChange}
+                    placeholder="Enter product name"
+                    required
                   />
                 </div>
-              ))}
-              <label className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/50 hover:bg-muted">
-                <Upload className="mb-2 h-8 w-8 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">
-                  Add Gallery Images
-                </span>
-                <input
-                  type="file"
-                  className="hidden"
-                  accept="image/*"
-                  multiple
-                  onChange={handleGalleryImageChange}
-                />
-              </label>
-            </div>
-            <p className="mt-4 text-sm text-muted-foreground">
-              You can add multiple gallery images. Drag-and-drop reordering is
-              not supported here.
-            </p>
-          </div>
+                <div>
+                  <Label htmlFor="slug">URL Slug *</Label>
+                  <Input
+                    id="slug"
+                    value={slug}
+                    onChange={handleSlugChange}
+                    placeholder="product-url-slug"
+                    required
+                  />
+                </div>
+              </div>
 
-          {/* Pricing & Variants */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Pricing & Variants</h2>
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="grid gap-2">
-                <Label htmlFor="price">Selling Price (₹)</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  placeholder="0"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                  placeholder="Enter product description (Markdown supported)"
+                  rows={4}
                 />
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="discountPrice">Discount Price (₹)</Label>
-                <Input
-                  id="discountPrice"
-                  type="number"
-                  placeholder="0"
-                  value={discountPrice}
-                  onChange={(e) => setDiscountPrice(e.target.value)}
+
+              <div>
+                <Label>Short Description</Label>
+                <div className="mb-2 flex gap-1 border-b border-gray-200 pb-2">
+                  <button
+                    type="button"
+                    onClick={() => formatText('bold')}
+                    className="rounded px-3 py-1 text-sm font-medium hover:bg-gray-100">
+                    Bold
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => formatText('italic')}
+                    className="rounded px-3 py-1 text-sm font-medium hover:bg-gray-100">
+                    Italic
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => formatText('underline')}
+                    className="rounded px-3 py-1 text-sm font-medium hover:bg-gray-100">
+                    Underline
+                  </button>
+                </div>
+                <div
+                  id="shortDescription"
+                  ref={shortDescriptionRef}
+                  contentEditable
+                  onInput={handleShortDescriptionChange}
+                  className="min-h-24 rounded border border-gray-300 p-3 focus:border-blue-500 focus:outline-none"
+                  suppressContentEditableWarning
                 />
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="discountPercent">Discount Percent (%)</Label>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Category *</Label>
+                  <div className="mt-2 rounded border border-gray-300 bg-white p-3 max-h-48 overflow-y-auto">
+                    {categories.length > 0 ? (
+                      <div className="space-y-2">
+                        {categories.map(cat => (
+                          <div key={cat.id} className="flex items-center gap-2">
+                            <Checkbox
+                              id={`category-${cat.id}`}
+                              checked={selectedCategories.includes(cat.id)}
+                              onCheckedChange={() => toggleCategory(cat.id)}
+                            />
+                            <Label
+                              htmlFor={`category-${cat.id}`}
+                              className="font-normal cursor-pointer">
+                              {cat.name}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500">
+                        Loading categories...
+                      </p>
+                    )}
+                  </div>
+                  {selectedCategories.length > 0 && (
+                    <p className="mt-2 text-xs text-gray-600">
+                      {selectedCategories.length} selected
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <Label>Brand *</Label>
+                  <div className="mt-2 rounded border border-gray-300 bg-white p-3 max-h-48 overflow-y-auto">
+                    {brands.length > 0 ? (
+                      <div className="space-y-2">
+                        {brands.map(br => (
+                          <div key={br.id} className="flex items-center gap-2">
+                            <Checkbox
+                              id={`brand-${br.id}`}
+                              checked={selectedBrands.includes(br.id)}
+                              onCheckedChange={() => toggleBrand(br.id)}
+                            />
+                            <Label
+                              htmlFor={`brand-${br.id}`}
+                              className="font-normal cursor-pointer">
+                              {br.name}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500">Loading brands...</p>
+                    )}
+                  </div>
+                  {selectedBrands.length > 0 && (
+                    <p className="mt-2 text-xs text-gray-600">
+                      {selectedBrands.length} selected
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="productCode">Product Code</Label>
+                  <Input
+                    id="productCode"
+                    value={productCode}
+                    onChange={e => setProductCode(e.target.value)}
+                    placeholder="e.g., SKU-001"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="sku">SKU</Label>
+                  <Input
+                    id="sku"
+                    value={sku}
+                    onChange={e => setSku(e.target.value)}
+                    placeholder="e.g., SKU123"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="warranty">Warranty</Label>
+                  <Input
+                    id="warranty"
+                    value={warranty}
+                    onChange={e => setWarranty(e.target.value)}
+                    placeholder="e.g., 1 year"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Product Status</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="isActive">Active</Label>
+                  <Switch
+                    id="isActive"
+                    checked={isActive}
+                    onCheckedChange={setIsActive}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="isOnline">Online</Label>
+                  <Switch
+                    id="isOnline"
+                    checked={isOnline}
+                    onCheckedChange={setIsOnline}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="isPos">POS</Label>
+                  <Switch
+                    id="isPos"
+                    checked={isPos}
+                    onCheckedChange={setIsPos}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="isPreOrder">Pre-Order</Label>
+                  <Switch
+                    id="isPreOrder"
+                    checked={isPreOrder}
+                    onCheckedChange={setIsPreOrder}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="isOfficial">Official</Label>
+                  <Switch
+                    id="isOfficial"
+                    checked={isOfficial}
+                    onCheckedChange={setIsOfficial}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="freeShipping">Free Shipping</Label>
+                  <Switch
+                    id="freeShipping"
+                    checked={freeShipping}
+                    onCheckedChange={setFreeShipping}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="isEmi">EMI Available</Label>
+                  <Switch
+                    id="isEmi"
+                    checked={isEmi}
+                    onCheckedChange={setIsEmi}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Media</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <Label>Thumbnail Image</Label>
+                <div className="mt-2 rounded border-2 border-dashed border-gray-300 p-6">
+                  {thumbnailPreview ? (
+                    <div className="relative inline-block">
+                      <img
+                        src={thumbnailPreview}
+                        alt="Thumbnail"
+                        className="h-32 w-32 rounded object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={removeThumbnail}
+                        className="absolute -right-2 -top-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600">
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex cursor-pointer flex-col items-center justify-center gap-2">
+                      <Upload className="h-8 w-8 text-gray-400" />
+                      <span className="text-sm text-gray-600">
+                        Click to upload thumbnail
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleThumbnailUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <Label>Gallery Images</Label>
+                <div className="mt-2 rounded border-2 border-dashed border-gray-300 p-6">
+                  {galleryImagePreviews.length > 0 ? (
+                    <div className="grid grid-cols-4 gap-4">
+                      {galleryImagePreviews.map((preview, idx) => (
+                        <div key={idx} className="relative">
+                          <img
+                            src={preview.url}
+                            alt={`Gallery ${idx}`}
+                            className="h-24 w-24 rounded object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeGalleryImage(idx)}
+                            className="absolute -right-2 -top-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600">
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                      <label className="flex cursor-pointer items-center justify-center rounded border-2 border-dashed border-gray-300">
+                        <Plus className="h-6 w-6 text-gray-400" />
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          onChange={handleGalleryImageUpload}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                  ) : (
+                    <label className="flex cursor-pointer flex-col items-center justify-center gap-2">
+                      <ImageIcon className="h-8 w-8 text-gray-400" />
+                      <span className="text-sm text-gray-600">
+                        Click to upload gallery images
+                      </span>
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handleGalleryImageUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>SEO Settings</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="seoTitle">SEO Title</Label>
                 <Input
-                  id="discountPercent"
-                  type="number"
-                  placeholder="0"
-                  value={discountPercent}
-                  onChange={(e) => setDiscountPercent(e.target.value)}
+                  id="seoTitle"
+                  value={seoTitle}
+                  onChange={e => setSeoTitle(e.target.value)}
+                  placeholder="SEO title"
                 />
               </div>
-            </div>
-            {/* EMI Radio Button */}
-            <div className="flex items-center gap-4 mt-2">
-              <Label className="mr-2">EMI:</Label>
-              <label className="flex items-center gap-1">
-                <input
-                  type="radio"
-                  name="emiAvailable"
-                  value="yes"
-                  checked={emiAvailable === "yes"}
-                  onChange={() => setEmiAvailable("yes")}
+              <div>
+                <Label htmlFor="seoDescription">SEO Description</Label>
+                <Textarea
+                  id="seoDescription"
+                  value={seoDescription}
+                  onChange={e => setSeoDescription(e.target.value)}
+                  placeholder="SEO description"
+                  rows={3}
                 />
-                <span>Yes</span>
-              </label>
-              <label className="flex items-center gap-1">
-                <input
-                  type="radio"
-                  name="emiAvailable"
-                  value="no"
-                  checked={emiAvailable === "no"}
-                  onChange={() => setEmiAvailable("no")}
+              </div>
+              <div>
+                <Label htmlFor="seoKeywords">
+                  SEO Keywords (comma-separated)
+                </Label>
+                <Input
+                  id="seoKeywords"
+                  value={seoKeywords}
+                  onChange={e => setSeoKeywords(e.target.value)}
+                  placeholder="keyword1, keyword2, keyword3"
                 />
-                <span>No</span>
-              </label>
-            </div>
+              </div>
+              <div>
+                <Label htmlFor="seoCanonical">Canonical URL</Label>
+                <Input
+                  id="seoCanonical"
+                  value={seoCanonical}
+                  onChange={e => setSeoCanonical(e.target.value)}
+                  placeholder="https://example.com/product"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Specifications</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {specifications.map((spec, idx) => (
+                <div key={spec.id} className="flex gap-2">
+                  <Input
+                    placeholder="Key (e.g., Color)"
+                    value={spec.key}
+                    onChange={e =>
+                      updateSpecification(spec.id, 'key', e.target.value)
+                    }
+                  />
+                  <Input
+                    placeholder="Value (e.g., Black)"
+                    value={spec.value}
+                    onChange={e =>
+                      updateSpecification(spec.id, 'value', e.target.value)
+                    }
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeSpecification(spec.id)}
+                    className="rounded bg-red-100 px-3 py-2 text-red-600 hover:bg-red-200">
+                    Remove
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={addSpecification}
+                className="mt-2 rounded bg-blue-100 px-4 py-2 text-blue-600 hover:bg-blue-200">
+                + Add Specification
+              </button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Additional Info</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="rewardPoints">Reward Points</Label>
+                  <Input
+                    id="rewardPoints"
+                    type="number"
+                    value={rewardPoints}
+                    onChange={e => setRewardPoints(e.target.value)}
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="minBookingPrice">Min Booking Price</Label>
+                  <Input
+                    id="minBookingPrice"
+                    type="number"
+                    value={minBookingPrice}
+                    onChange={e => setMinBookingPrice(e.target.value)}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="tags">Tags (comma-separated)</Label>
+                <Input
+                  id="tags"
+                  value={tags}
+                  onChange={e => setTags(e.target.value)}
+                  placeholder="tag1, tag2, tag3"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <TabsContent value="basic" className="space-y-6">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Variants</CardTitle>
-                <Button variant="default" size="sm" onClick={addVariant}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Variant
-                </Button>
+              <CardHeader>
+                <CardTitle>Colors</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {variants.map((variant, index) => (
-                    <div
-                      key={variant.id}
-                      className="flex items-center gap-4 rounded-lg border border-border p-4"
-                    >
-                      <GripVertical className="h-5 w-5 cursor-grab text-muted-foreground" />
-                      <div className="grid flex-1 gap-4 sm:grid-cols-3">
-                        <Input
-                          placeholder="Variant name (e.g., 256GB)"
-                          value={variant.name}
-                          onChange={(e) =>
-                            updateVariant(variant.id, "name", e.target.value)
-                          }
+              <CardContent className="space-y-4">
+                {basicColors.map((color, idx) => (
+                  <div key={color.id} className="space-y-4 rounded border p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={color.isDefault}
+                          onCheckedChange={checked => {
+                            // Set this color as default and unset others
+                            setBasicColors(prev =>
+                              prev.map(c => ({
+                                ...c,
+                                isDefault:
+                                  c.id === color.id ? !!checked : false,
+                              })),
+                            );
+                          }}
+                          id={`default-${color.id}`}
                         />
+                        <Label
+                          htmlFor={`default-${color.id}`}
+                          className="text-sm font-medium cursor-pointer">
+                          Default Price (Show in UI)
+                        </Label>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeBasicColor(color.id)}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Color Name</Label>
                         <Input
-                          placeholder="Price"
-                          value={variant.price}
-                          onChange={(e) =>
-                            updateVariant(variant.id, "price", e.target.value)
+                          value={color.colorName}
+                          onChange={e =>
+                            updateBasicColor(
+                              color.id,
+                              'colorName',
+                              e.target.value,
+                            )
                           }
+                          placeholder="e.g., Midnight Black"
                         />
+                      </div>
+                      <div>
+                        <Label>Stock Quantity</Label>
                         <Input
-                          placeholder="Stock"
-                          value={variant.stock}
-                          onChange={(e) =>
-                            updateVariant(variant.id, "stock", e.target.value)
+                          type="number"
+                          value={color.stockQuantity}
+                          onChange={e =>
+                            updateBasicColor(
+                              color.id,
+                              'stockQuantity',
+                              e.target.value,
+                            )
+                          }
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label>Color Image</Label>
+                      <div className="mt-2 rounded border-2 border-dashed border-gray-300 p-4">
+                        {color.colorImage ? (
+                          <div className="relative inline-block">
+                            <img
+                              src={color.colorImage}
+                              alt={color.colorName}
+                              className="h-24 w-24 rounded object-cover"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeBasicColorImage(color.id)}
+                              className="absolute -right-2 -top-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600">
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <label className="flex cursor-pointer flex-col items-center justify-center gap-2">
+                            <Upload className="h-6 w-6 text-gray-400" />
+                            <span className="text-sm text-gray-600">
+                              Click to upload color image
+                            </span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={e =>
+                                handleBasicColorImageUpload(color.id, e)
+                              }
+                              className="hidden"
+                            />
+                          </label>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Regular Price</Label>
+                        <Input
+                          type="number"
+                          value={color.regularPrice}
+                          onChange={e => {
+                            const regularPrice =
+                              parseFloat(e.target.value) || 0;
+                            const percent =
+                              parseFloat(color.discountPercent) || 0;
+                            const discountPrice = Math.round(
+                              regularPrice - (regularPrice * percent) / 100,
+                            );
+
+                            updateBasicColor(
+                              color.id,
+                              'regularPrice',
+                              e.target.value,
+                            );
+                            if (percent > 0) {
+                              updateBasicColor(
+                                color.id,
+                                'discountPrice',
+                                discountPrice.toString(),
+                              );
+                            }
+                          }}
+                          placeholder="0"
+                        />
+                      </div>
+                      <div>
+                        <Label>Discount %</Label>
+                        <Input
+                          type="number"
+                          value={color.discountPercent}
+                          onChange={e => {
+                            const percent = parseFloat(e.target.value) || 0;
+                            const regularPrice =
+                              parseFloat(color.regularPrice) || 0;
+                            const discountPrice = Math.round(
+                              regularPrice - (regularPrice * percent) / 100,
+                            );
+
+                            updateBasicColor(
+                              color.id,
+                              'discountPercent',
+                              e.target.value,
+                            );
+                            updateBasicColor(
+                              color.id,
+                              'discountPrice',
+                              discountPrice.toString(),
+                            );
+                          }}
+                          placeholder="0"
+                        />
+                      </div>
+                      <div>
+                        <Label>Discount Price</Label>
+                        <Input
+                          type="number"
+                          value={color.discountPrice}
+                          onChange={e =>
+                            updateBasicColor(
+                              color.id,
+                              'discountPrice',
+                              e.target.value,
+                            )
+                          }
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => removeBasicColor(color.id)}
+                      className="rounded bg-red-100 px-4 py-2 text-red-600 hover:bg-red-200">
+                      Remove Color
+                    </button>
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={addBasicColor}
+                  className="rounded bg-blue-100 px-4 py-2 text-blue-600 hover:bg-blue-200">
+                  + Add Color
+                </button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="network" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Networks & Colors</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {networks.map(network => (
+                  <div
+                    key={network.id}
+                    className="space-y-4 rounded border p-4">
+                    <div className="flex items-end gap-4">
+                      <div className="flex-1">
+                        <Label>Network Name</Label>
+                        <Input
+                          value={network.networkName}
+                          onChange={e =>
+                            updateNetwork(
+                              network.id,
+                              'networkName',
+                              e.target.value,
+                            )
+                          }
+                          placeholder="e.g., Retail Partner A"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Label className="text-sm">Has Default Storages</Label>
+                        <Switch
+                          checked={network.hasDefaultStorages}
+                          onCheckedChange={e =>
+                            updateNetwork(network.id, 'hasDefaultStorages', e)
                           }
                         />
                       </div>
-                      {variants.length > 1 && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeVariant(variant.id)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => removeNetwork(network.id)}
+                        className="rounded bg-red-100 px-4 py-2 text-red-600 hover:bg-red-200">
+                        Remove
+                      </button>
                     </div>
-                  ))}
-                </div>
+
+                    {network.hasDefaultStorages && (
+                      <div className="space-y-3 rounded bg-blue-50 p-3">
+                        <Label className="block font-semibold">
+                          Default Storages (for this Network)
+                        </Label>
+                        <p className="text-xs text-gray-600">
+                          These storages will be used by all colors unless
+                          overridden
+                        </p>
+                        {network.defaultStorages.map(storage => (
+                          <div
+                            key={storage.id}
+                            className="space-y-2 rounded bg-white p-2">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <Checkbox
+                                checked={storage.isDefault}
+                                onCheckedChange={checked => {
+                                  // Set this storage as default and unset ALL other storages (default + custom)
+                                  setNetworks(prev =>
+                                    prev.map(n =>
+                                      n.id === network.id
+                                        ? {
+                                            ...n,
+                                            defaultStorages:
+                                              n.defaultStorages.map(s => ({
+                                                ...s,
+                                                isDefault:
+                                                  s.id === storage.id
+                                                    ? !!checked
+                                                    : false,
+                                              })),
+                                            colors: n.colors.map(c => ({
+                                              ...c,
+                                              storages: c.storages.map(cs => ({
+                                                ...cs,
+                                                isDefault: false, // Unset all custom storages
+                                              })),
+                                            })),
+                                          }
+                                        : n,
+                                    ),
+                                  );
+                                }}
+                                id={`network-storage-default-${storage.id}`}
+                              />
+                              <Label
+                                htmlFor={`network-storage-default-${storage.id}`}
+                                className="text-xs cursor-pointer">
+                                Default Storage
+                              </Label>
+                            </div>
+                            <div className="grid grid-cols-4 gap-2">
+                              <div>
+                                <Label className="text-xs">Storage Size</Label>
+                                <Input
+                                  value={storage.storageSize}
+                                  onChange={e =>
+                                    updateDefaultStorageInNetwork(
+                                      network.id,
+                                      storage.id,
+                                      'storageSize',
+                                      e.target.value,
+                                    )
+                                  }
+                                  placeholder="256GB"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">Regular Price</Label>
+                                <Input
+                                  type="number"
+                                  value={storage.regularPrice}
+                                  onChange={e => {
+                                    const regularPrice =
+                                      parseFloat(e.target.value) || 0;
+                                    const percent =
+                                      parseFloat(storage.discountPercent) || 0;
+                                    const discountPrice = Math.round(
+                                      regularPrice -
+                                        (regularPrice * percent) / 100,
+                                    );
+
+                                    updateDefaultStorageInNetwork(
+                                      network.id,
+                                      storage.id,
+                                      'regularPrice',
+                                      e.target.value,
+                                    );
+                                    if (percent > 0) {
+                                      updateDefaultStorageInNetwork(
+                                        network.id,
+                                        storage.id,
+                                        'discountPrice',
+                                        discountPrice.toString(),
+                                      );
+                                    }
+                                  }}
+                                  placeholder="0"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">Discount %</Label>
+                                <Input
+                                  type="number"
+                                  value={storage.discountPercent}
+                                  onChange={e => {
+                                    const percent =
+                                      parseFloat(e.target.value) || 0;
+                                    const regularPrice =
+                                      parseFloat(storage.regularPrice) || 0;
+                                    const discountPrice = Math.round(
+                                      regularPrice -
+                                        (regularPrice * percent) / 100,
+                                    );
+                                    updateDefaultStorageInNetwork(
+                                      network.id,
+                                      storage.id,
+                                      'discountPercent',
+                                      e.target.value,
+                                    );
+                                    updateDefaultStorageInNetwork(
+                                      network.id,
+                                      storage.id,
+                                      'discountPrice',
+                                      discountPrice.toString(),
+                                    );
+                                  }}
+                                  placeholder="0"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">
+                                  Discount Price
+                                </Label>
+                                <Input
+                                  type="number"
+                                  value={storage.discountPrice}
+                                  onChange={e =>
+                                    updateDefaultStorageInNetwork(
+                                      network.id,
+                                      storage.id,
+                                      'discountPrice',
+                                      e.target.value,
+                                    )
+                                  }
+                                  placeholder="0"
+                                />
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <div className="flex-1">
+                                <Label className="text-xs">Stock</Label>
+                                <Input
+                                  type="number"
+                                  value={storage.stockQuantity}
+                                  onChange={e =>
+                                    updateDefaultStorageInNetwork(
+                                      network.id,
+                                      storage.id,
+                                      'stockQuantity',
+                                      e.target.value,
+                                    )
+                                  }
+                                  placeholder="0"
+                                />
+                              </div>
+                              {network.defaultStorages.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    removeDefaultStorageFromNetwork(
+                                      network.id,
+                                      storage.id,
+                                    )
+                                  }
+                                  className="rounded bg-red-100 px-2 py-2 text-red-600 hover:bg-red-200">
+                                  <X className="h-4 w-4" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => addDefaultStorageToNetwork(network.id)}
+                          className="text-xs text-blue-600 hover:underline">
+                          + Add Default Storage
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="space-y-3">
+                      <Label className="block font-semibold">Colors</Label>
+                      {network.colors.map(color => (
+                        <div
+                          key={color.id}
+                          className="space-y-2 rounded bg-gray-50 p-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                checked={color.isDefault}
+                                onCheckedChange={checked => {
+                                  // Set this color as default and unset others in this network
+                                  setNetworks(prev =>
+                                    prev.map(n =>
+                                      n.id === network.id
+                                        ? {
+                                            ...n,
+                                            colors: n.colors.map(c => ({
+                                              ...c,
+                                              isDefault:
+                                                c.id === color.id
+                                                  ? !!checked
+                                                  : false,
+                                            })),
+                                          }
+                                        : n,
+                                    ),
+                                  );
+                                }}
+                                id={`network-default-${color.id}`}
+                              />
+                              <Label
+                                htmlFor={`network-default-${color.id}`}
+                                className="text-xs cursor-pointer">
+                                Default
+                              </Label>
+                            </div>
+                          </div>
+                          <div className="flex items-end gap-2">
+                            <div className="flex-1">
+                              <Label className="text-sm">Color Name</Label>
+                              <Input
+                                value={color.colorName}
+                                onChange={e =>
+                                  updateColorInNetwork(
+                                    network.id,
+                                    color.id,
+                                    'colorName',
+                                    e.target.value,
+                                  )
+                                }
+                                placeholder="e.g., Midnight Black"
+                              />
+                            </div>
+                            <div className="flex-1">
+                              <Label className="text-sm">Color Image</Label>
+                              {color.colorImage ? (
+                                <div className="relative inline-block">
+                                  <img
+                                    src={color.colorImage}
+                                    alt={color.colorName}
+                                    className="h-12 w-12 rounded object-cover"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      removeNetworkColorImage(
+                                        network.id,
+                                        color.id,
+                                      )
+                                    }
+                                    className="absolute -right-2 -top-2 rounded-full bg-red-500 p-0.5 text-white hover:bg-red-600">
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <label className="flex cursor-pointer items-center justify-center rounded border-2 border-dashed border-gray-300 p-2">
+                                  <Upload className="h-4 w-4 text-gray-400" />
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={e =>
+                                      handleNetworkColorImageUpload(
+                                        network.id,
+                                        color.id,
+                                        e,
+                                      )
+                                    }
+                                    className="hidden"
+                                  />
+                                </label>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                removeColorFromNetwork(network.id, color.id)
+                              }
+                              className="rounded bg-red-100 px-2 py-2 text-red-600 hover:bg-red-200">
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <Label className="text-sm">
+                              Has Storage Options
+                            </Label>
+                            <Switch
+                              checked={color.hasStorage}
+                              onCheckedChange={e =>
+                                updateColorInNetwork(
+                                  network.id,
+                                  color.id,
+                                  'hasStorage',
+                                  e,
+                                )
+                              }
+                            />
+                          </div>
+
+                          {!color.hasStorage && (
+                            <div className="grid grid-cols-3 gap-2 rounded bg-white p-2">
+                              <div>
+                                <Label className="text-xs">Single Price</Label>
+                                <Input
+                                  type="number"
+                                  value={color.singlePrice}
+                                  onChange={e =>
+                                    updateColorInNetwork(
+                                      network.id,
+                                      color.id,
+                                      'singlePrice',
+                                      e.target.value,
+                                    )
+                                  }
+                                  placeholder="0"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">Compare Price</Label>
+                                <Input
+                                  type="number"
+                                  value={color.singleComparePrice}
+                                  onChange={e =>
+                                    updateColorInNetwork(
+                                      network.id,
+                                      color.id,
+                                      'singleComparePrice',
+                                      e.target.value,
+                                    )
+                                  }
+                                  placeholder="0"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">Stock</Label>
+                                <Input
+                                  type="number"
+                                  value={color.singleStockQuantity}
+                                  onChange={e =>
+                                    updateColorInNetwork(
+                                      network.id,
+                                      color.id,
+                                      'singleStockQuantity',
+                                      e.target.value,
+                                    )
+                                  }
+                                  placeholder="0"
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          {color.hasStorage && (
+                            <>
+                              {network.hasDefaultStorages && (
+                                <div className="flex items-center gap-2">
+                                  <Label className="text-sm">
+                                    Use Default Storages
+                                  </Label>
+                                  <Switch
+                                    checked={color.useDefaultStorages}
+                                    onCheckedChange={e =>
+                                      updateColorInNetwork(
+                                        network.id,
+                                        color.id,
+                                        'useDefaultStorages',
+                                        e,
+                                      )
+                                    }
+                                  />
+                                </div>
+                              )}
+
+                              {(!network.hasDefaultStorages ||
+                                !color.useDefaultStorages) && (
+                                <>
+                                  {color.storages.map(storage => (
+                                    <div
+                                      key={storage.id}
+                                      className="space-y-2 rounded bg-white p-2">
+                                      <div className="flex items-center space-x-2 mb-2">
+                                        <Checkbox
+                                          checked={storage.isDefault}
+                                          onCheckedChange={checked => {
+                                            // Set this storage as default and unset ALL other storages (default + all colors' storages)
+                                            setNetworks(prev =>
+                                              prev.map(n =>
+                                                n.id === network.id
+                                                  ? {
+                                                      ...n,
+                                                      defaultStorages:
+                                                        n.defaultStorages.map(
+                                                          ds => ({
+                                                            ...ds,
+                                                            isDefault: false, // Unset all default storages
+                                                          }),
+                                                        ),
+                                                      colors: n.colors.map(c =>
+                                                        c.id === color.id
+                                                          ? {
+                                                              ...c,
+                                                              storages:
+                                                                c.storages.map(
+                                                                  s => ({
+                                                                    ...s,
+                                                                    isDefault:
+                                                                      s.id ===
+                                                                      storage.id
+                                                                        ? !!checked
+                                                                        : false,
+                                                                  }),
+                                                                ),
+                                                            }
+                                                          : {
+                                                              ...c,
+                                                              storages:
+                                                                c.storages.map(
+                                                                  s => ({
+                                                                    ...s,
+                                                                    isDefault:
+                                                                      false, // Unset other colors' storages
+                                                                  }),
+                                                                ),
+                                                            },
+                                                      ),
+                                                    }
+                                                  : n,
+                                              ),
+                                            );
+                                          }}
+                                          id={`network-color-storage-${storage.id}`}
+                                        />
+                                        <Label
+                                          htmlFor={`network-color-storage-${storage.id}`}
+                                          className="text-xs cursor-pointer">
+                                          Default
+                                        </Label>
+                                      </div>
+                                      <div className="grid grid-cols-4 gap-2">
+                                        <div>
+                                          <Label className="text-xs">
+                                            Storage Size
+                                          </Label>
+                                          <Input
+                                            value={storage.storageSize}
+                                            onChange={e =>
+                                              updateStorageInNetwork(
+                                                network.id,
+                                                color.id,
+                                                storage.id,
+                                                'storageSize',
+                                                e.target.value,
+                                              )
+                                            }
+                                            placeholder="256GB"
+                                          />
+                                        </div>
+                                        <div>
+                                          <Label className="text-xs">
+                                            Regular Price
+                                          </Label>
+                                          <Input
+                                            type="number"
+                                            value={storage.regularPrice}
+                                            onChange={e => {
+                                              const regularPrice =
+                                                parseFloat(e.target.value) || 0;
+                                              const percent =
+                                                parseFloat(
+                                                  storage.discountPercent,
+                                                ) || 0;
+                                              const discountPrice = Math.round(
+                                                regularPrice -
+                                                  (regularPrice * percent) /
+                                                    100,
+                                              );
+
+                                              updateStorageInNetwork(
+                                                network.id,
+                                                color.id,
+                                                storage.id,
+                                                'regularPrice',
+                                                e.target.value,
+                                              );
+                                              if (percent > 0) {
+                                                updateStorageInNetwork(
+                                                  network.id,
+                                                  color.id,
+                                                  storage.id,
+                                                  'discountPrice',
+                                                  discountPrice.toString(),
+                                                );
+                                              }
+                                            }}
+                                            placeholder="0"
+                                          />
+                                        </div>
+                                        <div>
+                                          <Label className="text-xs">
+                                            Discount %
+                                          </Label>
+                                          <Input
+                                            type="number"
+                                            value={storage.discountPercent}
+                                            onChange={e => {
+                                              const percent =
+                                                parseFloat(e.target.value) || 0;
+                                              const regularPrice =
+                                                parseFloat(
+                                                  storage.regularPrice,
+                                                ) || 0;
+                                              const discountPrice = Math.round(
+                                                regularPrice -
+                                                  (regularPrice * percent) /
+                                                    100,
+                                              );
+                                              updateStorageInNetwork(
+                                                network.id,
+                                                color.id,
+                                                storage.id,
+                                                'discountPercent',
+                                                e.target.value,
+                                              );
+                                              updateStorageInNetwork(
+                                                network.id,
+                                                color.id,
+                                                storage.id,
+                                                'discountPrice',
+                                                discountPrice.toString(),
+                                              );
+                                            }}
+                                            placeholder="0"
+                                          />
+                                        </div>
+                                        <div>
+                                          <Label className="text-xs">
+                                            Discount Price
+                                          </Label>
+                                          <Input
+                                            type="number"
+                                            value={storage.discountPrice}
+                                            onChange={e =>
+                                              updateStorageInNetwork(
+                                                network.id,
+                                                color.id,
+                                                storage.id,
+                                                'discountPrice',
+                                                e.target.value,
+                                              )
+                                            }
+                                            placeholder="0"
+                                          />
+                                        </div>
+                                      </div>
+                                      <div className="flex gap-2">
+                                        <div className="flex-1">
+                                          <Label className="text-xs">
+                                            Stock
+                                          </Label>
+                                          <Input
+                                            type="number"
+                                            value={storage.stockQuantity}
+                                            onChange={e =>
+                                              updateStorageInNetwork(
+                                                network.id,
+                                                color.id,
+                                                storage.id,
+                                                'stockQuantity',
+                                                e.target.value,
+                                              )
+                                            }
+                                            placeholder="0"
+                                          />
+                                        </div>
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            removeStorageFromNetwork(
+                                              network.id,
+                                              color.id,
+                                              storage.id,
+                                            )
+                                          }
+                                          className="rounded bg-red-100 px-2 py-2 text-red-600 hover:bg-red-200">
+                                          <X className="h-4 w-4" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ))}
+
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      addStorageToNetwork(network.id, color.id)
+                                    }
+                                    className="text-xs text-blue-600 hover:underline">
+                                    + Add Storage
+                                  </button>
+                                </>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      ))}
+
+                      <button
+                        type="button"
+                        onClick={() => addColorToNetwork(network.id)}
+                        className="text-sm text-blue-600 hover:underline">
+                        + Add Color
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={addNetwork}
+                  className="rounded bg-blue-100 px-4 py-2 text-blue-600 hover:bg-blue-200">
+                  + Add Network
+                </button>
               </CardContent>
             </Card>
-          </div>
+          </TabsContent>
 
-          {/* Inventory Management */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Inventory Management</h2>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="grid gap-2">
-                <Label htmlFor="stock">Stock Quantity</Label>
-                <Input
-                  id="stock"
-                  type="number"
-                  placeholder="0"
-                  value={stock}
-                  onChange={(e) => setStock(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="lowStock">Low Stock Alert</Label>
-                <Input
-                  id="lowStock"
-                  type="number"
-                  placeholder="10"
-                  value={lowStock}
-                  onChange={(e) => setLowStock(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch
-                id="trackStock"
-                checked={trackStock}
-                onCheckedChange={setTrackStock}
-              />
-              <Label htmlFor="trackStock">Track stock quantity</Label>
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch
-                id="allowBackorder"
-                checked={allowBackorder}
-                onCheckedChange={setAllowBackorder}
-              />
-              <Label htmlFor="allowBackorder">Allow backorders</Label>
-            </div>
-          </div>
+          <TabsContent value="region" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Regions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {regions.map(region => (
+                  <div key={region.id} className="space-y-4 rounded border p-4">
+                    <div className="flex items-end gap-4">
+                      <div className="flex-1">
+                        <Label>Region Name</Label>
+                        <Input
+                          value={region.regionName}
+                          onChange={e =>
+                            updateRegion(
+                              region.id,
+                              'regionName',
+                              e.target.value,
+                            )
+                          }
+                          placeholder="e.g., US, UK, EU"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Label className="text-sm">Is Default</Label>
+                        <Switch
+                          checked={region.isDefault}
+                          onCheckedChange={e =>
+                            updateRegion(region.id, 'isDefault', e)
+                          }
+                        />
+                      </div>
+                      {regions.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeRegion(region.id)}
+                          className="rounded bg-red-100 px-4 py-2 text-red-600 hover:bg-red-200">
+                          Remove
+                        </button>
+                      )}
+                    </div>
 
-          {/* SEO Settings */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold">SEO Settings</h2>
-            <div className="grid gap-2">
-              <Label htmlFor="metaTitle">Meta Title</Label>
-              <Input
-                id="metaTitle"
-                placeholder="Enter meta title"
-                value={metaTitle}
-                onChange={(e) => setMetaTitle(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                Recommended: 50-60 characters
-              </p>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="metaDescription">Meta Description</Label>
-              <Textarea
-                id="metaDescription"
-                placeholder="Enter meta description"
-                rows={3}
-                value={metaDescription}
-                onChange={(e) => setMetaDescription(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                Recommended: 150-160 characters
-              </p>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="metaKeywords">Meta Keywords</Label>
-              <Input
-                id="metaKeywords"
-                placeholder="e.g. phone, smartphone, android, latest model"
-                value={metaKeywords}
-                onChange={(e) => setMetaKeywords(e.target.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="seoTitle">SEO Title</Label>
-              <Input
-                id="seoTitle"
-                placeholder="Enter SEO title"
-                value={seoTitle || ""}
-                onChange={(e) => setSeoTitle(e.target.value || null)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="seoDescription">SEO Description</Label>
-              <Textarea
-                id="seoDescription"
-                placeholder="Enter SEO description"
-                rows={2}
-                value={seoDescription || ""}
-                onChange={(e) => setSeoDescription(e.target.value || null)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="seoKeywords">SEO Keywords</Label>
-              <Input
-                id="seoKeywords"
-                placeholder="e.g. apple, macbook, m2, laptop"
-                value={seoKeywords}
-                onChange={(e) => setSeoKeywords(e.target.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="model">Model</Label>
-              <Input
-                id="model"
-                placeholder="Enter model name/number"
-                value={model || ""}
-                onChange={(e) => setModel(e.target.value || null)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="minBookingPrice">Min Booking Price</Label>
-              <Input
-                id="minBookingPrice"
-                type="number"
-                placeholder="0"
-                value={minBookingPrice}
-                onChange={(e) => setMinBookingPrice(e.target.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="highlights">Highlights</Label>
-              <Input
-                id="highlights"
-                placeholder="e.g. 5G, 120Hz, AMOLED, Fast Charging"
-                value={highlights}
-                onChange={(e) => setHighlights(e.target.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="slug">URL Slug</Label>
-              <Input
-                id="slug"
-                placeholder="product-url-slug"
-                value={slug}
-                onChange={handleSlugChange}
-              />
-            </div>
-          </div>
+                    <div className="space-y-3 rounded bg-blue-50 p-3">
+                      <Label className="block font-semibold">
+                        Default Storages
+                      </Label>
+                      {region.defaultStorages.map(storage => (
+                        <div
+                          key={storage.id}
+                          className="space-y-2 rounded bg-white p-2">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <Checkbox
+                              checked={storage.isDefault}
+                              onCheckedChange={checked => {
+                                // Set this storage as default and unset ALL other storages (default + custom)
+                                setRegions(prev =>
+                                  prev.map(r =>
+                                    r.id === region.id
+                                      ? {
+                                          ...r,
+                                          defaultStorages:
+                                            r.defaultStorages.map(s => ({
+                                              ...s,
+                                              isDefault:
+                                                s.id === storage.id
+                                                  ? !!checked
+                                                  : false,
+                                            })),
+                                          colors: r.colors.map(c => ({
+                                            ...c,
+                                            storages: c.storages.map(cs => ({
+                                              ...cs,
+                                              isDefault: false, // Unset all custom storages
+                                            })),
+                                          })),
+                                        }
+                                      : r,
+                                  ),
+                                );
+                              }}
+                              id={`region-storage-default-${storage.id}`}
+                            />
+                            <Label
+                              htmlFor={`region-storage-default-${storage.id}`}
+                              className="text-xs cursor-pointer">
+                              Default Storage
+                            </Label>
+                          </div>
+                          <div className="grid grid-cols-4 gap-2">
+                            <div>
+                              <Label className="text-xs">Storage Size</Label>
+                              <Input
+                                value={storage.storageSize}
+                                onChange={e =>
+                                  updateDefaultStorageInRegion(
+                                    region.id,
+                                    storage.id,
+                                    'storageSize',
+                                    e.target.value,
+                                  )
+                                }
+                                placeholder="256GB"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Regular Price</Label>
+                              <Input
+                                type="number"
+                                value={storage.regularPrice}
+                                onChange={e => {
+                                  const regularPrice =
+                                    parseFloat(e.target.value) || 0;
+                                  const percent =
+                                    parseFloat(storage.discountPercent) || 0;
+                                  const discountPrice = Math.round(
+                                    regularPrice -
+                                      (regularPrice * percent) / 100,
+                                  );
 
-          {/* Specification Section */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Specification</h2>
-            <div className="rounded-lg border">
-              <div className="grid grid-cols-3 bg-muted font-semibold p-2 rounded-t-lg">
-                <div>Key</div>
-                <div className="col-span-2">Value</div>
-              </div>
-              {specifications.map((spec, idx) => (
-                <div
-                  key={spec.id}
-                  className="grid grid-cols-3 gap-2 items-center border-t p-2"
-                >
-                  <Input
-                    placeholder="e.g. Brand"
-                    value={spec.key}
-                    onChange={(e) =>
-                      updateSpecification(spec.id, "key", e.target.value)
-                    }
-                  />
-                  <Input
-                    className="col-span-1"
-                    placeholder="e.g. Apple"
-                    value={spec.value}
-                    onChange={(e) =>
-                      updateSpecification(spec.id, "value", e.target.value)
-                    }
-                  />
-                  <div className="flex gap-2">
-                    {specifications.length > 1 && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeSpecification(spec.id)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
+                                  updateDefaultStorageInRegion(
+                                    region.id,
+                                    storage.id,
+                                    'regularPrice',
+                                    e.target.value,
+                                  );
+                                  if (percent > 0) {
+                                    updateDefaultStorageInRegion(
+                                      region.id,
+                                      storage.id,
+                                      'discountPrice',
+                                      discountPrice.toString(),
+                                    );
+                                  }
+                                }}
+                                placeholder="0"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Discount %</Label>
+                              <Input
+                                type="number"
+                                value={storage.discountPercent}
+                                onChange={e => {
+                                  const percent =
+                                    parseFloat(e.target.value) || 0;
+                                  const regularPrice =
+                                    parseFloat(storage.regularPrice) || 0;
+                                  const discountPrice = Math.round(
+                                    regularPrice -
+                                      (regularPrice * percent) / 100,
+                                  );
+                                  updateDefaultStorageInRegion(
+                                    region.id,
+                                    storage.id,
+                                    'discountPercent',
+                                    e.target.value,
+                                  );
+                                  updateDefaultStorageInRegion(
+                                    region.id,
+                                    storage.id,
+                                    'discountPrice',
+                                    discountPrice.toString(),
+                                  );
+                                }}
+                                placeholder="0"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Discount Price</Label>
+                              <Input
+                                type="number"
+                                value={storage.discountPrice}
+                                onChange={e =>
+                                  updateDefaultStorageInRegion(
+                                    region.id,
+                                    storage.id,
+                                    'discountPrice',
+                                    e.target.value,
+                                  )
+                                }
+                                placeholder="0"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <div className="flex-1">
+                              <Label className="text-xs">Stock</Label>
+                              <Input
+                                type="number"
+                                value={storage.stockQuantity}
+                                onChange={e =>
+                                  updateDefaultStorageInRegion(
+                                    region.id,
+                                    storage.id,
+                                    'stockQuantity',
+                                    e.target.value,
+                                  )
+                                }
+                                placeholder="0"
+                              />
+                            </div>
+                            {region.defaultStorages.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  removeDefaultStorageFromRegion(
+                                    region.id,
+                                    storage.id,
+                                  )
+                                }
+                                className="rounded bg-red-100 px-2 py-2 text-red-600 hover:bg-red-200">
+                                <X className="h-4 w-4" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => addDefaultStorageToRegion(region.id)}
+                        className="text-xs text-blue-600 hover:underline">
+                        + Add Default Storage
+                      </button>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label className="block font-semibold">Colors</Label>
+                      {region.colors.map(color => (
+                        <div
+                          key={color.id}
+                          className="space-y-2 rounded bg-gray-50 p-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                checked={color.isDefault}
+                                onCheckedChange={checked => {
+                                  // Set this color as default and unset others in this region
+                                  setRegions(prev =>
+                                    prev.map(r =>
+                                      r.id === region.id
+                                        ? {
+                                            ...r,
+                                            colors: r.colors.map(c => ({
+                                              ...c,
+                                              isDefault:
+                                                c.id === color.id
+                                                  ? !!checked
+                                                  : false,
+                                            })),
+                                          }
+                                        : r,
+                                    ),
+                                  );
+                                }}
+                                id={`region-default-${color.id}`}
+                              />
+                              <Label
+                                htmlFor={`region-default-${color.id}`}
+                                className="text-xs cursor-pointer">
+                                Default
+                              </Label>
+                            </div>
+                          </div>
+                          <div className="flex items-end gap-2">
+                            <div className="flex-1">
+                              <Label className="text-sm">Color Name</Label>
+                              <Input
+                                value={color.colorName}
+                                onChange={e =>
+                                  updateColorInRegion(
+                                    region.id,
+                                    color.id,
+                                    'colorName',
+                                    e.target.value,
+                                  )
+                                }
+                                placeholder="e.g., Midnight"
+                              />
+                            </div>
+                            <div className="flex-1">
+                              <Label className="text-sm">Color Image</Label>
+                              {color.colorImage ? (
+                                <div className="relative inline-block">
+                                  <img
+                                    src={color.colorImage}
+                                    alt={color.colorName}
+                                    className="h-12 w-12 rounded object-cover"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      removeRegionColorImage(
+                                        region.id,
+                                        color.id,
+                                      )
+                                    }
+                                    className="absolute -right-2 -top-2 rounded-full bg-red-500 p-0.5 text-white hover:bg-red-600">
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <label className="flex cursor-pointer items-center justify-center rounded border-2 border-dashed border-gray-300 p-2">
+                                  <Upload className="h-4 w-4 text-gray-400" />
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={e =>
+                                      handleRegionColorImageUpload(
+                                        region.id,
+                                        color.id,
+                                        e,
+                                      )
+                                    }
+                                    className="hidden"
+                                  />
+                                </label>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                removeColorFromRegion(region.id, color.id)
+                              }
+                              className="rounded bg-red-100 px-2 py-2 text-red-600 hover:bg-red-200">
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <Label className="text-sm">
+                              Has Storage Options
+                            </Label>
+                            <Switch
+                              checked={color.hasStorage}
+                              onCheckedChange={e =>
+                                updateColorInRegion(
+                                  region.id,
+                                  color.id,
+                                  'hasStorage',
+                                  e,
+                                )
+                              }
+                            />
+                          </div>
+
+                          {color.hasStorage && (
+                            <>
+                              <div className="flex items-center gap-2">
+                                <Label className="text-sm">
+                                  Use Default Storages
+                                </Label>
+                                <Switch
+                                  checked={color.useDefaultStorages}
+                                  onCheckedChange={e =>
+                                    updateColorInRegion(
+                                      region.id,
+                                      color.id,
+                                      'useDefaultStorages',
+                                      e,
+                                    )
+                                  }
+                                />
+                              </div>
+
+                              {!color.useDefaultStorages && (
+                                <>
+                                  {color.storages.map(storage => (
+                                    <div
+                                      key={storage.id}
+                                      className="space-y-2 rounded bg-white p-2">
+                                      <div className="flex items-center space-x-2 mb-2">
+                                        <Checkbox
+                                          checked={storage.isDefault}
+                                          onCheckedChange={checked => {
+                                            // Set this storage as default and unset ALL other storages (default + all colors' storages)
+                                            setRegions(prev =>
+                                              prev.map(r =>
+                                                r.id === region.id
+                                                  ? {
+                                                      ...r,
+                                                      defaultStorages:
+                                                        r.defaultStorages.map(
+                                                          ds => ({
+                                                            ...ds,
+                                                            isDefault: false, // Unset all default storages
+                                                          }),
+                                                        ),
+                                                      colors: r.colors.map(c =>
+                                                        c.id === color.id
+                                                          ? {
+                                                              ...c,
+                                                              storages:
+                                                                c.storages.map(
+                                                                  s => ({
+                                                                    ...s,
+                                                                    isDefault:
+                                                                      s.id ===
+                                                                      storage.id
+                                                                        ? !!checked
+                                                                        : false,
+                                                                  }),
+                                                                ),
+                                                            }
+                                                          : {
+                                                              ...c,
+                                                              storages:
+                                                                c.storages.map(
+                                                                  s => ({
+                                                                    ...s,
+                                                                    isDefault:
+                                                                      false, // Unset other colors' storages
+                                                                  }),
+                                                                ),
+                                                            },
+                                                      ),
+                                                    }
+                                                  : r,
+                                              ),
+                                            );
+                                          }}
+                                          id={`region-color-storage-${storage.id}`}
+                                        />
+                                        <Label
+                                          htmlFor={`region-color-storage-${storage.id}`}
+                                          className="text-xs cursor-pointer">
+                                          Default
+                                        </Label>
+                                      </div>
+                                      <div className="grid grid-cols-4 gap-2">
+                                        <div>
+                                          <Label className="text-xs">
+                                            Storage
+                                          </Label>
+                                          <Input
+                                            value={storage.storageSize}
+                                            onChange={e =>
+                                              updateStorageInRegion(
+                                                region.id,
+                                                color.id,
+                                                storage.id,
+                                                'storageSize',
+                                                e.target.value,
+                                              )
+                                            }
+                                            placeholder="256GB"
+                                          />
+                                        </div>
+                                        <div>
+                                          <Label className="text-xs">
+                                            Regular
+                                          </Label>
+                                          <Input
+                                            type="number"
+                                            value={storage.regularPrice}
+                                            onChange={e => {
+                                              const regularPrice =
+                                                parseFloat(e.target.value) || 0;
+                                              const percent =
+                                                parseFloat(
+                                                  storage.discountPercent,
+                                                ) || 0;
+                                              const discountPrice = Math.round(
+                                                regularPrice -
+                                                  (regularPrice * percent) /
+                                                    100,
+                                              );
+
+                                              updateStorageInRegion(
+                                                region.id,
+                                                color.id,
+                                                storage.id,
+                                                'regularPrice',
+                                                e.target.value,
+                                              );
+                                              if (percent > 0) {
+                                                updateStorageInRegion(
+                                                  region.id,
+                                                  color.id,
+                                                  storage.id,
+                                                  'discountPrice',
+                                                  discountPrice.toString(),
+                                                );
+                                              }
+                                            }}
+                                            placeholder="0"
+                                          />
+                                        </div>
+                                        <div>
+                                          <Label className="text-xs">
+                                            Discount %
+                                          </Label>
+                                          <Input
+                                            type="number"
+                                            value={storage.discountPercent}
+                                            onChange={e => {
+                                              const percent =
+                                                parseFloat(e.target.value) || 0;
+                                              const regularPrice =
+                                                parseFloat(
+                                                  storage.regularPrice,
+                                                ) || 0;
+                                              const discountPrice = Math.round(
+                                                regularPrice -
+                                                  (regularPrice * percent) /
+                                                    100,
+                                              );
+                                              updateStorageInRegion(
+                                                region.id,
+                                                color.id,
+                                                storage.id,
+                                                'discountPercent',
+                                                e.target.value,
+                                              );
+                                              updateStorageInRegion(
+                                                region.id,
+                                                color.id,
+                                                storage.id,
+                                                'discountPrice',
+                                                discountPrice.toString(),
+                                              );
+                                            }}
+                                            placeholder="0"
+                                          />
+                                        </div>
+                                        <div>
+                                          <Label className="text-xs">
+                                            Discount Price
+                                          </Label>
+                                          <Input
+                                            type="number"
+                                            value={storage.discountPrice}
+                                            onChange={e =>
+                                              updateStorageInRegion(
+                                                region.id,
+                                                color.id,
+                                                storage.id,
+                                                'discountPrice',
+                                                e.target.value,
+                                              )
+                                            }
+                                            placeholder="0"
+                                          />
+                                        </div>
+                                      </div>
+                                      <div className="flex gap-2">
+                                        <div className="flex-1">
+                                          <Label className="text-xs">
+                                            Stock
+                                          </Label>
+                                          <Input
+                                            type="number"
+                                            value={storage.stockQuantity}
+                                            onChange={e =>
+                                              updateStorageInRegion(
+                                                region.id,
+                                                color.id,
+                                                storage.id,
+                                                'stockQuantity',
+                                                e.target.value,
+                                              )
+                                            }
+                                            placeholder="0"
+                                          />
+                                        </div>
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            removeStorageFromRegion(
+                                              region.id,
+                                              color.id,
+                                              storage.id,
+                                            )
+                                          }
+                                          className="rounded bg-red-100 px-2 py-2 text-red-600 hover:bg-red-200">
+                                          <X className="h-4 w-4" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ))}
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      addStorageToRegion(region.id, color.id)
+                                    }
+                                    className="text-xs text-blue-600 hover:underline">
+                                    + Add Storage
+                                  </button>
+                                </>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      ))}
+
+                      <button
+                        type="button"
+                        onClick={() => addColorToRegion(region.id)}
+                        className="text-sm text-blue-600 hover:underline">
+                        + Add Color
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
-              <div className="p-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  type="button"
-                  onClick={addSpecification}
-                >
-                  <Plus className="mr-2 h-4 w-4" /> Add Row
-                </Button>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+                ))}
 
-      <div className="flex items-center justify-end gap-4">
-        <div className="flex items-center gap-2 mr-auto">
-          <Switch id="status" checked={status} onCheckedChange={setStatus} />
-          <Label htmlFor="status">{status ? "Publish" : "Unpublish"}</Label>
-        </div>
-        <Button variant="outline" disabled={isSubmitting}>
-          Save as Draft
-        </Button>
-        <Button
-          variant="success"
-          onClick={handlePublish}
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? "Publishing..." : "Publish Product"}
-        </Button>
-      </div>
+                <button
+                  type="button"
+                  onClick={addRegion}
+                  className="rounded bg-blue-100 px-4 py-2 text-blue-600 hover:bg-blue-200">
+                  + Add Region
+                </button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <div className="flex gap-4">
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50">
+              {isSubmitting
+                ? 'Creating...'
+                : `Create ${
+                    productType === 'basic'
+                      ? 'Basic'
+                      : productType === 'network'
+                      ? 'Network'
+                      : 'Region'
+                  } Product`}
+            </Button>
+            <Link href="/admin/products">
+              <Button
+                type="button"
+                variant="outline"
+                className="text-gray-600 hover:bg-gray-100">
+                Cancel
+              </Button>
+            </Link>
+          </div>
+        </form>
+      </Tabs>
     </div>
   );
 }
+
+export default withProtectedRoute(NewProductPage);

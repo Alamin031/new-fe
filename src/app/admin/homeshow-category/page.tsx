@@ -57,6 +57,7 @@ import {useEffect, useState} from 'react';
 import {categoriesService} from '../../lib/api/services/categories';
 import {productsService} from '../../lib/api/services/products';
 import type {Category, Product} from '../../lib/api/types';
+import { withProtectedRoute } from '../../lib/auth/protected-route';
 
 // Custom MultiSelect Component
 interface MultiSelectProps {
@@ -187,7 +188,7 @@ function MultiSelect({
   );
 }
 
-export default function HomeshowCategoryPage() {
+function HomeshowCategoryPage() {
   const [categories, setCategories] = useState<Homecategory[]>([]);
   const [filteredCategories, setFilteredCategories] = useState<Homecategory[]>(
     [],
@@ -630,3 +631,9 @@ export default function HomeshowCategoryPage() {
     </div>
   );
 }
+
+export default withProtectedRoute(HomeshowCategoryPage, {
+  requiredRoles: ["admin"],
+  fallbackTo: "/login",
+  showLoader: true,
+});

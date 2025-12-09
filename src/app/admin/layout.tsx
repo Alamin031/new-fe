@@ -1,3 +1,4 @@
+"use client"
 import type React from 'react';
 import type {Metadata} from 'next';
 import Link from 'next/link';
@@ -18,11 +19,6 @@ import {
 import {Badge} from '../components/ui/badge';
 import {Suspense} from 'react';
 import {AdminHeader} from '../components/admin/admin-header';
-
-export const metadata: Metadata = {
-  title: 'Admin Dashboard',
-  description: 'Manage your e-commerce store.',
-};
 
 const sidebarLinks = [
   {href: '/admin', label: 'Dashboard', icon: LayoutDashboard},

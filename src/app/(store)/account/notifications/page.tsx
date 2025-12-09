@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui
 import { Button } from "../../../components/ui/button"
 import { Switch } from "../../../components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs"
+import { withProtectedRoute } from "../../../lib/auth/protected-route"
 
 const notifications = [
   {
@@ -30,7 +31,7 @@ const notifications = [
     id: "3",
     type: "payment",
     title: "Payment Successful",
-    message: "Payment of ₹1,48,399 for order #ORD-2024-001 completed.",
+    message: "Payment of ৳1,48,399 for order #ORD-2024-001 completed.",
     time: "1 day ago",
     read: true,
     icon: CreditCard,
@@ -58,7 +59,7 @@ const notificationSettings = [
   { id: "newsletter", label: "Newsletter", description: "Weekly updates on new products", enabled: false },
 ]
 
-export default function NotificationsPage() {
+function NotificationsPage() {
   const [notifs, setNotifs] = useState(notifications)
   const [settings, setSettings] = useState(notificationSettings)
 
@@ -193,3 +194,7 @@ export default function NotificationsPage() {
     </div>
   )
 }
+
+export default withProtectedRoute(NotificationsPage, {
+  requiredRoles: ["user"],
+})

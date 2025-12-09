@@ -17,6 +17,7 @@ import { WriteReviewModal } from "../../../components/order/write-review-modal"
 import { OrderTrackingTimeline } from "../../../components/order/order-tracking-timeline"
 import { ReviewCard } from "../../../components/order/review-card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../../components/ui/dialog"
+import { withProtectedRoute } from "../../../lib/auth/protected-route"
 
 const ordersData = [
   {
@@ -141,28 +142,34 @@ function OrderCard({ order }: { order: OrderWithStatus }) {
 
   const handleBuyAgain = (item: (typeof order.items)[0]) => {
     addToCart(
-      {
-        id: item.productId,
-        name: item.name,
-        slug: item.slug,
-        description: "",
-        price: item.price,
-        images: [item.image],
-        category: { id: "1", name: "Electronics", slug: "electronics" },
-        brand: { id: "1", name: "Brand", slug: "brand", logo: "" },
-        variants: [],
-        highlights: [],
-        specifications: {},
-        stock: 10,
-        sku: "",
-        warranty: "",
-        rating: 4.5,
-        reviewCount: 100,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      item.quantity,
-    )
+        {
+          id: item.productId,
+          name: item.name,
+          slug: item.slug,
+          description: "",
+          price: item.price,
+          images: [item.image],
+          category: {
+            id: "1",
+            name: "Electronics",
+            slug: "electronics",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+          brand: { id: "1", name: "Brand", slug: "brand", logo: "" },
+          variants: [],
+          highlights: [],
+          specifications: {},
+          stock: 10,
+          sku: "",
+          warranty: "",
+          rating: 4.5,
+          reviewCount: 100,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        item.quantity,
+      )
   }
 
   return (
@@ -318,7 +325,7 @@ function OrderCard({ order }: { order: OrderWithStatus }) {
   )
 }
 
-export default function OrdersPage() {
+function OrdersPage() {
   const [searchTerm, setSearchTerm] = useState("")
 
   const filteredOrders = ordersData.filter((order) =>
@@ -422,3 +429,7 @@ export default function OrdersPage() {
     </div>
   )
 }
+
+export default withProtectedRoute(OrdersPage, {
+  requiredRoles: ["user"],
+})

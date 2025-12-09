@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Heart, BarChart3, ShoppingCart, Share2, Shield, Truck, RotateCcw, Check, AlertCircle } from "lucide-react"
 import { Button } from "../ui/button"
 import { Badge } from "../ui/badge"
@@ -9,22 +10,22 @@ import { Separator } from "../ui/separator"
 import { useCartStore } from "@/app/store/cart-store"
 import { useWishlistStore } from "@/app/store/wishlist-store"
 import { useCompareStore } from "@/app/store/compare-store"
-import { formatPrice, calculateDiscount, formatEMI } from "@/app/lib/utils/format"
+import { formatPrice } from "@/app/lib/utils/format"
 import { cn } from "@/app/lib/utils"
-import { EMICalculator } from "./emi-calculator"
 import { CarePlusAddon } from "./care-plus-addon"
 import { NotifyProductDialog } from "./notify-product-dialog"
 import type { Product } from "@/app/types"
+import { getDefaultProductPrice } from "@/app/lib/utils/product"
 
 interface ProductInfoProps {
   product: Product
 }
 
 export function ProductInfo({ product }: ProductInfoProps) {
+  const router = useRouter()
   const [quantity, setQuantity] = useState(1)
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({})
   const [carePlusSelected, setCarePlusSelected] = useState(false)
-  const [showEMI, setShowEMI] = useState(false)
   const [notifyDialogOpen, setNotifyDialogOpen] = useState(false)
 
   const addToCart = useCartStore((state) => state.addItem)
@@ -33,9 +34,14 @@ export function ProductInfo({ product }: ProductInfoProps) {
 
   const inWishlist = isInWishlist(product.id)
   const inCompare = isInCompare(product.id)
-  const hasDiscount = product.originalPrice && product.originalPrice > product.price
-  const discount = hasDiscount ? calculateDiscount(product.originalPrice!, product.price) : 0
-  const isOutOfStock = product.stock === 0
+
+  // Extract default variant prices based on product type
+  const priceInfo = getDefaultProductPrice(product)
+  const regularPrice = priceInfo.regularPrice
+  const salePrice = priceInfo.discountPrice
+  const hasDiscount = priceInfo.hasDiscount
+  const discount = priceInfo.discount
+  const isOutOfStock = priceInfo.stockQuantity === 0
 
   // Group variants by type
   const variantsByType = product.variants.reduce(
@@ -55,8 +61,8 @@ export function ProductInfo({ product }: ProductInfoProps) {
     return total + (variant?.priceModifier || 0)
   }, 0)
 
-  const carePlusPrice = carePlusSelected ? Math.round(product.price * 0.08) : 0
-  const totalPrice = product.price + variantPriceModifier + carePlusPrice
+  const carePlusPrice = carePlusSelected ? Math.round(salePrice * 0.08) : 0
+  const totalPrice = salePrice + variantPriceModifier + carePlusPrice
 
   const handleAddToCart = () => {
     if (!isOutOfStock) {
@@ -72,15 +78,35 @@ export function ProductInfo({ product }: ProductInfoProps) {
     }
   }
 
+  const handleAddToCompareAndNavigate = () => {
+    addToCompare(product)
+    router.push("/compare")
+  }
+
   return (
     <div className="flex flex-col">
+      {/* Add to Compare Button */}
+      <div className="mb-4 flex justify-end">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-2 text-muted-foreground hover:text-foreground"
+          onClick={handleAddToCompareAndNavigate}
+        >
+          <BarChart3 className="h-4 w-4" />
+          Add to Compare
+        </Button>
+      </div>
+
       {/* Brand */}
-      <Link
-        href={`/brand/${product.brand.slug}`}
-        className="text-sm font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground"
-      >
-        {product.brand.name}
-      </Link>
+      {product.brand && (
+        <Link
+          href={`/brand/${product.brand.slug}`}
+          className="text-sm font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground"
+        >
+          {product.brand.name}
+        </Link>
+      )}
 
       {/* Title */}
       <h1 className="mt-2 text-2xl font-bold tracking-tight md:text-3xl">{product.name}</h1>
@@ -120,20 +146,13 @@ export function ProductInfo({ product }: ProductInfoProps) {
           <span className="text-3xl font-bold">{formatPrice(totalPrice)}</span>
           {hasDiscount && (
             <>
-              <span className="text-lg text-muted-foreground line-through">{formatPrice(product.originalPrice!)}</span>
+              <span className="text-lg text-muted-foreground line-through">{formatPrice(regularPrice)}</span>
               <Badge className="bg-[oklch(0.55_0.2_25)] text-[oklch(1_0_0)] hover:bg-[oklch(0.55_0.2_25)]">
                 Save {discount}%
               </Badge>
             </>
           )}
         </div>
-        <button
-          onClick={() => setShowEMI(!showEMI)}
-          className="text-sm text-muted-foreground underline-offset-2 hover:underline"
-        >
-          EMI from {formatEMI(totalPrice)} • View options
-        </button>
-        {showEMI && <EMICalculator price={totalPrice} onClose={() => setShowEMI(false)} />}
       </div>
 
       {/* Stock Status */}

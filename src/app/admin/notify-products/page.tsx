@@ -14,8 +14,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu'
 import { toast } from 'sonner'
 import { productNotifyService, type ProductNotifyRequest } from '../../lib/api/services/notify'
+import { withProtectedRoute } from '../../lib/auth/protected-route'
+import { apiClient } from '../../lib/api/client'
 
-export default function NotifyProductsPage() {
+function NotifyProductsPage() {
   const [notifications, setNotifications] = useState<ProductNotifyRequest[]>([])
   const [filteredNotifications, setFilteredNotifications] = useState<ProductNotifyRequest[]>([])
   const [searchQuery, setSearchQuery] = useState('')
@@ -27,40 +29,26 @@ export default function NotifyProductsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all')
 
   useEffect(() => {
-    // Initialize with mock data
-    setNotifications([
-      {
-        id: '1',
-        productId: 'PRD-001',
-        productName: 'iPhone 15 Pro Max',
-        email: 'user1@example.com',
-        phone: '+880 1234567890',
-        userId: 'USER-001',
-        status: 'pending',
-        createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-      },
-      {
-        id: '2',
-        productId: 'PRD-002',
-        productName: 'Samsung Galaxy S24 Ultra',
-        email: 'user2@example.com',
-        phone: '+880 9876543210',
-        userId: 'USER-002',
-        status: 'pending',
-        createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-      },
-      {
-        id: '3',
-        productId: 'PRD-003',
-        productName: 'MacBook Air M3',
-        email: 'user3@example.com',
-        phone: '+880 5555555555',
-        userId: 'USER-003',
-        status: 'resolved',
-        createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-      },
-    ])
+    fetchNotifications()
   }, [])
+
+  const fetchNotifications = async () => {
+    setLoading(true)
+    try {
+      const response = await apiClient.get('/products/notify')
+      const data = Array.isArray(response.data) ? response.data : []
+      const normalizedData = data.map((n: any) => ({
+        ...n,
+        createdAt: new Date(n.createdAt)
+      }))
+      setNotifications(normalizedData)
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error)
+      setNotifications([])
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
     filterNotifications()
@@ -376,3 +364,9 @@ export default function NotifyProductsPage() {
     </div>
   )
 }
+
+export default withProtectedRoute(NotifyProductsPage, {
+  requiredRoles: ["admin"],
+  fallbackTo: "/login",
+  showLoader: true,
+});

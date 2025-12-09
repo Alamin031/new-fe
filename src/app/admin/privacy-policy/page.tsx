@@ -56,6 +56,7 @@ import {Checkbox} from '../../components/ui/checkbox';
 import {policiesService} from '../../lib/api';
 import {toast} from 'sonner';
 import type {Policy} from '../../lib/api/types';
+import { withProtectedRoute } from '../../lib/auth/protected-route';
 
 const POLICY_TYPES: Array<Policy['type']> = [
   'privacy',
@@ -67,7 +68,7 @@ const POLICY_TYPES: Array<Policy['type']> = [
   'custom',
 ];
 
-export default function PrivacyPolicyPage() {
+function PrivacyPolicyPage() {
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [filteredPolicies, setFilteredPolicies] = useState<Policy[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -545,3 +546,9 @@ export default function PrivacyPolicyPage() {
     </div>
   );
 }
+
+export default withProtectedRoute(PrivacyPolicyPage, {
+  requiredRoles: ["admin"],
+  fallbackTo: "/login",
+  showLoader: true,
+});

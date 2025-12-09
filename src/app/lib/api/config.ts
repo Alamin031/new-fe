@@ -22,6 +22,7 @@ export const API_ENDPOINTS = {
   AUTH_SOCIAL_LOGIN: '/auth/social-login',
   AUTH_REFRESH: '/auth/refresh',
   AUTH_LOGOUT: '/auth/logout',
+  AUTH_DECODE: '/auth/decode/{token}',
 
   // Users
   USERS_CREATE: '/users',
@@ -63,25 +64,33 @@ export const API_ENDPOINTS = {
   BRANDS_UPDATE: '/brands/{id}',
   BRANDS_DELETE: '/brands/{id}',
 
+
+
+
   // Products
-  PRODUCTS_CREATE: '/products',
-  PRODUCTS_GET: '/products',
-  PRODUCTS_GET_ONE: '/products/{id}',
-  PRODUCTS_FEATURED: '/products/featured',
-  PRODUCTS_NEW: '/products/new',
-  PRODUCTS_HOT: '/products/hot',
-  PRODUCTS_SEARCH: '/products/search',
-  PRODUCTS_SLUG: '/products/{slug}',
-  PRODUCTS_UPDATE: '/products/{id}',
-  PRODUCTS_DELETE: '/products/{id}',
+  PRODUCTS_CREATE: '/products-new',
+  PRODUCTS_GET: '/products-new',
+  PRODUCTS_GET_ONE: '/products-new/id/{id}',
+  PRODUCTS_SEARCH: '/products-new/search',
+  PRODUCTS_SLUG: '/products-new/{slug}',
+  PRODUCTS_DELETE: '/products-new/{id}',
+
+  // Products (New Architecture)
+  PRODUCTS_CREATE_BASIC: '/products-new/basic',
+  PRODUCTS_CREATE_NETWORK: '/products-new/network',
+  PRODUCTS_CREATE_REGION: '/products-new/region',
+
+  PRODUCTS_UPDATE_BASIC: '/products-new/basic/{id}',
+  PRODUCTS_UPDATE_NETWORK: '/products-new/network/{id}',
+  PRODUCTS_UPDATE_REGION: '/products-new/region/{id}',
 
   // Product Care Plans
-  PRODUCT_CARE_CREATE: '/products/cares',
-  PRODUCT_CARE_LIST: '/products/{productId}/cares',
-  PRODUCT_CARE_UPDATE: '/products/cares/{id}',
-  PRODUCT_CARE_GET: '/products/cares/{id}',
-  PRODUCT_CARE_DELETE: '/products/cares/{id}',
-  ALL_CARE_GET: '/products/cares',
+  PRODUCT_CARE_CREATE: '/products-new/care',
+  PRODUCT_CARE_GET_ALL: '/products-new/care',
+  PRODUCT_CARE_UPDATE: '/products-new/care/{id}',
+  PRODUCT_CARE_GET: '/products-new/care/{id}',
+  PRODUCT_CARE_DELETE: '/products-new/care/{id}',
+  PRODUCT_CARE_BY_PRODUCT: '/products-new/care/product/{productId}',
 
   // Product Notification Requests
   PRODUCT_NOTIFY_CREATE: '/products/{productId}/notify',
@@ -178,6 +187,19 @@ export const API_ENDPOINTS = {
   HEROBANNER_GET_ONE: '/herobanner/{id}',
   HEROBANNER_UPDATE: '/herobanner/{id}',
   HEROBANNER_DELETE: '/herobanner/{id}',
+
+  HEROBANNER_BOTTOM_CREATE: '/herobanner/bottom',
+  HEROBANNER_BOTTOM_GET_ALL: '/herobanner/bottom',
+  HEROBANNER_BOTTOM_GET_ONE: '/herobanner/bottom/{id}',
+  HEROBANNER_BOTTOM_UPDATE: '/herobanner/bottom/{id}',
+  HEROBANNER_BOTTOM_DELETE: '/herobanner/bottom/{id}',
+
+  // Hero Banner Middle
+  HEROBANNER_MIDDLE_CREATE: '/herobanner/middle',
+  HEROBANNER_MIDDLE_GET_ALL: '/herobanner/middle',
+  HEROBANNER_MIDDLE_GET_ONE: '/herobanner/middle/{id}',
+  HEROBANNER_MIDDLE_UPDATE: '/herobanner/middle/{id}',
+  HEROBANNER_MIDDLE_DELETE: '/herobanner/middle/{id}',
 
   // EMI
   EMI_PLAN_CREATE: '/emi/plan',

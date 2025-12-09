@@ -1,3 +1,5 @@
+"use client"
+
 import Link from "next/link"
 import Image from "next/image"
 import { ArrowLeft, CheckCircle2, MapPin, Phone } from "lucide-react"
@@ -6,6 +8,7 @@ import { Button } from "../../../../components/ui/button"
 import { Badge } from "../../../../components/ui/badge"
 import { Separator } from "../../../../components/ui/separator"
 import { formatPrice } from "../../../../lib/utils/format"
+import { withProtectedRoute } from "../../../../lib/auth/protected-route"
 
 const orderDetails = {
   id: "ORD-2024-001",
@@ -44,7 +47,7 @@ const orderDetails = {
   ],
 }
 
-export default function OrderDetailPage() {
+function OrderDetailPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -203,3 +206,7 @@ export default function OrderDetailPage() {
     </div>
   )
 }
+
+export default withProtectedRoute(OrderDetailPage, {
+  requiredRoles: ["user"],
+})

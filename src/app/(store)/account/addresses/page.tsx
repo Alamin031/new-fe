@@ -7,6 +7,7 @@ import { Badge } from "../../../components/ui/badge"
 import { EditAddressModal } from "../../../components/account/edit-address-modal"
 import { MapPin, Plus, Edit2, Trash2 } from "lucide-react"
 import { Address } from "../../../types"
+import { withProtectedRoute } from "../../../lib/auth/protected-route"
 
 const initialAddresses: Address[] = [
   {
@@ -29,7 +30,7 @@ const initialAddresses: Address[] = [
   },
 ]
 
-export default function AddressesPage() {
+function AddressesPage() {
   const [addresses, setAddresses] = useState<Address[]>(initialAddresses)
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null)
@@ -198,3 +199,7 @@ export default function AddressesPage() {
     </div>
   )
 }
+
+export default withProtectedRoute(AddressesPage, {
+  requiredRoles: ["user"],
+})
