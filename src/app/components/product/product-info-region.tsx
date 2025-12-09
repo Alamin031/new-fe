@@ -118,38 +118,28 @@ export function ProductInfoRegion({product, onColorChange}: ProductInfoRegionPro
   // Get the network to access its colors and storages directly
   const networks = isNetworkProduct ? (rawProduct?.networks || []) : [];
 
-  if (isNetworkProduct) {
-    console.log('DEBUG: isNetworkProduct=true, networks=', networks, 'networkCount=', networks.length)
-  }
-
   let regions: Region[] = isNetworkProduct
-    ? networks.map((n: Network) => {
-        const networkNameForRegion = (n.networkType || '').trim();
-        console.log('DEBUG: mapping network:', n.id, 'networkType=', n.networkType, 'trimmed=', networkNameForRegion, 'colors=', n.colors?.length, 'storages=', n.defaultStorages?.length);
-        return {
-          id: n.id,
-          name: networkNameForRegion,
-          networkType: networkNameForRegion,
-          colors: (n.colors || []).map((color) => ({
-            id: color.id,
-            name: color.colorName,
-            image: color.colorImage,
-            regularPrice: color.regularPrice,
-            discountPrice: color.discountPrice,
-            stockQuantity: color.stockQuantity,
-          })),
-          defaultStorages: (n.defaultStorages || []).map((storage) => ({
-            id: storage.id,
-            size: (storage.storageSize || '').trim(),
-            storageSize: (storage.storageSize || '').trim(),
-            price: storage.price,
-            stock: storage.stock,
-          })),
-        }
-      })
+    ? networks.map((n: Network) => ({
+        id: n.id,
+        name: (n.networkType || '').trim(),
+        networkType: (n.networkType || '').trim(),
+        colors: (n.colors || []).map((color) => ({
+          id: color.id,
+          name: color.colorName,
+          image: color.colorImage,
+          regularPrice: color.regularPrice,
+          discountPrice: color.discountPrice,
+          stockQuantity: color.stockQuantity,
+        })),
+        defaultStorages: (n.defaultStorages || []).map((storage) => ({
+          id: storage.id,
+          size: (storage.storageSize || '').trim(),
+          storageSize: (storage.storageSize || '').trim(),
+          price: storage.price,
+          stock: storage.stock,
+        })),
+      }))
     : (rawProduct?.regions || []);
-
-  console.log('DEBUG: final regions after mapping:', regions.length, 'regions:', regions);
 
   // For basic products, convert directColors to a default region structure
   if (isBasicProduct && (!regions || regions.length === 0) && rawProduct?.directColors) {
