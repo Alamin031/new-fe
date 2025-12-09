@@ -113,6 +113,7 @@ export function ProductInfoRegion({product, onColorChange}: ProductInfoRegionPro
 
   // Region/Network-based logic
   const isNetworkProduct = rawProduct?.productType === 'network';
+  const isBasicProduct = rawProduct?.productType === 'basic';
 
   // Get the network to access its colors and storages directly
   const networks = isNetworkProduct ? (rawProduct?.networks || []) : [];
