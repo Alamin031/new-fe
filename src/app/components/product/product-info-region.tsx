@@ -465,7 +465,7 @@ export function ProductInfoRegion({product, onColorChange}: ProductInfoRegionPro
           </label>
           <div className="flex flex-wrap gap-2">
             {storages.map((storage: any) => {
-              const storageSize = storage.storageSize || storage.size;
+              const storageSize = (storage.storageSize || storage.size || '').toString().trim();
               return (
               <button
                 key={storage.id}
