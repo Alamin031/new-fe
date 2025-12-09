@@ -554,6 +554,21 @@ export function ProductInfoRegion({product}: ProductInfoRegionProps) {
         onOpenChange={setEmiModalOpen}
         plans={emiPlans}
         price={priceData.regularPrice}
+        isLoading={loadingEmiPlans}
+        onOpen={async () => {
+          if (emiPlans.length === 0 && rawProduct?.isEmi) {
+            try {
+              setLoadingEmiPlans(true)
+              const plans = await emiService.getPlans()
+              setEmiPlans(plans)
+            } catch (error) {
+              console.error("Error fetching EMI plans:", error)
+              setEmiPlans([])
+            } finally {
+              setLoadingEmiPlans(false)
+            }
+          }
+        }}
       />
 
       {/* Additional Actions */}
