@@ -245,9 +245,10 @@ export function ProductInfoRegion({product}: ProductInfoRegionProps) {
           )}
           <h1 className="text-4xl font-bold tracking-tight mt-2 leading-tight">{product.name}</h1>
           {rawProduct?.shortDescription && (
-            <div 
-              className="mt-3 text-sm text-muted-foreground leading-relaxed"
+            <div
+              className="mt-3 text-sm text-muted-foreground leading-relaxed prose prose-sm max-w-none dark:prose-invert"
               dangerouslySetInnerHTML={{__html: rawProduct.shortDescription}}
+              suppressHydrationWarning
             />
           )}
         </div>
