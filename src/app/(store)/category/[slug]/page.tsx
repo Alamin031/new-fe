@@ -160,6 +160,7 @@ export default async function Page({ params }: CategoryPageProps) {
         <main className="flex-1">
           <CategoryProductsClient
             categoryId={category.id}
+            categorySlug={slug}
             initialProducts={products.slice(0, 20)}
             totalProducts={products.length}
           />
