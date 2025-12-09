@@ -22,6 +22,7 @@ const PAGE_SIZE = 20
 
 export function CategoryProductsClient({
   categoryId,
+  categorySlug,
   initialProducts = [],
   totalProducts = 0,
 }: CategoryProductsClientProps) {
@@ -41,14 +42,15 @@ export function CategoryProductsClient({
   })
 
   // Generate cache key based on category and page
-  const cacheKey = `category_${categoryId}_page_${currentPage}`
+  const cacheKey = `category_${categorySlug}_page_${currentPage}`
 
-  // Fetch products for category and current page
-  const { data: paginatedData, isLoading, error } = useSWRCache<ProductListResponse>(
+  // Fetch products for category and current page using the dedicated category endpoint
+  const { data: paginatedData, isLoading, error } = useSWRCache<CategoryProductsResponse>(
     cacheKey,
     async () => {
-      const response = await productsService.getAll(
-        { categoryId },
+      const response = await categoriesService.getProducts(
+        categorySlug,
+        {},
         currentPage,
         PAGE_SIZE
       )
