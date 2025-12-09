@@ -1,6 +1,3 @@
-
-
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { CategorySlider } from "./components/home/category-slider";
 import { categoriesService } from "./lib/api/services/categories";
