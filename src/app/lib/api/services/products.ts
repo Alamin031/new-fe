@@ -75,7 +75,15 @@ export const productsService = {
    */
   getBySlug: async (slug: string): Promise<Product> => {
     const endpoint = API_ENDPOINTS.PRODUCTS_SLUG.replace('{slug}', slug);
-    const response = await apiClient.get<Product>(endpoint);
+    const response = await apiClient.get<Product>(endpoint, {
+      params: {
+        relations: 'true',
+        networks: 'true',
+        regions: 'true',
+        colors: 'true',
+        storages: 'true',
+      },
+    });
     return response.data;
   },
 

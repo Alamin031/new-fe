@@ -119,25 +119,29 @@ export function ProductInfoRegion({product, onColorChange}: ProductInfoRegionPro
   const networks = isNetworkProduct ? (rawProduct?.networks || []) : [];
 
   let regions: Region[] = isNetworkProduct
-    ? networks.map((n: Network) => ({
-        id: n.id,
-        name: n.networkType,
-        colors: (n.colors || []).map((color) => ({
-          id: color.id,
-          name: color.colorName,
-          image: color.colorImage,
-          regularPrice: color.regularPrice,
-          discountPrice: color.discountPrice,
-          stockQuantity: color.stockQuantity,
-        })),
-        defaultStorages: (n.defaultStorages || []).map((storage) => ({
-          id: storage.id,
-          size: storage.storageSize,
-          storageSize: storage.storageSize,
-          price: storage.price,
-          stock: storage.stock,
-        })),
-      }))
+    ? networks.map((n: Network) => {
+        const trimmedNetworkType = (n.networkType || '').trim();
+        return {
+          id: n.id,
+          name: trimmedNetworkType,
+          networkType: trimmedNetworkType,
+          colors: (n.colors || []).map((color: any) => ({
+            id: color.id,
+            name: (color.colorName || '').trim(),
+            image: color.colorImage,
+            regularPrice: color.regularPrice,
+            discountPrice: color.discountPrice,
+            stockQuantity: color.stockQuantity,
+          })),
+          defaultStorages: (n.defaultStorages || []).map((storage: any) => ({
+            id: storage.id,
+            size: (storage.storageSize || '').trim(),
+            storageSize: (storage.storageSize || '').trim(),
+            price: storage.price,
+            stock: storage.stock,
+          })),
+        };
+      })
     : (rawProduct?.regions || []);
 
   // For basic products, convert directColors to a default region structure
@@ -407,12 +411,11 @@ export function ProductInfoRegion({product, onColorChange}: ProductInfoRegionPro
                   )}
                 >
                   {colorImage ? (
-                    <div className="relative h-16 w-16 overflow-hidden rounded-lg bg-muted border border-border">
-                      <Image
+                    <div className="h-16 w-16 overflow-hidden rounded-lg bg-muted border border-border">
+                      <img
                         src={colorImage}
                         alt={colorName || 'Color'}
-                        fill
-                        className="object-cover"
+                        className="h-full w-full object-cover"
                       />
                     </div>
                   ) : (
@@ -434,7 +437,7 @@ export function ProductInfoRegion({product, onColorChange}: ProductInfoRegionPro
           </label>
           <div className="flex flex-wrap gap-2">
             {regions.map((region: any) => {
-              const regionName = (region.name || '').toString().trim();
+              const regionName = region.name || region.networkType || '';
               return (
               <button
                 key={region.id}
@@ -466,7 +469,7 @@ export function ProductInfoRegion({product, onColorChange}: ProductInfoRegionPro
           </label>
           <div className="flex flex-wrap gap-2">
             {storages.map((storage: any) => {
-              const storageSize = storage.storageSize || storage.size;
+              const storageSize = (storage.storageSize || storage.size || '').toString().trim();
               return (
               <button
                 key={storage.id}
