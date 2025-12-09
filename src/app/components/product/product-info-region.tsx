@@ -617,19 +617,21 @@ export function ProductInfoRegion({product, onColorChange}: ProductInfoRegionPro
 
       {/* Additional Actions */}
       <div className="flex gap-3 pt-4">
+        {isOutOfStock && (
+          <Button
+            variant="outline"
+            size="lg"
+            className="flex-1 gap-2"
+            onClick={() => setNotifyDialogOpen(true)}
+          >
+            <AlertCircle className="h-4 w-4" />
+            Notify Me
+          </Button>
+        )}
         <Button
           variant="outline"
           size="lg"
-          className="flex-1 gap-2"
-          onClick={() => setNotifyDialogOpen(true)}
-        >
-          <AlertCircle className="h-4 w-4" />
-          Notify Me
-        </Button>
-        <Button
-          variant="outline"
-          size="lg"
-          className="flex-1 gap-2"
+          className={cn("gap-2", isOutOfStock ? "flex-1" : "flex-1")}
           onClick={handleAddToCompareAndNavigate}
         >
           <BarChart3 className="h-4 w-4" />
