@@ -407,12 +407,11 @@ export function ProductInfoRegion({product, onColorChange}: ProductInfoRegionPro
                   )}
                 >
                   {colorImage ? (
-                    <div className="relative h-16 w-16 overflow-hidden rounded-lg bg-muted border border-border">
-                      <Image
+                    <div className="h-16 w-16 overflow-hidden rounded-lg bg-muted border border-border">
+                      <img
                         src={colorImage}
                         alt={colorName || 'Color'}
-                        fill
-                        className="object-cover"
+                        className="h-full w-full object-cover"
                       />
                     </div>
                   ) : (
