@@ -2,10 +2,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { categoriesService } from "@/app/lib/api/services/categories";
+import { brandsService } from "@/app/lib/api/services/brands";
 import { productsService } from "@/app/lib/api/services/products";
 import { CategoryProducts } from "@/app/components/category/category-products";
 import { ProductsListClient } from "@/app/components/all-products/products-list-client";
-import type { Category, Product } from "@/app/types/index";
+import { AllProductsFilters } from "@/app/components/all-products/all-products-filters";
+import type { Category, Product, Brand } from "@/app/types/index";
 
 interface AllProductsPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
