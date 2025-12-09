@@ -28,8 +28,16 @@ type Region = {
   colors?: Array<{id: string; name: string; image?: string}>;
   defaultStorages?: Array<{id: string; size: string; price: any; stock?: number}>;
 };
+
+type Network = {
+  id: string;
+  networkType: string;
+  colors?: Array<{id: string; colorName: string; colorImage?: string}>;
+  defaultStorages?: Array<{id: string; storageSize: string; price: any; stock?: number}>;
+};
+
 type ProductInfoRegionProps = {
-  product: Product & {rawProduct?: {regions?: Region[]; [key: string]: any}; productType?: string};
+  product: Product & {rawProduct?: {regions?: Region[]; networks?: Network[]; [key: string]: any}; productType?: string};
 };
 
 export function ProductInfoRegion({product}: ProductInfoRegionProps) {
