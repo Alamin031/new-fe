@@ -409,7 +409,9 @@ export function ProductInfoRegion({product}: ProductInfoRegionProps) {
             Storage
           </label>
           <div className="flex flex-wrap gap-2">
-            {storages.map((storage: {id: string; size: string; price: any; stock?: number}) => (
+            {storages.map((storage: any) => {
+              const storageSize = storage.size || (storage as any).storageSize || 'Storage';
+              return (
               <button
                 key={storage.id}
                 onClick={() => setSelectedStorageId(storage.id)}
@@ -420,9 +422,10 @@ export function ProductInfoRegion({product}: ProductInfoRegionProps) {
                     : "border-border hover:border-foreground/30 hover:bg-muted/50",
                 )}
               >
-                {storage.size}
+                {storageSize}
               </button>
-            ))}
+            );
+            })}
           </div>
         </div>
       )}
