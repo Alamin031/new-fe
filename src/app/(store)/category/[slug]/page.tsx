@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { categoriesService } from "@/app/lib/api/services/categories";
-import { CategoryFilters } from "@/app/components/category/category-filters";
+import { productsService } from "@/app/lib/api/services/products";
 import { CategoryProductsClient } from "@/app/components/category/category-products-client";
 import { CategoryFAQ } from "@/app/components/category/category-faq";
 import type { Category, Product } from "@/app/types/index";
@@ -106,18 +107,35 @@ export default async function Page({ params }: CategoryPageProps) {
   if (!category) {
     notFound();
   }
-  // Fetch products for this category using the dedicated category endpoint
+  // Fetch all products with full details
   let products: Product[] = [];
   try {
-    // Call endpoint /api/categories/[slug]/products
-    const res = await categoriesService.getProductsBySlug(slug);
-    products = Array.isArray(res)
-      ? res.map((p) => ({ ...p, images: p.images ?? [] }))
-      : [];
+    const allRes = await productsService.getAll({}, 1, 1000);
+    let allProducts: Product[] = [];
+    if (allRes && typeof allRes === "object") {
+      if (Array.isArray((allRes as { data?: unknown[] }).data)) {
+        allProducts = (allRes as { data?: unknown[] }).data as Product[];
+      } else if (Array.isArray((allRes as { items?: unknown[] }).items)) {
+        allProducts = (allRes as { items?: unknown[] }).items as Product[];
+      } else if (Array.isArray(allRes)) {
+        allProducts = allRes as Product[];
+      }
+    } else if (Array.isArray(allRes)) {
+      allProducts = allRes as Product[];
+    }
+
+    // Filter products for this category
+    products = allProducts.filter((p: any) => {
+      if (Array.isArray(p.categoryIds)) {
+        return p.categoryIds.includes(category.id);
+      }
+      return p.categoryId === category.id;
+    });
   } catch (error) {
     console.error(`Failed to fetch products for category ${slug}:`, error);
     products = [];
   }
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
       <nav className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
@@ -142,11 +160,6 @@ export default async function Page({ params }: CategoryPageProps) {
 
       {/* Content */}
       <div className="flex flex-col gap-8 lg:flex-row">
-        {/* Filters - Sidebar */}
-        <aside className="w-full shrink-0 lg:w-64">
-          <CategoryFilters />
-        </aside>
-
         {/* Products Grid */}
         <main className="flex-1">
           <CategoryProductsClient
