@@ -433,7 +433,7 @@ export function ProductInfoRegion({product, onColorChange}: ProductInfoRegionPro
           </label>
           <div className="flex flex-wrap gap-2">
             {regions.map((region: any) => {
-              const regionName = (region.name || '').toString().trim();
+              const regionName = (region.name || '').trim() || (isNetworkProduct ? region.networkType || '' : '');
               return (
               <button
                 key={region.id}
