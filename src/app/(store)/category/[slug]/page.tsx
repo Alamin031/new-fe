@@ -4,7 +4,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { categoriesService } from "@/app/lib/api/services/categories";
 import { productsService } from "@/app/lib/api/services/products";
-import { CategoryFilters } from "@/app/components/category/category-filters";
 import { CategoryProductsClient } from "@/app/components/category/category-products-client";
 import { CategoryFAQ } from "@/app/components/category/category-faq";
 import type { Category, Product } from "@/app/types/index";
