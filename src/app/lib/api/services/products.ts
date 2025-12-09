@@ -77,7 +77,11 @@ export const productsService = {
     const endpoint = API_ENDPOINTS.PRODUCTS_SLUG.replace('{slug}', slug);
     const response = await apiClient.get<Product>(endpoint, {
       params: {
-        includeRelations: 'true', // Include nested regions, networks, directColors
+        relations: 'true',
+        networks: 'true',
+        regions: 'true',
+        colors: 'true',
+        storages: 'true',
       },
     });
     return response.data;
