@@ -623,7 +623,7 @@ export function ProductInfoRegion({product, onColorChange}: ProductInfoRegionPro
 
       {/* Additional Actions */}
       <div className="flex gap-3 pt-4">
-        {isOutOfStock && (
+        {isHydrated && isOutOfStock && (
           <Button
             variant="outline"
             size="lg"
@@ -637,7 +637,7 @@ export function ProductInfoRegion({product, onColorChange}: ProductInfoRegionPro
         <Button
           variant="outline"
           size="lg"
-          className={cn("gap-2", isOutOfStock ? "flex-1" : "flex-1")}
+          className={cn("gap-2", isHydrated && isOutOfStock ? "flex-1" : "flex-1")}
           onClick={handleAddToCompareAndNavigate}
         >
           <BarChart3 className="h-4 w-4" />
