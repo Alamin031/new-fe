@@ -121,7 +121,8 @@ export function ProductInfoRegion({product, onColorChange}: ProductInfoRegionPro
   let regions: Region[] = isNetworkProduct
     ? networks.map((n: Network) => ({
         id: n.id,
-        name: n.networkType,
+        name: (n.networkType || '').trim(),
+        networkType: (n.networkType || '').trim(),
         colors: (n.colors || []).map((color) => ({
           id: color.id,
           name: color.colorName,
@@ -132,8 +133,8 @@ export function ProductInfoRegion({product, onColorChange}: ProductInfoRegionPro
         })),
         defaultStorages: (n.defaultStorages || []).map((storage) => ({
           id: storage.id,
-          size: storage.storageSize,
-          storageSize: storage.storageSize,
+          size: (storage.storageSize || '').trim(),
+          storageSize: (storage.storageSize || '').trim(),
           price: storage.price,
           stock: storage.stock,
         })),
