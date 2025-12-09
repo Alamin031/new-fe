@@ -41,7 +41,7 @@ type ProductInfoRegionProps = {
   onColorChange?: (colorImage: string | null) => void;
 };
 
-export function ProductInfoRegion({product}: ProductInfoRegionProps) {
+export function ProductInfoRegion({product, onColorChange}: ProductInfoRegionProps) {
   const router = useRouter()
   const rawProduct = product.rawProduct
   // const productType = product.productType || 'basic' // unused
