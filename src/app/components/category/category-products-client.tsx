@@ -67,9 +67,9 @@ export function CategoryProductsClient({
   const products = useMemo(() => {
     const mapProduct = (product: any): Product => ({
       ...product,
-      images: product.images ?? [], // Ensure 'images' exists
+      images: product.images ?? [],
     })
-    if (paginatedData?.data && paginatedData.data.length > 0) {
+    if (paginatedData?.data && Array.isArray(paginatedData.data) && paginatedData.data.length > 0) {
       return paginatedData.data.map(mapProduct)
     }
     return currentPage === 1 ? initialProducts.map(mapProduct) : []
