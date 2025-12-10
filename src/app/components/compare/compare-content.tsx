@@ -151,12 +151,14 @@ export function CompareContent() {
                 </p>
               </div>
 
-              {Array.from(allSpecs).map((spec) => {
-                const specValue = product.specifications[spec]
-                const displayValue = typeof specValue === "object" && specValue?.specValue ? specValue.specValue : specValue || "N/A"
+              {sortedSpecKeys.map((specKey) => {
+                const specItem = Array.isArray(product.specifications)
+                  ? product.specifications.find((s: any) => s.specKey === specKey)
+                  : null
+                const displayValue = specItem?.specValue || "N/A"
                 return (
-                  <div key={spec} className="border-b border-border pb-3 last:border-b-0">
-                    <p className="text-xs font-medium text-muted-foreground">{spec}</p>
+                  <div key={specKey} className="border-b border-border pb-3 last:border-b-0">
+                    <p className="text-xs font-medium text-muted-foreground">{specKey}</p>
                     <p className="text-sm font-medium">
                       {displayValue}
                     </p>
