@@ -10,6 +10,16 @@ import { formatPrice } from "@/app/lib/utils/format"
 import { useCartStore } from "@/app/store/cart-store"
 import { getDefaultProductPrice } from "@/app/lib/utils/product"
 
+const getProductImageUrl = (image: any): string => {
+  if (!image || image === "") return "/placeholder.svg?height=128&width=128"
+  if (typeof image === "string") return image
+  if (typeof image === "object") {
+    const url = image.imageUrl || image.url || ""
+    return url && url !== "" ? url : "/placeholder.svg?height=128&width=128"
+  }
+  return "/placeholder.svg?height=128&width=128"
+}
+
 export function CompareContent() {
   const { items, removeItem, clearCompare } = useCompareStore()
   const addToCart = useCartStore((state) => state.addItem)
@@ -35,10 +45,20 @@ export function CompareContent() {
     )
   }
 
-  const allSpecs = new Set<string>()
+  const allSpecs = new Map<string, number>()
   items.forEach((product) => {
-    Object.keys(product.specifications).forEach((key) => allSpecs.add(key))
+    if (Array.isArray(product.specifications)) {
+      product.specifications.forEach((spec: any) => {
+        const displayOrder = spec.displayOrder ?? 999
+        if (!allSpecs.has(spec.specKey)) {
+          allSpecs.set(spec.specKey, displayOrder)
+        }
+      })
+    }
   })
+  const sortedSpecKeys = Array.from(allSpecs.entries())
+    .sort(([, orderA], [, orderB]) => orderA - orderB)
+    .map(([key]) => key)
 
   return (
     <div>
@@ -83,11 +103,11 @@ export function CompareContent() {
               <Link href={`/product/${product.slug}`}>
                 <div className="mb-3 h-32 w-32 overflow-hidden rounded-lg bg-muted">
                   <Image
-                    src={
-                      Array.isArray(product.images) && product.images.length > 0 && product.images[0]
+                    src={getProductImageUrl(
+                      Array.isArray(product.images) && product.images.length > 0
                         ? product.images[0]
-                        : "/placeholder.svg?height=128&width=128"
-                    }
+                        : null
+                    )}
                     alt={product.name}
                     width={128}
                     height={128}
@@ -119,26 +139,24 @@ export function CompareContent() {
 
             {/* Specifications */}
             <div className="flex-1 space-y-3 p-4">
-              <div className="border-b border-border pb-3">
-                <p className="text-xs font-medium text-muted-foreground">Brand</p>
-                <p className="text-sm font-medium">{product.brand ? product.brand.name : "N/A"}</p>
-              </div>
-
-              <div className="border-b border-border pb-3">
-                <p className="text-xs font-medium text-muted-foreground">Rating</p>
-                <p className="text-sm font-medium">
-                  {product.rating} <span className="text-muted-foreground">({product.reviewCount})</span>
-                </p>
-              </div>
-
-              {Array.from(allSpecs).map((spec) => (
-                <div key={spec} className="border-b border-border pb-3 last:border-b-0">
-                  <p className="text-xs font-medium text-muted-foreground">{spec}</p>
-                  <p className="text-sm font-medium">
-                    {product.specifications[spec] || "N/A"}
-                  </p>
-                </div>
-              ))}
+              {sortedSpecKeys.length > 0 ? (
+                sortedSpecKeys.map((specKey) => {
+                  const specItem = Array.isArray(product.specifications)
+                    ? product.specifications.find((s: any) => s.specKey === specKey)
+                    : null
+                  const displayValue = specItem?.specValue || "N/A"
+                  return (
+                    <div key={specKey} className="border-b border-border pb-3 last:border-b-0">
+                      <p className="text-xs font-medium text-muted-foreground">{specKey}</p>
+                      <p className="text-sm font-medium">
+                        {displayValue}
+                      </p>
+                    </div>
+                  )
+                })
+              ) : (
+                <p className="text-xs text-muted-foreground">No specifications available</p>
+              )}
             </div>
 
             {/* Action Button */}
