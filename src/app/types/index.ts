@@ -1,3 +1,12 @@
+export interface Specification {
+  id: string
+  productId: string
+  specKey: string
+  specValue: string
+  displayOrder: number
+  createdAt: string
+}
+
 export interface Product {
   id: string
   name: string
@@ -7,12 +16,12 @@ export interface Product {
   originalPrice?: number
   comparePrice?: number
   stockQuantity?: number
-  images?: string[]
+  images?: string[] | Array<{id: string; imageUrl: string; isThumbnail: boolean; altText: string; displayOrder: number; createdAt: string}>
   category: Category
   brand: Brand
   variants: ProductVariant[]
   highlights: string[]
-  specifications: Record<string, string>
+  specifications: Specification[]
   stock: number
   sku: string
   warranty: string
