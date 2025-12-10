@@ -571,26 +571,10 @@ export function ProductInfoRegion({
           )}
         </div>
 
-        <div suppressHydrationWarning>
-          {isOutOfStock ? (
-            <Badge
-              variant="secondary"
-              className="bg-red-100 text-red-900 dark:bg-red-900/20 dark:text-red-400">
-              Out of Stock
-            </Badge>
-          ) : priceData.stock <= 10 ? (
-            <Badge className="bg-amber-100 text-amber-900 dark:bg-amber-900/20 dark:text-amber-400">
-              Only {priceData.stock} left
-            </Badge>
-          ) : (
-            <Badge className="bg-emerald-100 text-emerald-900 dark:bg-emerald-900/20 dark:text-emerald-400">
-              <Check className="mr-1.5 h-3 w-3" /> In Stock
-            </Badge>
-          )}
-        </div>
+        <div suppressHydrationWarning />
       </div>
 
-      <Separator className="my-2" />
+      <Separator className="mb-2" />
 
       {/* Price Section */}
       <div className="space-y-4">
@@ -667,16 +651,6 @@ export function ProductInfoRegion({
             </label>
             <p className="text-sm text-muted-foreground mt-1">
               {selectedColor?.name || 'Select a color'}
-              {selectedColor && selectedColor.stockQuantity !== undefined && (
-                <span className="ml-2 text-xs">
-                  (
-                  {selectedColor.stockQuantity !== null &&
-                  selectedColor.stockQuantity !== undefined
-                    ? selectedColor.stockQuantity
-                    : '—'}{' '}
-                  in stock)
-                </span>
-              )}
             </p>
           </div>
           <div className="flex flex-wrap gap-3">

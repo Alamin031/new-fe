@@ -79,7 +79,8 @@ export function EmiOptionsModal({
   const selectedBankData = plansByBank[selectedBank]
   const bankPlans = selectedBankData?.plans || []
 
-  const numAmount = Number(amount) || 0
+  // Always use regular price for EMI calculation
+  const regularPrice = price
 
   const calculateEmi = (principal: number, monthCount: number, rate: number = 0) => {
     if (rate === 0) {
@@ -156,10 +157,11 @@ export function EmiOptionsModal({
                 <TableBody>
                   {bankPlans.length > 0 ? (
                     bankPlans.map((plan) => {
-                      const emiAmount = calculateEmi(numAmount, plan.months, plan.interestRate)
+                      // Always use regular price for EMI calculation
+                      const emiAmount = calculateEmi(regularPrice, plan.months, plan.interestRate)
                       const totalCost = emiAmount * plan.months
-                      const totalInterest = totalCost - numAmount
-                      const chargePercent = (totalInterest / numAmount * 100).toFixed(2)
+                      const totalInterest = totalCost - regularPrice
+                      const chargePercent = (totalInterest / regularPrice * 100).toFixed(2)
 
                       return (
                         <TableRow key={plan.id} className="bg-muted/50">
