@@ -69,6 +69,11 @@ export function ProductGallery({ images, name, isEmi, isCare, selectedColorImage
     setManuallySelectedIndex(index)
   }
 
+  // Reset manually selected index when color changes
+  useEffect(() => {
+    setManuallySelectedIndex(null)
+  }, [selectedColorImage])
+
   return (
     <>
       <div className="flex flex-col gap-4">
