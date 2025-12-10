@@ -478,7 +478,7 @@ export function ProductInfoRegion({
     // Check if user is authenticated
     if (!authStore.isAuthenticated) {
       // Redirect to login with the current product page as the return URL
-      router.push(`/auth/login?from=/product/${product.slug}`);
+      router.push(`/login?from=/product/${product.slug}`);
       return;
     }
 
