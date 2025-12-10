@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog"
-import { Button } from "../ui/button"
+import { Ban } from "lucide-react"
 import { Input } from "../ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
 import { formatPrice } from "@/app/lib/utils/format"
@@ -23,7 +24,6 @@ export function EmiOptionsModal({
   onOpenChange,
   plans,
   price,
-  isLoading = false,
   onOpen
 }: EmiOptionsModalProps) {
   const [amount, setAmount] = useState(price.toString())
@@ -33,10 +33,17 @@ export function EmiOptionsModal({
   // Fetch plans when modal opens
   useEffect(() => {
     if (open && onOpen && plans.length === 0) {
-      setIsLoadingPlans(true)
-      onOpen()
-        .catch((error) => console.error("Error loading EMI plans:", error))
-        .finally(() => setIsLoadingPlans(false))
+      const fetchPlans = async () => {
+        setIsLoadingPlans(true)
+        try {
+          await onOpen()
+        } catch (error) {
+          console.error("Error loading EMI plans:", error)
+        } finally {
+          setIsLoadingPlans(false)
+        }
+      }
+      fetchPlans()
     }
   }, [open, onOpen, plans.length])
 
@@ -90,7 +97,10 @@ export function EmiOptionsModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader className="flex flex-row items-center justify-between">
-          <DialogTitle>EMI Options</DialogTitle>
+          <div className="flex items-center gap-2">
+            <Ban className="h-6 w-6 text-[oklch(0.75_0.15_45)]" />
+            <DialogTitle>EMI Options</DialogTitle>
+          </div>
           <a href="#" className="text-sm font-medium text-[oklch(0.75_0.15_45)]">
             EMI FAQ
           </a>

@@ -47,6 +47,11 @@ export default async function ProductPage({params}: ProductPageProps) {
   let apiProduct;
   try {
     apiProduct = await productsService.getBySlug(slug);
+    // Debug: log the fetched product and its rawProduct field
+    console.log('Fetched apiProduct:', apiProduct);
+    if (apiProduct && (apiProduct as any).rawProduct) {
+      console.log('apiProduct.rawProduct:', (apiProduct as any).rawProduct);
+    }
   } catch (error) {
     console.error('Product fetch error:', error);
     notFound();
@@ -79,7 +84,10 @@ export default async function ProductPage({params}: ProductPageProps) {
   // Extract specifications
   const specifications = (() => {
     if (apiProduct.specifications && Array.isArray(apiProduct.specifications)) {
-      return Object.fromEntries(apiProduct.specifications.map((s: any) => [s.key, s.value]));
+      // Support both {key, value} and {specKey, specValue}
+      return Object.fromEntries(
+        apiProduct.specifications.map((s: any) => [s.key || s.specKey, s.value || s.specValue])
+      );
     }
     if (typeof apiProduct.specifications === 'object' && apiProduct.specifications !== null) {
       return apiProduct.specifications;

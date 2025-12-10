@@ -295,15 +295,6 @@ function NewProductPage() {
     setSlug(slugify(e.target.value));
   };
 
-  // Rich text editor
-  const formatText = (command: string, value?: string) => {
-    document.execCommand(command, false, value);
-  };
-
-  const handleShortDescriptionChange = (e: React.FormEvent<HTMLDivElement>) => {
-    setShortDescription(e.currentTarget.innerHTML);
-  };
-
   // Thumbnail handling
   const handleThumbnailUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1662,34 +1653,14 @@ function NewProductPage() {
               </div>
 
               <div>
-                <Label>Short Description</Label>
-                <div className="mb-2 flex gap-1 border-b border-gray-200 pb-2">
-                  <button
-                    type="button"
-                    onClick={() => formatText('bold')}
-                    className="rounded px-3 py-1 text-sm font-medium hover:bg-gray-100">
-                    Bold
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => formatText('italic')}
-                    className="rounded px-3 py-1 text-sm font-medium hover:bg-gray-100">
-                    Italic
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => formatText('underline')}
-                    className="rounded px-3 py-1 text-sm font-medium hover:bg-gray-100">
-                    Underline
-                  </button>
-                </div>
-                <div
+                <Label htmlFor="shortDescription">Short Description</Label>
+                <input
                   id="shortDescription"
-                  ref={shortDescriptionRef}
-                  contentEditable
-                  onInput={handleShortDescriptionChange}
-                  className="min-h-24 rounded-lg border-2 border-gray-200 p-4 focus:border-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-opacity-10 transition-all"
-                  suppressContentEditableWarning
+                  type="text"
+                  value={shortDescription}
+                  onChange={e => setShortDescription(e.target.value)}
+                  className="min-h-10 rounded-lg border-2 border-gray-200 p-4 focus:border-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-opacity-10 transition-all w-full"
+                  placeholder="Enter short description"
                 />
               </div>
 
@@ -2507,7 +2478,9 @@ function NewProductPage() {
                     )}
 
                     <div className="space-y-3">
-                      <Label className="block font-semibold">Colors</Label>
+                      <Label className="block font-semibold">
+                        Colors
+                      </Label>
                       {network.colors.map(color => (
                         <div
                           key={color.id}
