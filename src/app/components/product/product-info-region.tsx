@@ -471,6 +471,33 @@ export function ProductInfoRegion({
     }
   };
 
+  const handleBuyNow = () => {
+    const authStore = useAuthStore.getState();
+
+    // Check if user is authenticated
+    if (!authStore.isAuthenticated) {
+      // Redirect to login with the current product page as the return URL
+      router.push(`/auth/login?from=/product/${product.slug}`);
+      return;
+    }
+
+    // Add to cart and redirect to checkout
+    if (!isOutOfStock && selectedRegion && selectedColor && selectedStorage) {
+      addToCart(product, quantity, {
+        region: selectedRegion.id,
+        regionName: selectedRegion.name,
+        color: selectedColor.id,
+        colorName: selectedColor.name,
+        storage: selectedStorage.id,
+        storageName: selectedStorage.size,
+        priceType: selectedPriceType,
+      });
+
+      // Redirect to checkout
+      router.push('/checkout');
+    }
+  };
+
   const handleWishlistToggle = () => {
     if (inWishlist) {
       removeFromWishlist(product.id);
