@@ -151,7 +151,7 @@ export function CartContent() {
             <span className="text-xl">{formatPrice(total)}</span>
           </div>
 
-          <Button className="mt-6 w-full" size="lg">
+          <Button className="mt-6 w-full" size="lg" onClick={handleProceedToCheckout}>
             Proceed to Checkout
           </Button>
 
