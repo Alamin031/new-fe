@@ -41,7 +41,7 @@ export function formatPriceParts(price: number): { symbol: string; amount: strin
 }
 
 export function formatEMI(price: number, months = 12): string {
-  const emi = Math.ceil(price / months)
+  const emi = price / months
   return `${formatPrice(emi)}/month`
 }
 
