@@ -35,7 +35,6 @@ export function AllProductsFilters({
   const [activeBrands, setActiveBrands] = useState<string[]>(selectedBrands);
   const [expandedSections, setExpandedSections] = useState({
     categories: true,
-    brands: true,
   });
 
   const toggleSection = (section: keyof typeof expandedSections) => {
@@ -114,21 +113,6 @@ export function AllProductsFilters({
                   onClick={() => toggleCategory(categorySlug)}
                 >
                   {cat?.name}
-                  <X className="h-3 w-3" />
-                </Button>
-              );
-            })}
-            {activeBrands.map((brandSlug) => {
-              const brand = brands.find((b) => b.slug === brandSlug);
-              return (
-                <Button
-                  key={brandSlug}
-                  variant="secondary"
-                  size="sm"
-                  className="h-7 gap-1 text-xs"
-                  onClick={() => toggleBrand(brandSlug)}
-                >
-                  {brand?.name}
                   <X className="h-3 w-3" />
                 </Button>
               );
