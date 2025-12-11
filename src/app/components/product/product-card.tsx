@@ -220,13 +220,6 @@ export function ProductCard({ product, className }: ProductCardProps) {
 
       {/* Content */}
       <div className="flex flex-1 flex-col p-4">
-        {/* Debug info if product is missing required fields */}
-        {(!product.name || !product.slug) && (
-          <div className="text-xs text-red-500 mb-2">
-            Missing: {!product.name ? 'name ' : ''}{!product.slug ? 'slug' : ''}
-          </div>
-        )}
-
         {/* Brand */}
         {product.brand && product.brand.slug && product.brand.name && (
           <Link
@@ -238,17 +231,11 @@ export function ProductCard({ product, className }: ProductCardProps) {
         )}
 
         {/* Title */}
-        {product.slug ? (
-          <Link href={`/product/${product.slug}`}>
-            <h3 className="mt-1 line-clamp-2 text-sm font-medium transition-colors hover:text-muted-foreground">
-              {product.name || "Product"}
-            </h3>
-          </Link>
-        ) : (
+        <Link href={`/product/${product.slug}`}>
           <h3 className="mt-1 line-clamp-2 text-sm font-medium transition-colors hover:text-muted-foreground">
-            {product.name || "Product"}
+            {product.name}
           </h3>
-        )}
+        </Link>
 
         {/* Rating */}
         {product.rating > 0 && (
