@@ -185,8 +185,8 @@ export default async function ProductPage({params}: ProductPageProps) {
   try {
     if (category?.id) {
       console.log('DEBUG - Fetching related products for categoryId:', category.id);
-      const response = await productsService.getAll(
-        {categoryId: category.id},
+      const response = await productsService.getAllByCategoryIds(
+        [category.id],
         1,
         10,
       );
