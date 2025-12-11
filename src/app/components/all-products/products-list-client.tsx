@@ -122,7 +122,7 @@ export function ProductsListClient({
   return (
     <div className="space-y-8">
       {/* Product Count Info */}
-      <div className="text-sm text-muted-foreground">
+      <div className="text-sm text-muted-foreground" suppressHydrationWarning>
         Showing {displayTotalProducts > 0 ? offset + 1 : 0}-{Math.min(offset + PAGE_SIZE, displayTotalProducts)} of{" "}
         {displayTotalProducts} products
       </div>
