@@ -871,6 +871,7 @@ export function ProductInfoRegion({
         </div>
 
         {/* Add to Cart or Notify Button */}
+        <div suppressHydrationWarning>
         {isOutOfStock ? (
           <Button
             size="lg"
@@ -908,6 +909,7 @@ export function ProductInfoRegion({
             Add to Cart
           </Button>
         )}
+        </div>
 
         {/* Buy Now Button */}
         <Button
