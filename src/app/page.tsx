@@ -14,10 +14,13 @@ import { MiddleBanner } from "./components/home/middel-banner";
 export const dynamic = 'force-dynamic';
 
 export default async function Page() {
-  // Fetch brands for the slider
-  const brands = await brandsService.findAll();
-  // Fetch categories for the slider
-  const categories = await categoriesService.getAll();
+  // Parallelize API calls for better performance
+  const [brands, categories, homecategories] = await Promise.all([
+    brandsService.findAll(),
+    categoriesService.getAll(),
+    homecategoriesService.list(),
+  ]);
+
   // Ensure slug is always a string to match the app types
   const normalizedCategories: import("./types").Category[] = categories.map(
     (c) => ({
@@ -25,9 +28,6 @@ export default async function Page() {
       slug: c.slug ?? "",
     })
   );
-
-  // Fetch all homecategories and sort by priority
-  const homecategories = await homecategoriesService.list();
   console.log('Fetched homecategories:', homecategories);
   const sortedHomecategories = [...homecategories].sort(
     (a, b) => (a.priority ?? 999) - (b.priority ?? 999)
