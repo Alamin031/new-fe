@@ -15,6 +15,7 @@ import {
   CreditCard,
   TrendingUp,
   AlertCircle,
+  BookOpen,
 } from 'lucide-react';
 import {Badge} from '../components/ui/badge';
 import {Suspense} from 'react';
@@ -28,6 +29,7 @@ const sidebarLinks = [
   {href: '/admin/emi', label: 'EMI Plans', icon: CreditCard},
   {href: '/admin/products', label: 'Products', icon: Package},
   {href: '/admin/product-faqs', label: 'Product Faqs', icon: MessageSquare},
+  {href: '/admin/blog', label: 'Blog', icon: BookOpen},
   {href: '/admin/homeshow-category', label: 'HomeShow Category', icon: FolderTree},
   {href: '/admin/product-care-plan', label: 'Product Care Plan', icon: Settings},
   {href: '/admin/privacy-policy', label: 'Privacy Policy', icon: Settings},
