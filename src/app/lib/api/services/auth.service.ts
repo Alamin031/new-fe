@@ -66,17 +66,23 @@ export class AuthService {
    * Login with social provider
    */
    async socialLogin(data: SocialLoginRequest): Promise<AuthResponse> {
-    const response = await apiClient.post<ApiResponse<AuthResponse>>(
-      API_ENDPOINTS.AUTH_SOCIAL_LOGIN,
-      data
-    )
+    try {
+      const response = await apiClient.post<ApiResponse<AuthResponse>>(
+        API_ENDPOINTS.AUTH_SOCIAL_LOGIN,
+        data
+      )
 
-    if (response.data.data) {
-      const { token, refreshToken } = response.data.data
-      TokenManager.setTokens(token, refreshToken)
+      if (response.data.data) {
+        const { token, refreshToken } = response.data.data
+        TokenManager.setTokens(token, refreshToken)
+      }
+
+      return response.data.data!
+    } catch (error) {
+      // Auto-clear on social login error
+      TokenManager.clearTokens()
+      throw error
     }
-
-    return response.data.data!
   }
 
   /**
