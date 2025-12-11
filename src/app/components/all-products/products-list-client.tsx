@@ -74,7 +74,8 @@ export function ProductsListClient({
   })
 
   // Generate cache key based on current page and filters
-  const cacheKey = `products_list_page_${currentPage}_cats_${selectedCategoryIds.join(',')}_brands_${selectedBrandIds.join(',')}`
+  const filterKey = `${selectedCategoryIds.sort().join('_')}_${selectedBrandIds.sort().join('_')}`
+  const cacheKey = `products_list_${filterKey}_page_${currentPage}`
 
   // Fetch products for current page with filters
   const { data: paginatedData, isLoading, error } = useSWRCache<ProductListResponse>(
