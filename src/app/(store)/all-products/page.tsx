@@ -52,6 +52,7 @@ export default async function Page({ searchParams }: AllProductsPageProps) {
   const [categoriesRaw, brandsRaw, productsRaw] = await Promise.all([
     categoriesService.getAll(),
     brandsService.findAll().catch(() => []),
+    // Fetch products with full relations for complete product data
     productsService.getAll({}, 1, 1000).catch(() => null),
   ]);
 
@@ -98,6 +99,41 @@ export default async function Page({ searchParams }: AllProductsPageProps) {
     products = productsRaw as Product[];
   }
 
+  // Filter products based on selected categories and brands
+  const filteredProducts = products.filter((product) => {
+    const matchesCategory =
+      selectedCategories.length === 0 ||
+      selectedCategories.some((categorySlug) => {
+        const category = categories.find((c) => c.slug === categorySlug);
+        if (!category) return false;
+
+        // Handle both categoryId (singular) and categoryIds (plural array)
+        const productCategoryId = (product as any).categoryId;
+        const productCategoryIds = (product as any).categoryIds as string[] | undefined;
+
+        if (productCategoryId === category.id) return true;
+        if (productCategoryIds && productCategoryIds.includes(category.id)) return true;
+        return false;
+      });
+
+    const matchesBrand =
+      selectedBrands.length === 0 ||
+      selectedBrands.some((brandSlug) => {
+        const brand = brands.find((b) => b.slug === brandSlug);
+        if (!brand) return false;
+
+        // Handle both brandId (singular) and brandIds (plural array)
+        const productBrandId = (product as any).brandId;
+        const productBrandIds = (product as any).brandIds as string[] | undefined;
+
+        if (productBrandId === brand.id) return true;
+        if (productBrandIds && productBrandIds.includes(brand.id)) return true;
+        return false;
+      });
+
+    return matchesCategory && matchesBrand;
+  });
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
       <nav className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
@@ -134,11 +170,11 @@ export default async function Page({ searchParams }: AllProductsPageProps) {
         {/* Products Grid */}
         <main className="flex-1 min-w-0">
           <ProductsListClient
-            initialProducts={products.slice(0, 20)}
-            totalProducts={products.length}
+            initialProducts={filteredProducts.slice(0, 20)}
+            totalProducts={filteredProducts.length}
             selectedCategories={selectedCategories}
             selectedBrands={selectedBrands}
-            allProducts={products}
+            allProducts={filteredProducts}
             categories={categories}
             brands={brands}
           />

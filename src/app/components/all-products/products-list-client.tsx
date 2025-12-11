@@ -52,16 +52,52 @@ export function ProductsListClient({
     async () => {
       const filters: any = {}
 
+      // Send category and brand IDs - the API expects comma-separated values
       if (selectedCategoryIds.length > 0) {
-        filters.categoryIds = selectedCategoryIds
+        filters.categoryIds = selectedCategoryIds.join(',')
       }
 
       if (selectedBrandIds.length > 0) {
-        filters.brandIds = selectedBrandIds
+        filters.brandIds = selectedBrandIds.join(',')
       }
 
-      const response = await productsService.getAll(filters, currentPage, PAGE_SIZE)
-      return response
+      try {
+        const response = await productsService.getAll(filters, currentPage, PAGE_SIZE)
+        return response
+      } catch (err) {
+        // If API call fails, fall back to local filtering of allProducts
+        console.warn('API filtering failed, using local filtering:', err)
+        const start = (currentPage - 1) * PAGE_SIZE
+        const end = start + PAGE_SIZE
+
+        const filteredByCategory = allProducts.filter((product: any) => {
+          if (selectedCategoryIds.length === 0) return true
+          const productCategoryId = product.categoryId
+          const productCategoryIds = product.categoryIds as string[] | undefined
+          return selectedCategoryIds.some(id =>
+            productCategoryId === id || productCategoryIds?.includes(id)
+          )
+        })
+
+        const filteredByBrand = filteredByCategory.filter((product: any) => {
+          if (selectedBrandIds.length === 0) return true
+          const productBrandId = product.brandId
+          const productBrandIds = product.brandIds as string[] | undefined
+          return selectedBrandIds.some(id =>
+            productBrandId === id || productBrandIds?.includes(id)
+          )
+        })
+
+        return {
+          data: filteredByBrand.slice(start, end),
+          pagination: {
+            total: filteredByBrand.length,
+            page: currentPage,
+            limit: PAGE_SIZE,
+            pages: Math.ceil(filteredByBrand.length / PAGE_SIZE)
+          }
+        } as ProductListResponse
+      }
     },
     {
       ttl: 300000, // 5 minutes
@@ -86,10 +122,17 @@ export function ProductsListClient({
       images: product.images ?? [],
     })
 
+    // Use fetched data if available and has items
     if (paginatedData?.data && paginatedData.data.length > 0) {
       return paginatedData.data.map(mapToAppProduct)
     }
-    return currentPage === 1 ? initialProducts.map(mapToAppProduct) : []
+
+    // Fallback to initial products on first page
+    if (currentPage === 1 && initialProducts.length > 0) {
+      return initialProducts.map(mapToAppProduct)
+    }
+
+    return []
   }, [paginatedData, initialProducts, currentPage])
 
   const handleNextPage = () => {
