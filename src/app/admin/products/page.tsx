@@ -119,7 +119,8 @@ function AdminProductsPage() {
           queryParams.productType = activeTab;
         }
         if (selectedCategory && selectedCategory !== 'all') {
-          queryParams.categoryId = selectedCategory;
+          // Use categoryIds as an array for the API
+          queryParams.categoryIds = [selectedCategory];
         }
 
         const res = await productsService.getAllLite(
@@ -139,14 +140,16 @@ function AdminProductsPage() {
             ? res.length
             : apiProducts.length;
 
-        // Find missing category IDs
+
+        // Find missing category IDs (from categoryIds array)
+        const allCategoryIds = apiProducts
+          .flatMap((p: any) => Array.isArray(p.categoryIds) ? p.categoryIds : [])
+          .filter((id: string) => !!id);
         const missingCategoryIds = [
           ...new Set(
-            apiProducts
-              .map((p: any) => p.categoryId)
-              .filter(
-                (id: string) => id && !categories.some((c: any) => c.id === id),
-              ),
+            allCategoryIds.filter(
+              (id: string) => id && !categories.some((c: any) => c.id === id),
+            ),
           ),
         ];
 
@@ -172,6 +175,7 @@ function AdminProductsPage() {
           });
         }
 
+
         const mapped: UIProduct[] = apiProducts.map((p: any) => {
           // Handle images - they should come from API response
           let imageUrl = '/placeholder.svg';
@@ -187,8 +191,6 @@ function AdminProductsPage() {
             // fallback for single image field
             imageUrl = p.image;
           }
-
-          // Status calculation removed as it was unused
 
           let type: 'basic' | 'network' | 'region' = 'basic';
           if (p.productType) {
@@ -206,6 +208,8 @@ function AdminProductsPage() {
             slug: p.slug || '',
             description: p.description || '',
             type,
+            // Add categoryIds for filtering
+            categoryIds: Array.isArray(p.categoryIds) ? p.categoryIds : [],
           };
         });
 
@@ -276,7 +280,14 @@ function AdminProductsPage() {
     }
   };
 
-  const filteredProducts = products;
+  // Filter products by selectedCategory using categoryIds array
+  const filteredProducts =
+    selectedCategory && selectedCategory !== 'all'
+      ? products.filter(p =>
+          Array.isArray((p as any).categoryIds) &&
+          (p as any).categoryIds.includes(selectedCategory),
+        )
+      : products;
 
   return (
     <div className="space-y-6">
