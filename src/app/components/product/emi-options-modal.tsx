@@ -82,7 +82,7 @@ export function EmiOptionsModal({
     // Simple interest calculation: Principal + (Principal * Rate% * Months) / Months
     const totalInterest = (principal * rate) / 100
     const totalAmount = principal + (totalInterest * monthCount)
-    return Math.ceil(totalAmount / monthCount)
+    return totalAmount / monthCount
   }
 
   // Get initials for bank badge
