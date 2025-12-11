@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { useSWRCache } from "@/app/hooks/use-swr-cache"
 import { usePagination } from "@/app/hooks/use-pagination"
 import { productsService } from "@/app/lib/api/services/products"
@@ -16,6 +16,8 @@ interface ProductsListClientProps {
   selectedCategories?: string[]
   selectedBrands?: string[]
   allProducts?: Product[]
+  categories?: any[]
+  brands?: any[]
 }
 
 const PAGE_SIZE = 20
@@ -26,49 +28,39 @@ export function ProductsListClient({
   selectedCategories = [],
   selectedBrands = [],
   allProducts = [],
+  categories = [],
+  brands = [],
 }: ProductsListClientProps) {
-  // Filter products based on selected categories and brands
-  const filteredProducts = useMemo(() => {
-    let filtered = allProducts.length > 0 ? allProducts : initialProducts
+  // Convert category and brand slugs to IDs
+  const selectedCategoryIds = selectedCategories
+    .map(slug => categories.find((c: any) => c.slug === slug)?.id)
+    .filter(Boolean) as string[]
 
-    if (selectedCategories.length > 0) {
-      filtered = filtered.filter((product) =>
-        selectedCategories.includes(product.category?.slug)
-      )
-    }
+  const selectedBrandIds = selectedBrands
+    .map(slug => brands.find((b: any) => b.slug === slug)?.id)
+    .filter(Boolean) as string[]
 
-    if (selectedBrands.length > 0) {
-      filtered = filtered.filter((product) =>
-        selectedBrands.includes(product.brand?.slug)
-      )
-    }
+  const [currentPage, setCurrentPage] = useState(1)
 
-    return filtered
-  }, [allProducts, initialProducts, selectedCategories, selectedBrands])
+  // Generate cache key based on current page and filters
+  const filterKey = `${selectedCategoryIds.sort().join('_')}_${selectedBrandIds.sort().join('_')}`
+  const cacheKey = `products_list_${filterKey}_page_${currentPage}`
 
-  const {
-    currentPage,
-    totalPages,
-    pageSize,
-    offset,
-    goToPage,
-    nextPage,
-    prevPage,
-    hasNextPage,
-    hasPrevPage,
-  } = usePagination({
-    pageSize: PAGE_SIZE,
-    totalItems: filteredProducts.length,
-  })
-
-  // Generate cache key based on current page
-  const cacheKey = `products_list_page_${currentPage}`
-
-  // Fetch products for current page
+  // Fetch products for current page with filters
   const { data: paginatedData, isLoading, error } = useSWRCache<ProductListResponse>(
     cacheKey,
     async () => {
-      const response = await productsService.getAll({}, currentPage, PAGE_SIZE)
+      const filters: any = {}
+
+      if (selectedCategoryIds.length > 0) {
+        filters.categoryIds = selectedCategoryIds
+      }
+
+      if (selectedBrandIds.length > 0) {
+        filters.brandIds = selectedBrandIds
+      }
+
+      const response = await productsService.getAll(filters, currentPage, PAGE_SIZE)
       return response
     },
     {
@@ -77,6 +69,15 @@ export function ProductsListClient({
       dedupingInterval: 2000,
     }
   )
+
+  // Get total products from API response, fallback to prop value for initial hydration match
+  const displayTotalProducts = paginatedData?.pagination?.total ?? totalProducts ?? 0
+
+  // Calculate pagination values
+  const totalPages = displayTotalProducts > 0 ? Math.ceil(displayTotalProducts / PAGE_SIZE) : 0
+  const offset = (currentPage - 1) * PAGE_SIZE
+  const hasNextPage = currentPage < totalPages
+  const hasPrevPage = currentPage > 1
 
   // Use either fetched data or initial data
   const products = useMemo(() => {
@@ -88,19 +89,26 @@ export function ProductsListClient({
     if (paginatedData?.data && paginatedData.data.length > 0) {
       return paginatedData.data.map(mapToAppProduct)
     }
-    return currentPage === 1 ? filteredProducts.map(mapToAppProduct) : []
-  }, [paginatedData, filteredProducts, currentPage])
+    return currentPage === 1 ? initialProducts.map(mapToAppProduct) : []
+  }, [paginatedData, initialProducts, currentPage])
 
-  const displayTotalProducts = useMemo(() => {
-    return filteredProducts.length
-  }, [filteredProducts])
-
-  const displayTotalPages = useMemo(() => {
-    if (displayTotalProducts > 0) {
-      return Math.ceil(displayTotalProducts / PAGE_SIZE)
+  const handleNextPage = () => {
+    if (hasNextPage) {
+      setCurrentPage(prev => prev + 1)
     }
-    return totalPages
-  }, [displayTotalProducts, totalPages])
+  }
+
+  const handlePrevPage = () => {
+    if (hasPrevPage) {
+      setCurrentPage(prev => prev - 1)
+    }
+  }
+
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page)
+    }
+  }
 
   if (error) {
     return (
@@ -114,8 +122,8 @@ export function ProductsListClient({
   return (
     <div className="space-y-8">
       {/* Product Count Info */}
-      <div className="text-sm text-muted-foreground">
-        Showing {offset + 1}-{Math.min(offset + PAGE_SIZE, displayTotalProducts)} of{" "}
+      <div className="text-sm text-muted-foreground" suppressHydrationWarning>
+        Showing {displayTotalProducts > 0 ? offset + 1 : 0}-{Math.min(offset + PAGE_SIZE, displayTotalProducts)} of{" "}
         {displayTotalProducts} products
       </div>
 
@@ -123,27 +131,27 @@ export function ProductsListClient({
       <CategoryProducts products={products} isLoading={isLoading} />
 
       {/* Pagination Controls */}
-      {displayTotalPages > 1 && (
+      {totalPages > 1 && (
         <div className="flex flex-col items-center gap-4 py-8">
           <div className="flex gap-2">
             <Button
               variant="outline"
               disabled={!hasPrevPage || isLoading}
-              onClick={prevPage}
+              onClick={handlePrevPage}
             >
               Previous
             </Button>
 
             {/* Page Numbers */}
             <div className="flex items-center gap-1">
-              {Array.from({ length: Math.min(displayTotalPages, 5) }, (_, i) => {
+              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
                 let pageNum: number
-                if (displayTotalPages <= 5) {
+                if (totalPages <= 5) {
                   pageNum = i + 1
                 } else if (currentPage <= 3) {
                   pageNum = i + 1
-                } else if (currentPage >= displayTotalPages - 2) {
-                  pageNum = displayTotalPages - 4 + i
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i
                 } else {
                   pageNum = currentPage - 2 + i
                 }
@@ -165,14 +173,14 @@ export function ProductsListClient({
             <Button
               variant="outline"
               disabled={!hasNextPage || isLoading}
-              onClick={nextPage}
+              onClick={handleNextPage}
             >
               Next
             </Button>
           </div>
 
           <div className="text-sm text-muted-foreground">
-            Page {currentPage} of {displayTotalPages}
+            Page {currentPage} of {totalPages}
           </div>
         </div>
       )}
