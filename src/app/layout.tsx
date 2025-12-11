@@ -11,13 +11,13 @@ import { AuthInit } from "./components/providers/auth-init"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://techstore.com"),
+  metadataBase: new URL("https://www.friendstelecom.com.bd/"),
   title: {
-    default: "TechStore - Premium Electronics & Gadgets | Best Prices in India",
-    template: "%s | TechStore",
+    default: "Friends Telecom - Premium Electronics & Gadgets | Best Prices in Bangladesh",
+    template: "%s | Friends Telecom",
   },
   description:
-    "Shop the latest smartphones, laptops, tablets, and accessories at TechStore. 100% genuine products with official warranty, easy EMI options, and fast delivery across India.",
+    "Shop the latest smartphones, laptops, tablets, and accessories at Friends Telecom. 100% genuine products with official warranty, easy EMI options, and fast delivery across Bangladesh.",
   keywords: [
     "electronics",
     "gadgets",
@@ -41,9 +41,9 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_IN",
-    url: "https://techstore.com",
-    siteName: "TechStore",
-    title: "TechStore - Premium Electronics & Gadgets",
+    url: "https://www.friendstelecom.com.bd/",
+    siteName: "Friends Telecom",
+    title: "Friends Telecom - Premium Electronics & Gadgets",
     description:
       "Shop the latest smartphones, laptops, tablets, and accessories with official warranty and fast delivery.",
     images: [
@@ -51,17 +51,17 @@ export const metadata: Metadata = {
         url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "TechStore - Premium Electronics & Gadgets",
+        alt: "Friends Telecom - Premium Electronics & Gadgets",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "TechStore - Premium Electronics & Gadgets",
+    title: "Friends Telecom - Premium Electronics & Gadgets",
     description:
       "Shop the latest smartphones, laptops, tablets, and accessories with official warranty and fast delivery.",
     images: ["/og-image.jpg"],
-    creator: "@techstore",
+    creator: "@friendstelecom",
   },
   robots: {
     index: true,
@@ -78,7 +78,7 @@ export const metadata: Metadata = {
     google: "google-site-verification-code",
   },
   alternates: {
-    canonical: "https://techstore.com",
+    canonical: "https://www.friendstelecom.com.bd/",
   },
     generator: 'v0.app'
 }
