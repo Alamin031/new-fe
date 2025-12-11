@@ -83,11 +83,11 @@ export function ProductsListClient({
       const filters: any = {}
 
       if (selectedCategoryIds.length > 0) {
-        filters.categoryIds = selectedCategoryIds.join(',')
+        filters.categoryIds = selectedCategoryIds
       }
 
       if (selectedBrandIds.length > 0) {
-        filters.brandIds = selectedBrandIds.join(',')
+        filters.brandIds = selectedBrandIds
       }
 
       const response = await productsService.getAll(filters, currentPage, PAGE_SIZE)
