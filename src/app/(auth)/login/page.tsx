@@ -55,6 +55,13 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  // Show notification if session expired
+  useState(() => {
+    if (searchParams.get("token-expired") || searchParams.get("session-expired")) {
+      toast.info("Your session has expired. Please log in again.");
+    }
+  }, [searchParams]);
   const fromParam = searchParams.get("from");
 
   const handleSubmit = async (e: React.FormEvent) => {
