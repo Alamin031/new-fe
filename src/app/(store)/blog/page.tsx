@@ -16,6 +16,7 @@ export const metadata: Metadata = generateSEO({
 const blogPosts = [
   {
     id: 1,
+    slug: "top-10-smartphones-2024",
     title: "Top 10 Smartphones of 2024: Our Expert Recommendations",
     excerpt: "Discover the best smartphones that dominated the market this year. We've tested and reviewed the top 10 models to help you make the right choice.",
     content: "This comprehensive guide covers the top smartphones of 2024, including detailed specifications, performance analysis, and value for money assessment...",
@@ -27,6 +28,7 @@ const blogPosts = [
   },
   {
     id: 2,
+    slug: "laptop-buying-guide",
     title: "Laptop Buying Guide: Everything You Need to Know",
     excerpt: "Confused about which laptop to buy? Our guide covers processors, RAM, storage, and everything else you need to consider.",
     content: "Whether you're a student, professional, or creative, this guide helps you understand the key specs and choose the perfect laptop...",
@@ -38,6 +40,7 @@ const blogPosts = [
   },
   {
     id: 3,
+    slug: "5g-technology-explained",
     title: "5G Technology: What It Means for You",
     excerpt: "5G is here! Learn about 5G technology, its benefits, and how it will change mobile communication in Bangladesh.",
     content: "5G is the next generation of mobile network technology. In this article, we explore how 5G works, its benefits, and when you can expect it in Bangladesh...",
@@ -49,6 +52,7 @@ const blogPosts = [
   },
   {
     id: 4,
+    slug: "tablet-vs-laptop",
     title: "Tablet vs Laptop: Which Should You Buy?",
     excerpt: "Trying to decide between a tablet and laptop? We compare both to help you make the right choice for your needs.",
     content: "Tablets and laptops serve different purposes. Let's explore the pros and cons of each to help you decide which is right for you...",
@@ -60,6 +64,7 @@ const blogPosts = [
   },
   {
     id: 5,
+    slug: "gaming-laptops-explained",
     title: "Gaming Laptops Explained: Power Meets Portability",
     excerpt: "Looking for a gaming laptop? Our guide breaks down the key specs you need for smooth gameplay and stunning graphics.",
     content: "Gaming laptops require specific specifications to deliver great performance. Learn about GPUs, refresh rates, cooling, and more...",
@@ -71,6 +76,7 @@ const blogPosts = [
   },
   {
     id: 6,
+    slug: "budget-smartphones-under-30000",
     title: "Budget Smartphones Under ৳30,000: Best Options",
     excerpt: "Great phones don't have to be expensive. Check our top picks for the best budget smartphones under ৳30,000.",
     content: "If you're on a budget, there are still plenty of great smartphone options. Here are our top recommendations for phones under ৳30,000...",
@@ -82,6 +88,7 @@ const blogPosts = [
   },
   {
     id: 7,
+    slug: "understanding-warranty",
     title: "Understanding Warranty: What's Covered and What's Not",
     excerpt: "Confused about warranty coverage? We explain what manufacturer warranty covers and when you might need extended protection.",
     content: "Product warranties can be confusing. Let's break down what's typically covered, what's not, and whether extended warranty is worth it...",
@@ -93,6 +100,7 @@ const blogPosts = [
   },
   {
     id: 8,
+    slug: "ai-in-smartphones",
     title: "The Rise of AI in Smartphones: What to Expect",
     excerpt: "AI is revolutionizing smartphones. Discover how AI-powered features are making phones smarter and more capable.",
     content: "Artificial intelligence is becoming a core part of smartphone technology. In this article, we explore how AI enhances phone capabilities...",
@@ -104,6 +112,7 @@ const blogPosts = [
   },
   {
     id: 9,
+    slug: "electronics-maintenance-tips",
     title: "How to Take Care of Your Electronics: Maintenance Tips",
     excerpt: "Extend the life of your devices with these essential maintenance tips. Learn how to properly care for your electronics.",
     content: "Regular maintenance can significantly extend the life of your devices. Here are expert tips on how to care for your smartphones, laptops, and tablets...",
@@ -115,6 +124,7 @@ const blogPosts = [
   },
   {
     id: 10,
+    slug: "refurbished-electronics",
     title: "Refurbished Electronics: Quality vs. Cost",
     excerpt: "Are refurbished devices worth buying? We analyze the pros and cons to help you decide if refurbished is right for you.",
     content: "Refurbished electronics can offer great value. Let's explore the benefits and risks of buying refurbished vs. brand new devices...",
@@ -170,7 +180,7 @@ export default function BlogPage() {
               {new Date(blogPosts[0].date).toLocaleDateString()}
             </div>
             <span className="text-sm text-muted-foreground">{blogPosts[0].readTime}</span>
-            <a href={`/blog/${blogPosts[0].id}`} className="ml-auto inline-flex items-center gap-2 text-primary hover:underline font-medium">
+            <a href={`/blog/${blogPosts[0].slug}`} className="ml-auto inline-flex items-center gap-2 text-primary hover:underline font-medium">
               Read More
               <ArrowRight className="h-4 w-4" />
             </a>
@@ -240,7 +250,7 @@ export default function BlogPage() {
                       {new Date(post.date).toLocaleDateString()}
                     </div>
                     <span>{post.readTime}</span>
-                    <a href={`/blog/${post.id}`} className="ml-auto text-primary hover:underline font-medium">
+                    <a href={`/blog/${post.slug}`} className="ml-auto text-primary hover:underline font-medium">
                       Read →
                     </a>
                   </div>
