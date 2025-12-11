@@ -242,8 +242,7 @@ export default async function ProductPage({params}: ProductPageProps) {
         })
         .slice(0, 5);
     }
-  } catch (error) {
-    console.error('DEBUG - Error fetching related products:', error);
+  } catch {
     relatedProducts = [];
   }
 
