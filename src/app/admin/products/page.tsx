@@ -79,6 +79,7 @@ function AdminProductsPage() {
   const [totalCount, setTotalCount] = useState<number>(0);
   const [pageSize] = useState<number>(20);
   const [viewLoading, setViewLoading] = useState<boolean>(false);
+  const [searchTerm, setSearchTerm] = useState<string>('');
   const cacheRef = useRef<Map<string, any>>(new Map());
 
   // Fetch categories on mount
@@ -281,13 +282,23 @@ function AdminProductsPage() {
   };
 
   // Filter products by selectedCategory using categoryIds array
-  const filteredProducts =
+  let filteredProducts =
     selectedCategory && selectedCategory !== 'all'
       ? products.filter(p =>
           Array.isArray((p as any).categoryIds) &&
           (p as any).categoryIds.includes(selectedCategory),
         )
       : products;
+
+  // Further filter by search term (name or SKU)
+  if (searchTerm.trim() !== '') {
+    const lower = searchTerm.trim().toLowerCase();
+    filteredProducts = filteredProducts.filter(
+      p =>
+        p.name.toLowerCase().includes(lower) ||
+        (p.sku && p.sku.toLowerCase().includes(lower))
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -347,7 +358,15 @@ function AdminProductsPage() {
             <div className="flex flex-1 gap-4">
               <div className="relative flex-1 sm:max-w-xs">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input placeholder="Search products..." className="pl-9" />
+                <Input
+                  placeholder="Search products..."
+                  className="pl-9"
+                  value={searchTerm}
+                  onChange={e => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                />
               </div>
               <Select
                 value={selectedCategory}
@@ -373,6 +392,17 @@ function AdminProductsPage() {
                   ))}
                 </SelectContent>
               </Select>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSelectedCategory('all');
+                  setSearchTerm('');
+                  setCurrentPage(1);
+                }}
+              >
+                Reset Filters
+              </Button>
               {/*
               <Select defaultValue="all">
                 <SelectTrigger className="w-32">
