@@ -14,6 +14,7 @@ import {
   Truck,
   RotateCcw,
   Check,
+  Bell,
 } from 'lucide-react';
 import {Button} from '../ui/button';
 import {Badge} from '../ui/badge';
@@ -30,6 +31,7 @@ import {NotifyProductDialog} from './notify-product-dialog';
 import {CompanyDealModal} from './company-deal-modal';
 import {careService, type ProductCarePlan} from '@/app/lib/api/services/care';
 import {emiService, type EmiPlan} from '@/app/lib/api/services/emi';
+import {productNotifyService} from '@/app/lib/api/services/notify';
 import type {Product} from '@/app/types';
 
 type Region = {
@@ -104,12 +106,15 @@ export function ProductInfoRegion({
 }: ProductInfoRegionProps) {
   const router = useRouter();
   const rawProduct = product.rawProduct;
+  const [isHydrated, setIsHydrated] = useState(false);
 
   const [quantity, setQuantity] = useState(1);
   const [carePlusSelected, setCarePlusSelected] = useState(false);
   const [notifyDialogOpen, setNotifyDialogOpen] = useState(false);
   const [emiModalOpen, setEmiModalOpen] = useState(false);
   const [companyDealModalOpen, setCompanyDealModalOpen] = useState(false);
+  const [notifyLoading, setNotifyLoading] = useState(false);
+  const [notifySuccess, setNotifySuccess] = useState(false);
   const [selectedPriceType, setSelectedPriceType] = useState<
     'offer' | 'regular'
   >('offer');
@@ -131,6 +136,12 @@ export function ProductInfoRegion({
     isInWishlist,
   } = useWishlistStore();
   const {addItem: addToCompare, isInCompare} = useCompareStore();
+  const user = useAuthStore(state => state.user);
+
+  // Set hydration flag after mount
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   // Fetch care plans if isCare is true
   useEffect(() => {
@@ -514,6 +525,28 @@ export function ProductInfoRegion({
     router.push('/compare');
   };
 
+  const handleNotifyMe = async () => {
+    const authStore = useAuthStore.getState();
+
+    try {
+      setNotifyLoading(true);
+      await productNotifyService.create(product.id, {
+        productId: product.id,
+        productName: product.name,
+        email: user?.email || '',
+        userId: user?.id || '',
+        status: 'pending',
+      });
+      setNotifySuccess(true);
+      setTimeout(() => {
+        setNotifySuccess(false);
+      }, 3000);
+    } catch (error) {
+    } finally {
+      setNotifyLoading(false);
+    }
+  };
+
   // Debug logging
   useEffect(() => {
   }, [selectedRegion, selectedColor, selectedStorage, colors, storages]);
@@ -768,7 +801,7 @@ export function ProductInfoRegion({
       ) : null}
 
       {/* Quantity Selector & Action Buttons */}
-      <div className="space-y-3 rounded-2xl border border-border/80 bg-white/60 dark:bg-background/60 p-4 shadow-sm">
+      <div className="space-y-3 rounded-2xl border border-border/80 bg-white/60 dark:bg-background/60 p-4 shadow-sm" suppressHydrationWarning>
         <div className="flex items-center gap-3 flex-wrap">
           {/* Quantity Control */}
           <div className="flex items-center border border-border rounded-xl shadow-sm bg-white/80">
@@ -830,26 +863,52 @@ export function ProductInfoRegion({
           )}
           {/* Company Deal Button */}
           <Button
-            variant="ghost"
+            variant="greentransparent"
             size="icon"
-            className="h-11 px-4 rounded-lg"
+            className="h-11 px-5 rounded-lg"
             onClick={() => setCompanyDealModalOpen(true)}>
-            <span className="text-foreground font-semibold text-sm">Company Deal</span>
+            <span className="text-emerald-600 font-semibold text-sm">Company Deal</span>
           </Button>
         </div>
 
-        {/* Add to Cart Button */}
-        <Button
-          size="lg"
-          className={cn(
-            'w-full h-12 text-base font-semibold rounded-lg transition-all duration-200',
-            isOutOfStock && 'opacity-60 cursor-not-allowed',
-          )}
-          disabled={isOutOfStock}
-          onClick={handleAddToCart}>
-          <ShoppingCart className="h-5 w-5 mr-2" />
-          {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
-        </Button>
+        {/* Add to Cart or Notify Button */}
+        {isOutOfStock ? (
+          <Button
+            size="lg"
+            variant="outline"
+            className="w-full h-12 text-base font-semibold rounded-lg transition-all duration-200 border-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+            disabled={notifyLoading || notifySuccess}
+            onClick={handleNotifyMe}>
+            {notifyLoading ? (
+              <>
+                <span className="animate-spin mr-2">⏳</span>
+                Notifying...
+              </>
+            ) : notifySuccess ? (
+              <>
+                <Check className="h-5 w-5 mr-2 text-green-600" />
+                Notification Sent!
+              </>
+            ) : (
+              <>
+                <Bell className="h-5 w-5 mr-2" />
+                Notify Me When Available
+              </>
+            )}
+          </Button>
+        ) : (
+          <Button
+            size="lg"
+            className={cn(
+              'w-full h-12 text-base font-semibold rounded-lg transition-all duration-200',
+              isOutOfStock && 'opacity-60 cursor-not-allowed',
+            )}
+            disabled={isOutOfStock}
+            onClick={handleAddToCart}>
+            <ShoppingCart className="h-5 w-5 mr-2" />
+            Add to Cart
+          </Button>
+        )}
 
         {/* Buy Now Button */}
         <Button

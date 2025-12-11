@@ -14,10 +14,13 @@ import { MiddleBanner } from "./components/home/middel-banner";
 export const dynamic = 'force-dynamic';
 
 export default async function Page() {
-  // Fetch brands for the slider
-  const brands = await brandsService.findAll();
-  // Fetch categories for the slider
-  const categories = await categoriesService.getAll();
+  // Parallelize API calls for better performance
+  const [brands, categories, homecategories] = await Promise.all([
+    brandsService.findAll(),
+    categoriesService.getAll(),
+    homecategoriesService.list(),
+  ]);
+
   // Ensure slug is always a string to match the app types
   const normalizedCategories: import("./types").Category[] = categories.map(
     (c) => ({
@@ -25,9 +28,6 @@ export default async function Page() {
       slug: c.slug ?? "",
     })
   );
-
-  // Fetch all homecategories and sort by priority
-  const homecategories = await homecategoriesService.list();
   console.log('Fetched homecategories:', homecategories);
   const sortedHomecategories = [...homecategories].sort(
     (a, b) => (a.priority ?? 999) - (b.priority ?? 999)
@@ -40,7 +40,7 @@ export default async function Page() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Navbar />
+      <Navbar initialCategories={normalizedCategories} initialBrands={brands} />
       <main className="flex-1 flex flex-col">
         {/* Hero Banner */}
         <section className="mx-auto w-full max-w-7xl px-4 py-6">
@@ -57,21 +57,19 @@ export default async function Page() {
           </section>
         )}
 
-        {/* Dynamic Homecategory Sections (first 2) using ProductSectionLazy */}
+        {/* Dynamic Homecategory Sections (first 2) using ProductSectionLazy - Eager render (above fold) */}
         {sortedHomecategories.slice(0, 2).map((hc) => (
           <section key={hc.id} className="mx-auto w-full max-w-7xl px-4 py-8">
-            <LazySection>
-              <ProductSectionLazy
-                title={hc.name}
-                subtitle={hc.description}
-                products={hc.products}
-                viewAllLink={
-                  hc.products && hc.products.length > 0
-                    ? `/products?homecategory=${hc.id}`
-                    : undefined
-                }
-              />
-            </LazySection>
+            <ProductSectionLazy
+              title={hc.name}
+              subtitle={hc.description}
+              products={hc.products}
+              viewAllLink={
+                hc.products && hc.products.length > 0
+                  ? `/products?homecategory=${hc.id}`
+                  : undefined
+              }
+            />
           </section>
         ))}
 
