@@ -106,6 +106,7 @@ export function ProductInfoRegion({
 }: ProductInfoRegionProps) {
   const router = useRouter();
   const rawProduct = product.rawProduct;
+  const [isHydrated, setIsHydrated] = useState(false);
 
   const [quantity, setQuantity] = useState(1);
   const [carePlusSelected, setCarePlusSelected] = useState(false);
