@@ -174,7 +174,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                   results.map((product) => (
                     <button
                       key={product.id}
-                      onClick={() => handleSearch(product.name)}
+                      onClick={() => handleProductClick(product)}
                       className="flex w-full items-center justify-between rounded-lg p-3 text-left transition-colors hover:bg-accent"
                     >
                       <span className="font-medium">{product.name}</span>
