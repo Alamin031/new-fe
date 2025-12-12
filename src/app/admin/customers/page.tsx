@@ -1,210 +1,255 @@
-'use client'
+/* eslint-disable @typescript-eslint/no-explicit-any */
+'use client';
 
-import { useState } from "react"
-import Image from "next/image"
-import { Search, Filter, MoreVertical, Mail, Eye, Ban, Edit, Trash2, Send } from "lucide-react"
-import { Card, CardContent } from "../../components/ui/card"
-import { Button } from "../../components/ui/button"
-import { Input } from "../../components/ui/input"
-import { Badge } from "../../components/ui/badge"
-import { Checkbox } from "../../components/ui/checkbox"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../../components/ui/dropdown-menu"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../../components/ui/dialog"
-import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "../../components/ui/sheet"
-import { Label } from "../../components/ui/label"
-import { Textarea } from "../../components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select"
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "../../components/ui/alert-dialog"
-import { formatPrice } from "../../lib/utils/format"
-import { withProtectedRoute } from "../../lib/auth/protected-route"
-import "./modal-styles.css"
+import {useEffect, useState} from 'react';
+import Image from 'next/image';
+import {
+  Search,
+  Filter,
+  MoreVertical,
+  Mail,
+  Eye,
+  Ban,
+  Edit,
+  Trash2,
+  Send,
+} from 'lucide-react';
+import {Card, CardContent} from '../../components/ui/card';
+import {Button} from '../../components/ui/button';
+import {Input} from '../../components/ui/input';
+import {Badge} from '../../components/ui/badge';
+import {Checkbox} from '../../components/ui/checkbox';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../../components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../../components/ui/dialog';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '../../components/ui/sheet';
+import {Label} from '../../components/ui/label';
+import {Textarea} from '../../components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../../components/ui/alert-dialog';
+
+import {usersService} from '../../lib/api/services/users';
+import {formatPrice} from '@/app/lib/utils/format';
+import {withProtectedRoute} from '@/app/lib/auth';
 
 interface Customer {
-  id: string
-  name: string
-  email: string
-  avatar: string
-  orders: number
-  totalSpent: number
-  lastOrder: string
-  status: string
-  phone?: string
-  address?: string
-  joinDate?: string
+  id: string;
+  name: string;
+  email: string;
+  avatar: string;
+  // orders: number; // removed
+  totalSpent: number;
+  // lastOrder: string; // removed
+  status: string;
+  phone?: string;
+  address?: string;
+  joinDate?: string;
+  createdAt?: string;
 }
 
-const initialCustomers: Customer[] = [
-  {
-    id: "1",
-    name: "John Doe",
-    email: "john@example.com",
-    avatar: "/placeholder.svg?key=rk8n5",
-    orders: 12,
-    totalSpent: 456789,
-    lastOrder: "Nov 20, 2024",
-    status: "Active",
-    phone: "+880 1234567890",
-    address: "123 Main Street, Dhaka, Bangladesh",
-    joinDate: "Jan 15, 2023",
-  },
-  {
-    id: "2",
-    name: "Jane Smith",
-    email: "jane@example.com",
-    avatar: "/placeholder.svg?key=m3fz2",
-    orders: 8,
-    totalSpent: 234567,
-    lastOrder: "Nov 19, 2024",
-    status: "Active",
-    phone: "+880 9876543210",
-    address: "456 Oak Avenue, Chittagong, Bangladesh",
-    joinDate: "Feb 20, 2023",
-  },
-  {
-    id: "3",
-    name: "Bob Wilson",
-    email: "bob@example.com",
-    avatar: "/placeholder.svg?key=v9qs7",
-    orders: 3,
-    totalSpent: 79999,
-    lastOrder: "Nov 15, 2024",
-    status: "Active",
-    phone: "+880 5555555555",
-    address: "789 Pine Road, Sylhet, Bangladesh",
-    joinDate: "Mar 10, 2023",
-  },
-  {
-    id: "4",
-    name: "Alice Brown",
-    email: "alice@example.com",
-    avatar: "/placeholder.svg?key=x5kt9",
-    orders: 1,
-    totalSpent: 15999,
-    lastOrder: "Nov 10, 2024",
-    status: "Inactive",
-    phone: "+880 3333333333",
-    address: "321 Elm Street, Rajshahi, Bangladesh",
-    joinDate: "Apr 05, 2023",
-  },
-  {
-    id: "5",
-    name: "Charlie Davis",
-    email: "charlie@example.com",
-    avatar: "/placeholder.svg?key=h2pw4",
-    orders: 0,
-    totalSpent: 0,
-    lastOrder: "-",
-    status: "Blocked",
-    phone: "+880 7777777777",
-    address: "654 Birch Lane, Khulna, Bangladesh",
-    joinDate: "May 12, 2023",
-  },
-]
-
 function AdminCustomersPage() {
-  const [customers, setCustomers] = useState<Customer[]>(initialCustomers)
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
-  const [viewOpen, setViewOpen] = useState(false)
-  const [editOpen, setEditOpen] = useState(false)
-  const [emailOpen, setEmailOpen] = useState(false)
-  const [blockOpen, setBlockOpen] = useState(false)
-  const [deleteOpen, setDeleteOpen] = useState(false)
-  const [editFormData, setEditFormData] = useState<Customer | null>(null)
-  const [emailFormData, setEmailFormData] = useState({ subject: "", message: "" })
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
+    null,
+  );
+  const [viewOpen, setViewOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [blockOpen, setBlockOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState<Customer | null>(null);
+  const [emailFormData, setEmailFormData] = useState({
+    subject: '',
+    message: '',
+  });
+
+  useEffect(() => {
+    usersService
+      .getAll(1, 100)
+      .then(res => {
+        // API returns an array directly
+        const apiCustomers: Customer[] = (
+          Array.isArray(res) ? res : res.data ?? []
+        ).map((u: any) => ({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          avatar: u.avatar || u.image || '/placeholder.svg',
+          totalSpent: u.totalSpent || 0,
+          status:
+            u.status ||
+            (u.isBlocked
+              ? 'Blocked'
+              : u.isActive === false
+              ? 'Inactive'
+              : 'Active'),
+          phone: u.phone,
+          address: u.addresses && u.addresses[0] ? u.addresses[0].address : '',
+          joinDate: u.createdAt
+            ? new Date(u.createdAt).toLocaleDateString()
+            : '',
+          createdAt: u.createdAt,
+        }));
+        setCustomers(apiCustomers);
+        setError('');
+      })
+      .catch(err => setError(err?.message || 'Failed to load customers'))
+      .finally(() => setLoading(false));
+  }, []);
 
   const handleViewClick = (customer: Customer) => {
-    setSelectedCustomer(customer)
-    setViewOpen(true)
-  }
+    setSelectedCustomer(customer);
+    setViewOpen(true);
+  };
 
   const handleEditClick = (customer: Customer) => {
-    setSelectedCustomer(customer)
-    setEditFormData({ ...customer })
-    setEditOpen(true)
-  }
+    setSelectedCustomer(customer);
+    setEditFormData({...customer});
+    setEditOpen(true);
+  };
 
   const handleEmailClick = (customer: Customer) => {
-    setSelectedCustomer(customer)
-    setEmailFormData({ subject: "", message: "" })
-    setEmailOpen(true)
-  }
+    setSelectedCustomer(customer);
+    setEmailFormData({subject: '', message: ''});
+    setEmailOpen(true);
+  };
 
   const handleBlockClick = (customer: Customer) => {
-    setSelectedCustomer(customer)
-    setBlockOpen(true)
-  }
+    setSelectedCustomer(customer);
+    setBlockOpen(true);
+  };
 
   const handleDeleteClick = (customer: Customer) => {
-    setSelectedCustomer(customer)
-    setDeleteOpen(true)
-  }
+    setSelectedCustomer(customer);
+    setDeleteOpen(true);
+  };
 
   const handleSaveEdit = () => {
     if (editFormData) {
-      setCustomers(customers.map((c) => (c.id === editFormData.id ? editFormData : c)))
-      handleCloseEdit(false)
+      setCustomers(
+        customers.map(c => (c.id === editFormData.id ? editFormData : c)),
+      );
+      handleCloseEdit(false);
     }
-  }
+  };
 
   const handleSendEmail = () => {
     if (selectedCustomer && emailFormData.subject && emailFormData.message) {
-      alert(`Email sent to ${selectedCustomer.email}\n\nSubject: ${emailFormData.subject}`)
-      handleCloseEmail(false)
+      alert(
+        `Email sent to ${selectedCustomer.email}\n\nSubject: ${emailFormData.subject}`,
+      );
+      handleCloseEmail(false);
     }
-  }
+  };
 
   const handleBlockCustomer = () => {
     if (selectedCustomer) {
       setCustomers(
-        customers.map((c) => (c.id === selectedCustomer.id ? { ...c, status: "Blocked" } : c))
-      )
-      handleCloseBlock(false)
+        customers.map(c =>
+          c.id === selectedCustomer.id ? {...c, status: 'Blocked'} : c,
+        ),
+      );
+      handleCloseBlock(false);
     }
-  }
+  };
 
   const handleConfirmDelete = () => {
     if (selectedCustomer) {
-      setCustomers(customers.filter((c) => c.id !== selectedCustomer.id))
-      handleCloseDelete(false)
+      setCustomers(customers.filter(c => c.id !== selectedCustomer.id));
+      handleCloseDelete(false);
     }
-  }
+  };
 
   const handleCloseView = (open: boolean) => {
-    setViewOpen(open)
+    setViewOpen(open);
     if (!open) {
-      setSelectedCustomer(null)
+      setSelectedCustomer(null);
     }
-  }
+  };
 
   const handleCloseEdit = (open: boolean) => {
-    setEditOpen(open)
+    setEditOpen(open);
     if (!open) {
-      setSelectedCustomer(null)
-      setEditFormData(null)
+      setSelectedCustomer(null);
+      setEditFormData(null);
     }
-  }
+  };
 
   const handleCloseEmail = (open: boolean) => {
-    setEmailOpen(open)
+    setEmailOpen(open);
     if (!open) {
-      setSelectedCustomer(null)
-      setEmailFormData({ subject: "", message: "" })
+      setSelectedCustomer(null);
+      setEmailFormData({subject: '', message: ''});
     }
-  }
+  };
 
   const handleCloseBlock = (open: boolean) => {
-    setBlockOpen(open)
+    setBlockOpen(open);
     if (!open) {
-      setSelectedCustomer(null)
+      setSelectedCustomer(null);
     }
-  }
+  };
 
   const handleCloseDelete = (open: boolean) => {
-    setDeleteOpen(open)
+    setDeleteOpen(open);
     if (!open) {
-      setSelectedCustomer(null)
+      setSelectedCustomer(null);
     }
+  };
+
+  if (loading) {
+    return <div className="p-8 text-center text-lg">Loading customers...</div>;
   }
+  if (error) {
+    return <div className="p-8 text-center text-red-600">{error}</div>;
+  }
+
+  // Calculate new users this month
+  const now = new Date();
+  const thisMonth = now.getMonth();
+  const thisYear = now.getFullYear();
+  const newThisMonth = customers.filter(c => {
+    if (!c.createdAt) return false;
+    const created = new Date(c.createdAt);
+    return (
+      created.getMonth() === thisMonth && created.getFullYear() === thisYear
+    );
+  }).length;
 
   return (
     <div className="space-y-6">
@@ -219,7 +264,7 @@ function AdminCustomersPage() {
         </Button>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <CardContent className="p-6">
             <p className="text-2xl font-bold">{customers.length}</p>
@@ -228,20 +273,16 @@ function AdminCustomersPage() {
         </Card>
         <Card>
           <CardContent className="p-6">
-            <p className="text-2xl font-bold">{customers.filter((c) => c.status === "Active").length}</p>
+            <p className="text-2xl font-bold">
+              {customers.filter(c => c.status === 'Active').length}
+            </p>
             <p className="text-sm text-muted-foreground">Active Customers</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-6">
-            <p className="text-2xl font-bold">234</p>
+            <p className="text-2xl font-bold">{newThisMonth}</p>
             <p className="text-sm text-muted-foreground">New This Month</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-2xl font-bold">{formatPrice(43256)}</p>
-            <p className="text-sm text-muted-foreground">Avg. Order Value</p>
           </CardContent>
         </Card>
       </div>
@@ -253,7 +294,10 @@ function AdminCustomersPage() {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input placeholder="Search customers..." className="pl-9" />
             </div>
-            <Button variant="outline" size="sm" className="gap-2 bg-transparent">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 bg-transparent">
               <Filter className="h-4 w-4" />
               Filter
             </Button>
@@ -267,15 +311,13 @@ function AdminCustomersPage() {
                     <Checkbox />
                   </th>
                   <th className="pb-3 pr-4">Customer</th>
-                  <th className="pb-3 pr-4">Orders</th>
                   <th className="pb-3 pr-4">Total Spent</th>
-                  <th className="pb-3 pr-4">Last Order</th>
                   <th className="pb-3 pr-4">Status</th>
                   <th className="pb-3">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {customers.map((customer) => (
+                {customers.map(customer => (
                   <tr key={customer.id} className="border-b border-border">
                     <td className="py-4 pr-4">
                       <Checkbox />
@@ -284,7 +326,7 @@ function AdminCustomersPage() {
                       <div className="flex items-center gap-3">
                         <div className="h-10 w-10 overflow-hidden rounded-full bg-muted">
                           <Image
-                            src={customer.avatar || "/placeholder.svg"}
+                            src={customer.avatar || '/placeholder.svg'}
                             alt={customer.name}
                             width={40}
                             height={40}
@@ -293,24 +335,25 @@ function AdminCustomersPage() {
                         </div>
                         <div>
                           <p className="font-medium">{customer.name}</p>
-                          <p className="text-sm text-muted-foreground">{customer.email}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {customer.email}
+                          </p>
                         </div>
                       </div>
                     </td>
-                    <td className="py-4 pr-4">{customer.orders}</td>
-                    <td className="py-4 pr-4 font-medium">{formatPrice(customer.totalSpent)}</td>
-                    <td className="py-4 pr-4 text-sm text-muted-foreground">{customer.lastOrder}</td>
+                    <td className="py-4 pr-4 font-medium">
+                      {formatPrice(customer.totalSpent)}
+                    </td>
                     <td className="py-4 pr-4">
                       <Badge
                         variant="secondary"
                         className={
-                          customer.status === "Active"
-                            ? "bg-green-500/10 text-green-600"
-                            : customer.status === "Inactive"
-                              ? "bg-yellow-500/10 text-yellow-600"
-                              : "bg-red-500/10 text-red-600"
-                        }
-                      >
+                          customer.status === 'Active'
+                            ? 'bg-green-500/10 text-green-600'
+                            : customer.status === 'Inactive'
+                            ? 'bg-yellow-500/10 text-yellow-600'
+                            : 'bg-red-500/10 text-red-600'
+                        }>
                         {customer.status}
                       </Badge>
                     </td>
@@ -322,23 +365,29 @@ function AdminCustomersPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleViewClick(customer)}>
+                          <DropdownMenuItem
+                            onClick={() => handleViewClick(customer)}>
                             <Eye className="mr-2 h-4 w-4" />
                             View Profile
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEditClick(customer)}>
+                          <DropdownMenuItem
+                            onClick={() => handleEditClick(customer)}>
                             <Edit className="mr-2 h-4 w-4" />
                             Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEmailClick(customer)}>
+                          <DropdownMenuItem
+                            onClick={() => handleEmailClick(customer)}>
                             <Mail className="mr-2 h-4 w-4" />
                             Send Email
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleBlockClick(customer)}>
+                          <DropdownMenuItem
+                            onClick={() => handleBlockClick(customer)}>
                             <Ban className="mr-2 h-4 w-4" />
                             Block User
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(customer)}>
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={() => handleDeleteClick(customer)}>
                             <Trash2 className="mr-2 h-4 w-4" />
                             Delete
                           </DropdownMenuItem>
@@ -352,15 +401,9 @@ function AdminCustomersPage() {
           </div>
 
           <div className="mt-6 flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">Showing 1-5 of {customers.length} customers</p>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" disabled>
-                Previous
-              </Button>
-              <Button variant="outline" size="sm">
-                Next
-              </Button>
-            </div>
+            <p className="text-sm text-muted-foreground">
+              Showing {customers.length} customers
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -369,15 +412,19 @@ function AdminCustomersPage() {
       <Dialog open={viewOpen} onOpenChange={handleCloseView}>
         <DialogContent className="modal-animate max-w-2xl border-0 bg-white shadow-2xl">
           <DialogHeader className="space-y-1">
-            <DialogTitle className="text-2xl font-bold text-slate-900">Customer Profile</DialogTitle>
-            <DialogDescription className="text-slate-600">View customer details and order history</DialogDescription>
+            <DialogTitle className="text-2xl font-bold text-slate-900">
+              Customer Profile
+            </DialogTitle>
+            <DialogDescription className="text-slate-600">
+              View customer details and order history
+            </DialogDescription>
           </DialogHeader>
           {selectedCustomer && (
             <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-4">
               <div className="flex items-center gap-4 rounded-xl bg-slate-50 p-4 shadow-sm border border-slate-200">
                 <div className="h-20 w-20 overflow-hidden rounded-full border-2 border-slate-200 bg-gradient-to-br from-blue-100 to-purple-100 shadow-md">
                   <Image
-                    src={selectedCustomer.avatar || "/placeholder.svg"}
+                    src={selectedCustomer.avatar || '/placeholder.svg'}
                     alt={selectedCustomer.name}
                     width={80}
                     height={80}
@@ -385,18 +432,21 @@ function AdminCustomersPage() {
                   />
                 </div>
                 <div className="flex-1">
-                  <h2 className="text-2xl font-bold text-slate-900">{selectedCustomer.name}</h2>
-                  <p className="mt-1 text-sm text-slate-600">{selectedCustomer.email}</p>
+                  <h2 className="text-2xl font-bold text-slate-900">
+                    {selectedCustomer.name}
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-600">
+                    {selectedCustomer.email}
+                  </p>
                   <Badge
                     variant="secondary"
                     className={`mt-2 border-0 font-semibold ${
-                      selectedCustomer.status === "Active"
-                        ? "bg-emerald-100 text-emerald-700"
-                        : selectedCustomer.status === "Inactive"
-                          ? "bg-amber-100 text-amber-700"
-                          : "bg-red-100 text-red-700"
-                    }`}
-                  >
+                      selectedCustomer.status === 'Active'
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : selectedCustomer.status === 'Inactive'
+                        ? 'bg-amber-100 text-amber-700'
+                        : 'bg-red-100 text-red-700'
+                    }`}>
                     {selectedCustomer.status}
                   </Badge>
                 </div>
@@ -409,16 +459,28 @@ function AdminCustomersPage() {
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="rounded-lg bg-slate-50 p-3 border border-slate-100">
-                    <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Phone</Label>
-                    <p className="mt-2 font-semibold text-slate-900">{selectedCustomer.phone}</p>
+                    <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Phone
+                    </Label>
+                    <p className="mt-2 font-semibold text-slate-900">
+                      {selectedCustomer.phone}
+                    </p>
                   </div>
                   <div className="rounded-lg bg-slate-50 p-3 border border-slate-100">
-                    <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Email</Label>
-                    <p className="mt-2 truncate font-semibold text-slate-900">{selectedCustomer.email}</p>
+                    <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Email
+                    </Label>
+                    <p className="mt-2 truncate font-semibold text-slate-900">
+                      {selectedCustomer.email}
+                    </p>
                   </div>
                   <div className="col-span-2 rounded-lg bg-slate-50 p-3 border border-slate-100">
-                    <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Address</Label>
-                    <p className="mt-2 font-semibold text-slate-900">{selectedCustomer.address}</p>
+                    <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Address
+                    </Label>
+                    <p className="mt-2 font-semibold text-slate-900">
+                      {selectedCustomer.address}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -430,28 +492,41 @@ function AdminCustomersPage() {
                 </h3>
                 <div className="grid grid-cols-3 gap-4">
                   <div className="rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 p-3 border border-blue-200">
-                    <Label className="text-xs font-semibold uppercase tracking-wide text-blue-700">Total Orders</Label>
-                    <p className="mt-2 text-2xl font-bold text-blue-900">{selectedCustomer.orders}</p>
+                    <Label className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                      Total Orders
+                    </Label>
                   </div>
                   <div className="rounded-lg bg-gradient-to-br from-purple-50 to-purple-100 p-3 border border-purple-200">
-                    <Label className="text-xs font-semibold uppercase tracking-wide text-purple-700">Total Spent</Label>
-                    <p className="mt-2 text-2xl font-bold text-purple-900">{formatPrice(selectedCustomer.totalSpent)}</p>
+                    <Label className="text-xs font-semibold uppercase tracking-wide text-purple-700">
+                      Total Spent
+                    </Label>
+                    <p className="mt-2 text-2xl font-bold text-purple-900">
+                      {formatPrice(selectedCustomer.totalSpent)}
+                    </p>
                   </div>
                   <div className="rounded-lg bg-gradient-to-br from-emerald-50 to-emerald-100 p-3 border border-emerald-200">
-                    <Label className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Last Order</Label>
-                    <p className="mt-2 font-bold text-emerald-900">{selectedCustomer.lastOrder}</p>
+                    <Label className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                      Last Order
+                    </Label>
                   </div>
                 </div>
               </div>
 
               <div className="rounded-lg border border-slate-200 bg-white p-4">
-                <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Member Since</Label>
-                <p className="mt-2 font-semibold text-slate-900">{selectedCustomer.joinDate}</p>
+                <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Member Since
+                </Label>
+                <p className="mt-2 font-semibold text-slate-900">
+                  {selectedCustomer.joinDate}
+                </p>
               </div>
             </div>
           )}
           <DialogFooter className="mt-6 flex gap-3">
-            <Button variant="outline" onClick={() => handleCloseView(false)} className="border-slate-200">
+            <Button
+              variant="outline"
+              onClick={() => handleCloseView(false)}
+              className="border-slate-200">
               Close
             </Button>
           </DialogFooter>
@@ -462,58 +537,96 @@ function AdminCustomersPage() {
       <Dialog open={editOpen} onOpenChange={handleCloseEdit}>
         <DialogContent className="modal-animate max-w-2xl border-0 bg-white shadow-2xl">
           <DialogHeader className="space-y-1">
-            <DialogTitle className="text-2xl font-bold text-slate-900">Edit Customer</DialogTitle>
-            <DialogDescription className="text-slate-600">Update customer information</DialogDescription>
+            <DialogTitle className="text-2xl font-bold text-slate-900">
+              Edit Customer
+            </DialogTitle>
+            <DialogDescription className="text-slate-600">
+              Update customer information
+            </DialogDescription>
           </DialogHeader>
           {editFormData && (
             <div className="space-y-5 max-h-[60vh] overflow-y-auto pr-4">
               <div className="space-y-2.5">
-                <Label htmlFor="edit-name" className="text-sm font-semibold text-slate-700">Full Name</Label>
+                <Label
+                  htmlFor="edit-name"
+                  className="text-sm font-semibold text-slate-700">
+                  Full Name
+                </Label>
                 <Input
                   id="edit-name"
                   value={editFormData.name}
-                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                  onChange={e =>
+                    setEditFormData({...editFormData, name: e.target.value})
+                  }
                   placeholder="Enter full name"
                   className="input-enhance border-slate-200 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-lg focus:shadow-blue-500/10"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2.5">
-                  <Label htmlFor="edit-email" className="text-sm font-semibold text-slate-700">Email</Label>
+                  <Label
+                    htmlFor="edit-email"
+                    className="text-sm font-semibold text-slate-700">
+                    Email
+                  </Label>
                   <Input
                     id="edit-email"
                     type="email"
                     value={editFormData.email}
-                    onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                    onChange={e =>
+                      setEditFormData({...editFormData, email: e.target.value})
+                    }
                     placeholder="Enter email"
                     className="input-enhance border-slate-200 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-lg focus:shadow-blue-500/10"
                   />
                 </div>
                 <div className="space-y-2.5">
-                  <Label htmlFor="edit-phone" className="text-sm font-semibold text-slate-700">Phone</Label>
+                  <Label
+                    htmlFor="edit-phone"
+                    className="text-sm font-semibold text-slate-700">
+                    Phone
+                  </Label>
                   <Input
                     id="edit-phone"
                     value={editFormData.phone}
-                    onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                    onChange={e =>
+                      setEditFormData({...editFormData, phone: e.target.value})
+                    }
                     placeholder="Enter phone"
                     className="input-enhance border-slate-200 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-lg focus:shadow-blue-500/10"
                   />
                 </div>
               </div>
               <div className="space-y-2.5">
-                <Label htmlFor="edit-address" className="text-sm font-semibold text-slate-700">Address</Label>
+                <Label
+                  htmlFor="edit-address"
+                  className="text-sm font-semibold text-slate-700">
+                  Address
+                </Label>
                 <Input
                   id="edit-address"
                   value={editFormData.address}
-                  onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
+                  onChange={e =>
+                    setEditFormData({...editFormData, address: e.target.value})
+                  }
                   placeholder="Enter address"
                   className="input-enhance border-slate-200 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-lg focus:shadow-blue-500/10"
                 />
               </div>
               <div className="space-y-2.5">
-                <Label htmlFor="edit-status" className="text-sm font-semibold text-slate-700">Status</Label>
-                <Select value={editFormData.status} onValueChange={(value) => setEditFormData({ ...editFormData, status: value })}>
-                  <SelectTrigger id="edit-status" className="input-enhance border-slate-200 bg-white">
+                <Label
+                  htmlFor="edit-status"
+                  className="text-sm font-semibold text-slate-700">
+                  Status
+                </Label>
+                <Select
+                  value={editFormData.status}
+                  onValueChange={value =>
+                    setEditFormData({...editFormData, status: value})
+                  }>
+                  <SelectTrigger
+                    id="edit-status"
+                    className="input-enhance border-slate-200 bg-white">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="border-slate-200 bg-white">
@@ -526,29 +639,47 @@ function AdminCustomersPage() {
             </div>
           )}
           <DialogFooter className="mt-6 flex gap-3">
-            <Button variant="outline" onClick={() => handleCloseEdit(false)} className="border-slate-200">
+            <Button
+              variant="outline"
+              onClick={() => handleCloseEdit(false)}
+              className="border-slate-200">
               Cancel
             </Button>
-            <Button onClick={handleSaveEdit} className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800">Save Changes</Button>
+            <Button
+              onClick={handleSaveEdit}
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800">
+              Save Changes
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Send Email Drawer */}
       <Sheet open={emailOpen} onOpenChange={handleCloseEmail}>
-        <SheetContent side="right" className="drawer-animate w-full border-l border-slate-200 bg-white p-0 shadow-2xl sm:w-[500px]">
+        <SheetContent
+          side="right"
+          className="drawer-animate w-full border-l border-slate-200 bg-white p-0 shadow-2xl sm:w-[500px]">
           <div className="flex h-full flex-col">
             <SheetHeader className="border-b border-slate-200 bg-slate-50 px-6 py-5">
-              <SheetTitle className="text-2xl font-bold text-slate-900">Send Email</SheetTitle>
+              <SheetTitle className="text-2xl font-bold text-slate-900">
+                Send Email
+              </SheetTitle>
               <SheetDescription className="text-slate-600">
-                Send an email to <span className="font-semibold text-slate-900">{selectedCustomer?.name}</span>
+                Send an email to{' '}
+                <span className="font-semibold text-slate-900">
+                  {selectedCustomer?.name}
+                </span>
               </SheetDescription>
             </SheetHeader>
 
             <div className="flex-1 overflow-y-auto px-6 py-6">
               <div className="space-y-5">
                 <div className="space-y-2.5">
-                  <Label htmlFor="email-to" className="text-sm font-semibold text-slate-700">To</Label>
+                  <Label
+                    htmlFor="email-to"
+                    className="text-sm font-semibold text-slate-700">
+                    To
+                  </Label>
                   <Input
                     id="email-to"
                     value={selectedCustomer?.email}
@@ -557,21 +688,39 @@ function AdminCustomersPage() {
                   />
                 </div>
                 <div className="space-y-2.5">
-                  <Label htmlFor="email-subject" className="text-sm font-semibold text-slate-700">Subject</Label>
+                  <Label
+                    htmlFor="email-subject"
+                    className="text-sm font-semibold text-slate-700">
+                    Subject
+                  </Label>
                   <Input
                     id="email-subject"
                     value={emailFormData.subject}
-                    onChange={(e) => setEmailFormData({ ...emailFormData, subject: e.target.value })}
+                    onChange={e =>
+                      setEmailFormData({
+                        ...emailFormData,
+                        subject: e.target.value,
+                      })
+                    }
                     placeholder="Enter email subject"
                     className="input-enhance border-slate-200 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-lg focus:shadow-blue-500/10"
                   />
                 </div>
                 <div className="space-y-2.5">
-                  <Label htmlFor="email-message" className="text-sm font-semibold text-slate-700">Message</Label>
+                  <Label
+                    htmlFor="email-message"
+                    className="text-sm font-semibold text-slate-700">
+                    Message
+                  </Label>
                   <Textarea
                     id="email-message"
                     value={emailFormData.message}
-                    onChange={(e) => setEmailFormData({ ...emailFormData, message: e.target.value })}
+                    onChange={e =>
+                      setEmailFormData({
+                        ...emailFormData,
+                        message: e.target.value,
+                      })
+                    }
                     placeholder="Enter your message"
                     rows={8}
                     className="input-enhance resize-none border-slate-200 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-lg focus:shadow-blue-500/10"
@@ -581,10 +730,15 @@ function AdminCustomersPage() {
             </div>
 
             <SheetFooter className="border-t border-slate-200 bg-slate-50 px-6 py-4">
-              <Button variant="outline" onClick={() => handleCloseEmail(false)} className="border-slate-200">
+              <Button
+                variant="outline"
+                onClick={() => handleCloseEmail(false)}
+                className="border-slate-200">
                 Cancel
               </Button>
-              <Button onClick={handleSendEmail} className="gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800">
+              <Button
+                onClick={handleSendEmail}
+                className="gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800">
                 <Send className="h-4 w-4" />
                 Send Email
               </Button>
@@ -597,14 +751,24 @@ function AdminCustomersPage() {
       <AlertDialog open={blockOpen} onOpenChange={handleCloseBlock}>
         <AlertDialogContent className="alert-animate border-0 bg-white shadow-2xl">
           <AlertDialogHeader className="space-y-2">
-            <AlertDialogTitle className="text-xl font-bold text-slate-900">Block Customer</AlertDialogTitle>
+            <AlertDialogTitle className="text-xl font-bold text-slate-900">
+              Block Customer
+            </AlertDialogTitle>
             <AlertDialogDescription className="text-slate-600">
-              Are you sure you want to block <span className="font-bold text-amber-600">{selectedCustomer?.name}</span>? They will not be able to place orders or access their account.
+              Are you sure you want to block{' '}
+              <span className="font-bold text-amber-600">
+                {selectedCustomer?.name}
+              </span>
+              ? They will not be able to place orders or access their account.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-6 flex gap-3">
-            <AlertDialogCancel className="border-slate-200">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleBlockCustomer} className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800">
+            <AlertDialogCancel className="border-slate-200">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBlockCustomer}
+              className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800">
               Block Customer
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -615,25 +779,35 @@ function AdminCustomersPage() {
       <AlertDialog open={deleteOpen} onOpenChange={handleCloseDelete}>
         <AlertDialogContent className="alert-animate border-0 bg-white shadow-2xl">
           <AlertDialogHeader className="space-y-2">
-            <AlertDialogTitle className="text-xl font-bold text-slate-900">Delete Customer</AlertDialogTitle>
+            <AlertDialogTitle className="text-xl font-bold text-slate-900">
+              Delete Customer
+            </AlertDialogTitle>
             <AlertDialogDescription className="text-slate-600">
-              Are you sure you want to delete <span className="font-bold text-red-600">{selectedCustomer?.name}</span>? This action cannot be undone.
+              Are you sure you want to delete{' '}
+              <span className="font-bold text-red-600">
+                {selectedCustomer?.name}
+              </span>
+              ? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-6 flex gap-3">
-            <AlertDialogCancel className="border-slate-200">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmDelete} className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800">
+            <AlertDialogCancel className="border-slate-200">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800">
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  )
+  );
 }
 
 export default withProtectedRoute(AdminCustomersPage, {
-  requiredRoles: ["admin"],
-  fallbackTo: "/login",
+  requiredRoles: ['admin'],
+  fallbackTo: '/login',
   showLoader: true,
-})
+});

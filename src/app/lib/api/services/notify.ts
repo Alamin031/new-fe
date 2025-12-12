@@ -29,39 +29,56 @@ export interface UpdateProductNotifyRequest {
   status?: string;
 }
 
+// NotificationType enum
+export enum NotificationType {
+  ORDER_UPDATE = 'ORDER_UPDATE',
+  PROMOTION = 'PROMOTION',
+  GIVEAWAY = 'GIVEAWAY',
+  SYSTEM = 'SYSTEM',
+  PRODUCT_STOCK_OUT = 'PRODUCT_STOCK_OUT',
+}
+
+// Notification entity type
+export interface Notification {
+  id: string;
+  userId?: string;
+  type: NotificationType;
+  title?: string;
+  message?: string;
+  productId?: string;
+  link?: string;
+  read?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Create notification request type
+export interface CreateNotificationRequest {
+  userId?: string;
+  type: NotificationType;
+  title?: string;
+  message?: string;
+  productId?: string;
+  link?: string;
+}
+
+// Service
+export const notificationService = {
+  createStockOut: async (productId: string, userId?: string): Promise<Notification> => {
+    const response = await apiClient.post(
+      API_ENDPOINTS.NOTIFICATIONS_STOCK_OUT,
+      { productId, userId }
+    );
+    return response.data;
+  },
+};
+
 export const productNotifyService = {
   // Create notification request for a product (guest or user)
   create: async (productId: string, data: CreateProductNotifyRequest): Promise<ProductNotifyRequest> => {
-    const endpoint = API_ENDPOINTS.PRODUCT_NOTIFY_CREATE.replace('{productId}', productId);
+    const endpoint = API_ENDPOINTS.NOTIFICATIONS_STOCK_OUT.replace('{productId}', productId);
     const response = await apiClient.post(endpoint, data);
     return response.data;
-  },
-
-  // Get all notification requests for a product
-  list: async (productId: string): Promise<ProductNotifyRequest[]> => {
-    const endpoint = API_ENDPOINTS.PRODUCT_NOTIFY_LIST.replace('{productId}', productId);
-    const response = await apiClient.get(endpoint);
-    return response.data;
-  },
-
-  // Update notification request by id
-  update: async (id: string, data: UpdateProductNotifyRequest): Promise<ProductNotifyRequest> => {
-    const endpoint = API_ENDPOINTS.PRODUCT_NOTIFY_UPDATE.replace('{id}', id);
-    const response = await apiClient.patch(endpoint, data);
-    return response.data;
-  },
-
-  // Get notification request by id
-  get: async (id: string): Promise<ProductNotifyRequest> => {
-    const endpoint = API_ENDPOINTS.PRODUCT_NOTIFY_GET.replace('{id}', id);
-    const response = await apiClient.get(endpoint);
-    return response.data;
-  },
-
-  // Delete notification request by id
-  delete: async (id: string): Promise<void> => {
-    const endpoint = API_ENDPOINTS.PRODUCT_NOTIFY_DELETE.replace('{id}', id);
-    await apiClient.delete(endpoint);
   },
 };
 

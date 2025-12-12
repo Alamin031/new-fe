@@ -59,10 +59,11 @@ export interface UpdateUserRequest {
   avatar?: string
 }
 
-export interface UserListResponse {
-  data: User[]
-  pagination: PaginationMeta
-}
+// UserListResponse: Some APIs return User[] directly, others return paginated object
+export type UserListResponse = User[] | {
+  data: User[];
+  pagination: PaginationMeta;
+};
 
 
 // ==================== Subcategory Types ====================
@@ -407,27 +408,28 @@ export interface WarrantyLookupResponse {
 }
 
 // ==================== Giveaway Types ====================
+
 export interface GiveawayEntry {
-  id: string
-  name: string
-  email: string
-  phone: string
-  productId: string
-  message?: string
-  createdAt: string
+  id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  facebook?: string;
+  createdAt: string;
 }
+
 
 export interface CreateGiveawayEntryRequest {
-  name: string
-  email: string
-  phone: string
-  productId: string
-  message?: string
+  name: string;
+  phone: string;
+  email?: string;
+  facebook?: string;
 }
 
+
 export interface GiveawayListResponse {
-  data: GiveawayEntry[]
-  pagination: PaginationMeta
+  data: GiveawayEntry[];
+  pagination: PaginationMeta;
 }
 
 // ==================== Policy Types ====================

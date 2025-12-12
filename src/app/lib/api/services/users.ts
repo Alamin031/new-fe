@@ -7,7 +7,7 @@ export const usersService = {
    * Get all users (Admin/Management only)
    */
   getAll: async (page = 1, limit = 10): Promise<UserListResponse> => {
-    const response = await apiClient.get<UserListResponse>(API_ENDPOINTS.USERS_GET_LIST, {
+    const response = await apiClient.get<UserListResponse>(API_ENDPOINTS.USERS_GET_ALL, {
       params: { page, limit },
     })
     return response.data
@@ -43,10 +43,17 @@ export const usersService = {
   /**
    * Update user profile
    */
-  update: async (id: string, data: UpdateUserRequest): Promise<User> => {
-    const endpoint = API_ENDPOINTS.USERS_UPDATE.replace("{id}", id)
-    const response = await apiClient.patch<User>(endpoint, data)
-    return response.data
+  update: async (id: string, data: UpdateUserRequest | FormData): Promise<User> => {
+    const endpoint = API_ENDPOINTS.USERS_UPDATE.replace("{id}", id);
+    let response;
+    if (data instanceof FormData) {
+      response = await apiClient.patch<User>(endpoint, data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+    } else {
+      response = await apiClient.patch<User>(endpoint, data);
+    }
+    return response.data;
   },
 
   /**

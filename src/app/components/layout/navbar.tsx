@@ -71,7 +71,6 @@ export function Navbar({ initialCategories, initialBrands }: NavbarProps = {}) {
       try {
         setIsLoadingCategories(true)
         const data = await categoriesService.getAll()
-        // Normalize API categories to match app Category type (ensure slug is a string)
         const normalized = data.map((c) => ({
           ...c,
           slug: c.slug ?? "",
@@ -180,6 +179,11 @@ export function Navbar({ initialCategories, initialBrands }: NavbarProps = {}) {
                 All Products
               </Button>
             </Link>
+              <Link href="/giveaway" className="hidden sm:inline-flex">
+                <Button variant="outline" size="sm" className="text-sm font-medium">
+                  Giveaway
+                </Button>
+              </Link>
           </nav>
 
           {/* Search - Desktop */}

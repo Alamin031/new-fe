@@ -1,6 +1,5 @@
 "use client"
 import type React from 'react';
-import type {Metadata} from 'next';
 import Link from 'next/link';
 import {
   LayoutDashboard,
@@ -16,6 +15,7 @@ import {
   TrendingUp,
   AlertCircle,
   BookOpen,
+  Gift,
 } from 'lucide-react';
 import {Badge} from '../components/ui/badge';
 import {Suspense} from 'react';
@@ -28,6 +28,7 @@ const sidebarLinks = [
   {href: '/admin/categories', label: 'Categories', icon: FolderTree},
   {href: '/admin/emi', label: 'EMI Plans', icon: CreditCard},
   {href: '/admin/products', label: 'Products', icon: Package},
+  {href: '/admin/giveaways', label: 'Giveaways', icon: Gift},
   {href: '/admin/product-faqs', label: 'Product Faqs', icon: MessageSquare},
   {href: '/admin/blog', label: 'Blog', icon: BookOpen},
   {href: '/admin/homeshow-category', label: 'HomeShow Category', icon: FolderTree},

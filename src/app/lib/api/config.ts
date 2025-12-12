@@ -97,11 +97,9 @@ export const API_ENDPOINTS = {
   PRODUCT_CARE_BY_PRODUCT: '/products-new/care/product/{productId}',
 
   // Product Notification Requests
-  PRODUCT_NOTIFY_CREATE: '/products/{productId}/notify',
-  PRODUCT_NOTIFY_LIST: '/products/{productId}/notify',
-  PRODUCT_NOTIFY_UPDATE: '/products/notify/{id}',
-  PRODUCT_NOTIFY_GET: '/products/notify/{id}',
-  PRODUCT_NOTIFY_DELETE: '/products/notify/{id}',
+    NOTIFICATIONS_STOCK_OUT: '/notifications/stock-out',
+
+  
 
   // Orders
   ORDERS_CREATE: '/orders',
