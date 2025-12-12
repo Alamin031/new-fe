@@ -237,13 +237,13 @@ export function EditorJSWrapper({
                   title={block.description}
                 >
                   {Icon ? (
-                    <Icon className="w-5 h-5 text-slate-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
+                    <Icon className="w-5 h-5 text-slate-600 group-hover:text-blue-600 transition-colors" />
                   ) : (
-                    <span className="text-lg font-bold text-slate-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    <span className="text-lg font-bold text-slate-600 group-hover:text-blue-600 transition-colors">
                       {block.icon}
                     </span>
                   )}
-                  <span className="text-xs font-medium text-slate-700 dark:text-slate-300 text-center">
+                  <span className="text-xs font-medium text-slate-700 text-center">
                     {block.name}
                   </span>
                   <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 to-blue-600 rounded-b-lg scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
