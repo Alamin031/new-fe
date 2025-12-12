@@ -81,6 +81,10 @@ function EditBlogPage() {
     );
   }
 
+  if (blog) {
+    console.log('Blog data:', blog);
+  }
+
   return <BlogForm initialData={blog} isEditing={true} />;
 }
 

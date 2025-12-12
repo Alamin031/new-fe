@@ -1,6 +1,6 @@
 // API Configuration
 export const API_CONFIG = {
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://api.example.com',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/ap',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -16,12 +16,13 @@ export const STORAGE_KEYS = {
 
 // API Endpoints
 export const API_ENDPOINTS = {
-    // Blog
-    BLOGS_GET: '/blogs',
-    BLOGS_CREATE: '/blogs',
-    BLOGS_GET_ONE_SLUG: '/blogs/slug/{slug}',
-    BLOGS_UPDATE: '/blogs/{id}',
-    BLOGS_DELETE: '/blogs/{id}',
+  // Blog
+  BLOGS_GET: '/blogs',
+  BLOGS_CREATE: '/blogs',
+  BLOGS_GET_ONE_SLUG: '/blogs/{slug}',
+  BLOGS_UPDATE: '/blogs/{id}',
+  BLOGS_DELETE: '/blogs/{id}',
+  BLOGS_GET_BY_ID: '/blogs/id/{id}',
   // Auth
   AUTH_REGISTER: '/auth/register',
   AUTH_LOGIN: '/auth/login',
@@ -69,9 +70,6 @@ export const API_ENDPOINTS = {
   BRANDS_PRODUCTS: '/brands/{slug}/products',
   BRANDS_UPDATE: '/brands/{id}',
   BRANDS_DELETE: '/brands/{id}',
-
-
-
 
   // Products
   PRODUCTS_CREATE: '/products-new',

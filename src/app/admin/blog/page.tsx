@@ -41,17 +41,7 @@ import {
 } from '../../components/ui/select';
 import blogsService, { BlogPost } from '../../lib/api/services/blogs';
 
-const categories = [
-  'All',
-  'Smartphones',
-  'Laptops',
-  'Tablets',
-  'Technology',
-  'Comparison',
-  'Gaming',
-  'Tips',
-  'Reviews',
-];
+
 
 function AdminBlogsPage() {
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
@@ -63,7 +53,7 @@ function AdminBlogsPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [pageSize] = useState(20);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  // Removed category filter
   const [selectedStatus, setSelectedStatus] = useState('all');
   type BlogCache = {
     blogs: BlogPost[];
@@ -72,10 +62,10 @@ function AdminBlogsPage() {
   const cacheRef = useRef<Map<string, BlogCache>>(new Map());
 
   // Fetch blogs
-  const fetchBlogs = async (page: number = 1, search: string = '', category: string = '') => {
+  const fetchBlogs = async (page: number = 1, search: string = '') => {
     setLoading(true);
     try {
-      const cacheKey = `blogs-${page}-${search}-${category}-${selectedStatus}`;
+      const cacheKey = `blogs-${page}-${search}-${selectedStatus}`;
 
       if (cacheRef.current.has(cacheKey)) {
         const cached = cacheRef.current.get(cacheKey);
@@ -90,7 +80,6 @@ function AdminBlogsPage() {
 
       const filters: Record<string, string> = {};
       if (search) filters.search = search;
-      if (category !== 'All') filters.category = category;
       if (selectedStatus !== 'all') filters.status = selectedStatus;
 
       const response = await blogsService.getAll(filters, page, pageSize);
@@ -116,21 +105,15 @@ function AdminBlogsPage() {
   };
 
   useEffect(() => {
-    fetchBlogs(1, searchTerm, selectedCategory !== 'All' ? selectedCategory : '');
+    fetchBlogs(1, searchTerm);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedStatus, searchTerm, selectedCategory]);
+  }, [selectedStatus, searchTerm]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchTerm(value);
     setCurrentPage(1);
-    fetchBlogs(1, value, selectedCategory !== 'All' ? selectedCategory : '');
-  };
-
-  const handleCategoryChange = (category: string) => {
-    setSelectedCategory(category);
-    setCurrentPage(1);
-    fetchBlogs(1, searchTerm, category !== 'All' ? category : '');
+    fetchBlogs(1, value);
   };
 
   const handleDelete = async () => {
@@ -141,7 +124,7 @@ function AdminBlogsPage() {
     try {
       await blogsService.delete(blogId);
       cacheRef.current.clear();
-      await fetchBlogs(1, searchTerm, selectedCategory !== 'All' ? selectedCategory : '');
+      await fetchBlogs(1, searchTerm);
       setDeleteOpen(false);
       setSelectedBlog(null);
     } catch (error) {
@@ -181,21 +164,7 @@ function AdminBlogsPage() {
                 onChange={handleSearch}
               />
             </div>
-
-            <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {cat}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+            <Select value={selectedStatus} onValueChange={(val) => { setSelectedStatus(val); setCurrentPage(1); fetchBlogs(1, searchTerm); }}>
               <SelectTrigger className="w-full md:w-40">
                 <SelectValue />
               </SelectTrigger>
@@ -318,7 +287,7 @@ function AdminBlogsPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => fetchBlogs(currentPage - 1, searchTerm, selectedCategory !== 'All' ? selectedCategory : '')}
+                onClick={() => fetchBlogs(currentPage - 1, searchTerm)}
                 disabled={currentPage === 1 || loading}
               >
                 Previous
@@ -330,7 +299,7 @@ function AdminBlogsPage() {
                     key={page}
                     variant={currentPage === page ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => fetchBlogs(page, searchTerm, selectedCategory !== 'All' ? selectedCategory : '')}
+                    onClick={() => fetchBlogs(page, searchTerm)}
                     disabled={loading}
                   >
                     {page}
@@ -340,7 +309,7 @@ function AdminBlogsPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => fetchBlogs(currentPage + 1, searchTerm, selectedCategory !== 'All' ? selectedCategory : '')}
+                onClick={() => fetchBlogs(currentPage + 1, searchTerm)}
                 disabled={currentPage === totalPages || loading}
               >
                 Next

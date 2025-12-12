@@ -61,7 +61,7 @@ const blogsService = {
   // Get single blog by ID
   getById: async (id: string): Promise<BlogPost> => {
     try {
-      const url = API_ENDPOINTS.BLOGS_UPDATE.replace('{id}', id);
+      const url = API_ENDPOINTS.BLOGS_GET_BY_ID.replace('{id}', id);
       const response = await apiClient.get(url);
       return response.data;
     } catch (error: any) {
@@ -85,9 +85,16 @@ const blogsService = {
 
 
   // Create new blog
-  create: async (data: CreateBlogRequest): Promise<BlogPost> => {
+  create: async (data: CreateBlogRequest | FormData): Promise<BlogPost> => {
     try {
-      const response = await apiClient.post(API_ENDPOINTS.BLOGS_CREATE, data);
+      let response;
+      if (data instanceof FormData) {
+        response = await apiClient.post(API_ENDPOINTS.BLOGS_CREATE, data, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      } else {
+        response = await apiClient.post(API_ENDPOINTS.BLOGS_CREATE, data);
+      }
       return response.data;
     } catch (error: any) {
       console.error('Error creating blog:', error);
@@ -96,10 +103,17 @@ const blogsService = {
   },
 
   // Update blog
-  update: async (id: string, data: Partial<CreateBlogRequest>): Promise<BlogPost> => {
+  update: async (id: string, data: Partial<CreateBlogRequest> | FormData): Promise<BlogPost> => {
     try {
       const url = API_ENDPOINTS.BLOGS_UPDATE.replace('{id}', id);
-      const response = await apiClient.put(url, data);
+      let response;
+      if (data instanceof FormData) {
+        response = await apiClient.put(url, data, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      } else {
+        response = await apiClient.put(url, data);
+      }
       return response.data;
     } catch (error: any) {
       console.error('Error updating blog:', error);

@@ -1,13 +1,15 @@
+
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Share2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import ShareButton from "./ShareButton";
 import { notFound } from "next/navigation";
 import blogsService, { BlogPost } from "../../../lib/api/services/blogs";
 
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const { slug } = params;
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
   try {
     const post: BlogPost = await blogsService.getBySlug(slug);
     return {
@@ -22,8 +24,8 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   }
 }
 
-export default async function BlogPostPage({ params }: { params: { slug: string } }) {
-  const { slug } = params;
+export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   let post: BlogPost | null = null;
   try {
     post = await blogsService.getBySlug(slug);
@@ -59,20 +61,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
 
             {/* Author, Date, ReadTime removed */}
             <div className="flex flex-wrap items-center gap-6 pt-4 border-t border-border/40">
-              <button
-                onClick={() => {
-                  if (navigator.share) {
-                    navigator.share({
-                      title: post.title,
-                      text: post.excerpt || post.title,
-                      url: `/blog/${post.slug}`,
-                    });
-                  }
-                }}
-                className="ml-auto text-primary hover:underline"
-              >
-                <Share2 className="h-4 w-4" />
-              </button>
+              <ShareButton title={post.title} excerpt={post.excerpt} slug={post.slug} />
             </div>
           </div>
 
