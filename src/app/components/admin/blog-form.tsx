@@ -348,21 +348,18 @@ export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
             <CardTitle>Content</CardTitle>
           </CardHeader>
           <CardContent>
-            <Label htmlFor="content">
+            <Label>
               Full Content <span className="text-red-500">*</span>
             </Label>
-            <textarea
-              id="content"
-              name="content"
-              placeholder="Write your blog post content here. Supports markdown formatting."
-              value={formData.content}
-              onChange={handleInputChange}
-              required
-              className="mt-2 w-full rounded-md border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary font-mono"
-              rows={15}
-            />
+            <div className="mt-2">
+              <EditorJSWrapper
+                value={editorData}
+                onChange={setEditorData}
+                placeholder="Write your blog post content here. Add headings, text, lists, images, code blocks, and more..."
+              />
+            </div>
             <p className="text-xs text-muted-foreground mt-2">
-              Supports markdown: # Headings, ## Subheadings, - Lists, etc.
+              Use the toolbar to add different content blocks: headings, paragraphs, lists, images, code, quotes, and more.
             </p>
           </CardContent>
         </Card>
