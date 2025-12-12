@@ -16,6 +16,12 @@ export const STORAGE_KEYS = {
 
 // API Endpoints
 export const API_ENDPOINTS = {
+    // Blog
+    BLOGS_GET: '/blogs',
+    BLOGS_CREATE: '/blogs',
+    BLOGS_GET_ONE_SLUG: '/blogs/{slug}',
+    BLOGS_UPDATE: '/blogs/{id}',
+    BLOGS_DELETE: '/blogs/{id}',
   // Auth
   AUTH_REGISTER: '/auth/register',
   AUTH_LOGIN: '/auth/login',

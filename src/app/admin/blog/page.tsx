@@ -65,7 +65,11 @@ function AdminBlogsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('all');
-  const cacheRef = useRef<Map<string, any>>(new Map());
+  type BlogCache = {
+    blogs: BlogPost[];
+    total: number;
+  };
+  const cacheRef = useRef<Map<string, BlogCache>>(new Map());
 
   // Fetch blogs
   const fetchBlogs = async (page: number = 1, search: string = '', category: string = '') => {
@@ -75,26 +79,32 @@ function AdminBlogsPage() {
 
       if (cacheRef.current.has(cacheKey)) {
         const cached = cacheRef.current.get(cacheKey);
-        setBlogs(cached.blogs);
-        setTotalCount(cached.total);
-        setCurrentPage(page);
-        setLoading(false);
-        return;
+        if (cached) {
+          setBlogs(cached.blogs);
+          setTotalCount(cached.total);
+          setCurrentPage(page);
+          setLoading(false);
+          return;
+        }
       }
 
-      const filters: any = {};
+      const filters: Record<string, string> = {};
       if (search) filters.search = search;
       if (category !== 'All') filters.category = category;
       if (selectedStatus !== 'all') filters.status = selectedStatus;
 
       const response = await blogsService.getAll(filters, page, pageSize);
+      const normalizedBlogs = response.data.map((blog: BlogPost) => ({
+        ...blog,
+        id: typeof blog.id === 'string' ? blog.id : blog.id !== undefined ? String(blog.id) : '',
+      }));
 
       cacheRef.current.set(cacheKey, {
-        blogs: response.data,
+        blogs: normalizedBlogs,
         total: response.total,
       });
 
-      setBlogs(response.data);
+      setBlogs(normalizedBlogs);
       setTotalCount(response.total);
       setCurrentPage(page);
     } catch (error) {
@@ -107,7 +117,8 @@ function AdminBlogsPage() {
 
   useEffect(() => {
     fetchBlogs(1, searchTerm, selectedCategory !== 'All' ? selectedCategory : '');
-  }, [selectedStatus]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedStatus, searchTerm, selectedCategory]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -123,11 +134,11 @@ function AdminBlogsPage() {
   };
 
   const handleDelete = async () => {
-    if (!selectedBlog?._id && !selectedBlog?.id) return;
+    const blogId = selectedBlog?.id;
+    if (!blogId) return;
 
     setDeleting(true);
     try {
-      const blogId = selectedBlog._id || selectedBlog.id;
       await blogsService.delete(blogId);
       cacheRef.current.clear();
       await fetchBlogs(1, searchTerm, selectedCategory !== 'All' ? selectedCategory : '');
@@ -220,15 +231,13 @@ function AdminBlogsPage() {
                 <thead className="border-b border-border bg-muted/50">
                   <tr>
                     <th className="px-6 py-3 text-left font-semibold">Title</th>
-                    <th className="px-6 py-3 text-left font-semibold">Author</th>
-                    <th className="px-6 py-3 text-left font-semibold">Category</th>
                     <th className="px-6 py-3 text-left font-semibold">Status</th>
                     <th className="px-6 py-3 text-right font-semibold">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {blogs.map((blog) => (
-                    <tr key={blog._id || blog.id} className="border-b border-border/50 hover:bg-muted/50">
+                    <tr key={blog.id} className="border-b border-border/50 hover:bg-muted/50">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           {blog.image && (
@@ -247,12 +256,6 @@ function AdminBlogsPage() {
                             <p className="text-xs text-muted-foreground">{blog.slug}</p>
                           </div>
                         </div>
-                      </td>
-                      <td className="px-6 py-4 text-muted-foreground">{blog.author}</td>
-                      <td className="px-6 py-4">
-                        <span className="text-xs font-medium bg-primary/10 text-primary px-2 py-1 rounded">
-                          {blog.category}
-                        </span>
                       </td>
                       <td className="px-6 py-4">
                         <span
@@ -280,7 +283,7 @@ function AdminBlogsPage() {
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
-                              <Link href={`/admin/blog/${blog._id || blog.id}`} className="flex items-center gap-2">
+                              <Link href={`/admin/blog/${blog.id}`} className="flex items-center gap-2">
                                 <Edit className="h-4 w-4" />
                                 Edit
                               </Link>

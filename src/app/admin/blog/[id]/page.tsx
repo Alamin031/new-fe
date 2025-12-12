@@ -10,7 +10,8 @@ import { Card, CardContent } from '../../../components/ui/card';
 
 function EditBlogPage() {
   const params = useParams();
-  const id = params?.id as string;
+  // Normalize id to string for API compatibility
+  const id = params?.id ? String(params.id) : '';
   const [blog, setBlog] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -22,9 +23,25 @@ function EditBlogPage() {
       try {
         setLoading(true);
         const data = await blogsService.getById(id);
-        setBlog(data);
-      } catch (err: any) {
-        setError(err.response?.data?.error || 'Failed to load blog');
+        // Normalize id and _id to string for consistency
+        setBlog({
+          ...data,
+          id: data.id ? String(data.id) : '',
+          publishedAt: data.publishedAt ? String(data.publishedAt) : undefined,
+          readTime: typeof data.readTime === 'number' ? data.readTime : data.readTime ? Number(data.readTime) : undefined,
+        });
+      } catch (err: unknown) {
+        type ErrorWithResponse = { response?: { data?: { error?: string } } };
+        if (
+          typeof err === 'object' &&
+          err !== null &&
+          'response' in err &&
+          (err as ErrorWithResponse).response?.data?.error
+        ) {
+          setError((err as ErrorWithResponse).response!.data!.error!);
+        } else {
+          setError('Failed to load blog');
+        }
       } finally {
         setLoading(false);
       }

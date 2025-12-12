@@ -3,37 +3,34 @@ import { apiClient } from '../client';
 import { API_ENDPOINTS } from '../config';
 
 export interface BlogPost {
-  _id?: string;
-  id?: string;
+  id: string; // ObjectId as string
   title: string;
   slug: string;
-  author: string;
   content: string;
-  excerpt: string;
-  category: string;
-  image: string;
-  readTime: string;
-  publishedAt?: string;
-  status?: 'draft' | 'published';
+  image?: string;
+  excerpt?: string;
+  publishedAt?: string; // or Date, depending on your API serialization
+  readTime?: number;
+  status: string;
   tags?: string[];
-  createdAt?: string;
-  updatedAt?: string;
+  createdAt: string; // or Date
+  updatedAt: string; // or Date
 }
 
 export interface CreateBlogRequest {
   title: string;
   slug: string;
-  author: string;
   content: string;
   excerpt: string;
-  category: string;
   image: string;
   readTime: string;
   status?: 'draft' | 'published';
   tags?: string[];
 }
 
-export interface UpdateBlogRequest extends Partial<CreateBlogRequest> {}
+
+
+// Use Partial<CreateBlogRequest> directly instead of UpdateBlogRequest
 
 export interface BlogListResponse {
   data: BlogPost[];
@@ -53,8 +50,7 @@ const blogsService = {
         ...(filters?.category && { category: filters.category }),
         ...(filters?.status && { status: filters.status }),
       });
-
-      const response = await apiClient.get(`/blogs?${params.toString()}`);
+      const response = await apiClient.get(`${API_ENDPOINTS.BLOGS_GET}?${params.toString()}`);
       return response.data;
     } catch (error: any) {
       console.error('Error fetching blogs:', error);
@@ -65,7 +61,8 @@ const blogsService = {
   // Get single blog by ID
   getById: async (id: string): Promise<BlogPost> => {
     try {
-      const response = await apiClient.get(`/blogs/${id}`);
+      const url = API_ENDPOINTS.BLOGS_UPDATE.replace('{id}', id);
+      const response = await apiClient.get(url);
       return response.data;
     } catch (error: any) {
       console.error('Error fetching blog:', error);
@@ -76,7 +73,8 @@ const blogsService = {
   // Get blog by slug
   getBySlug: async (slug: string): Promise<BlogPost> => {
     try {
-      const response = await apiClient.get(`/blogs/slug/${slug}`);
+      const url = API_ENDPOINTS.BLOGS_GET_ONE_SLUG.replace('{slug}', slug);
+      const response = await apiClient.get(url);
       return response.data;
     } catch (error: any) {
       console.error('Error fetching blog by slug:', error);
@@ -84,10 +82,12 @@ const blogsService = {
     }
   },
 
+
+
   // Create new blog
   create: async (data: CreateBlogRequest): Promise<BlogPost> => {
     try {
-      const response = await apiClient.post(`/blogs`, data);
+      const response = await apiClient.post(API_ENDPOINTS.BLOGS_CREATE, data);
       return response.data;
     } catch (error: any) {
       console.error('Error creating blog:', error);
@@ -96,9 +96,10 @@ const blogsService = {
   },
 
   // Update blog
-  update: async (id: string, data: UpdateBlogRequest): Promise<BlogPost> => {
+  update: async (id: string, data: Partial<CreateBlogRequest>): Promise<BlogPost> => {
     try {
-      const response = await apiClient.put(`/blogs/${id}`, data);
+      const url = API_ENDPOINTS.BLOGS_UPDATE.replace('{id}', id);
+      const response = await apiClient.put(url, data);
       return response.data;
     } catch (error: any) {
       console.error('Error updating blog:', error);
@@ -109,31 +110,10 @@ const blogsService = {
   // Delete blog
   delete: async (id: string): Promise<void> => {
     try {
-      await apiClient.delete(`/blogs/${id}`);
+      const url = API_ENDPOINTS.BLOGS_DELETE.replace('{id}', id);
+      await apiClient.delete(url);
     } catch (error: any) {
       console.error('Error deleting blog:', error);
-      throw error;
-    }
-  },
-
-  // Get blogs by category
-  getByCategory: async (category: string, page: number = 1, pageSize: number = 20): Promise<BlogListResponse> => {
-    try {
-      const response = await apiClient.get(`/blogs?category=${category}&page=${page}&pageSize=${pageSize}`);
-      return response.data;
-    } catch (error: any) {
-      console.error('Error fetching blogs by category:', error);
-      throw error;
-    }
-  },
-
-  // Get all categories
-  getCategories: async (): Promise<string[]> => {
-    try {
-      const response = await apiClient.get(`/blogs/categories`);
-      return response.data;
-    } catch (error: any) {
-      console.error('Error fetching categories:', error);
       throw error;
     }
   },

@@ -1,6 +1,8 @@
+/* eslint-disable @next/next/no-img-element */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -21,16 +23,7 @@ interface BlogFormProps {
   isEditing?: boolean;
 }
 
-const categories = [
-  'Smartphones',
-  'Laptops',
-  'Tablets',
-  'Technology',
-  'Comparison',
-  'Gaming',
-  'Tips',
-  'Reviews',
-];
+
 
 export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
   const router = useRouter();
@@ -39,15 +32,19 @@ export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
   const [formData, setFormData] = useState({
     title: initialData?.title || '',
     slug: initialData?.slug || '',
-    author: initialData?.author || '',
     excerpt: initialData?.excerpt || '',
     content: initialData?.content || '',
-    category: initialData?.category || '',
-    image: initialData?.image || '',
-    readTime: initialData?.readTime || '',
+    publishedAt: initialData?.publishedAt ? new Date(initialData.publishedAt).toISOString().slice(0, 16) : '',
+    readTime: initialData?.readTime !== undefined && initialData?.readTime !== null ? String(initialData.readTime) : '',
     status: (initialData?.status as 'draft' | 'published') || 'draft',
-    tags: initialData?.tags?.join(', ') || '',
+    tags: Array.isArray(initialData?.tags) ? initialData.tags.join(', ') : '',
   });
+
+  // For image uploads (single image for backend compatibility)
+  const [images, setImages] = useState<(File | string)[]>(
+    initialData?.image ? [initialData.image] : []
+  );
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Generate slug from title
   const generateSlug = (title: string) => {
@@ -70,6 +67,20 @@ export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
     });
   };
 
+  // Handle image file input
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    // Only allow one image (replace previous)
+    setImages([files[0]]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  // Remove image from list
+  const handleRemoveImage = (idx: number) => {
+    setImages([]);
+  };
+
   const handleSelectChange = (name: string, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -78,16 +89,19 @@ export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
     if (
       !formData.title ||
       !formData.slug ||
-      !formData.author ||
       !formData.excerpt ||
-      !formData.content ||
-      !formData.category
+      !formData.content
     ) {
       setError('Please fill in all required fields');
       return false;
     }
     if (formData.content.length < 100) {
       setError('Content must be at least 100 characters');
+      return false;
+    }
+    // Require one image
+    if (images.length === 0) {
+      setError('Please upload an image');
       return false;
     }
     return true;
@@ -102,18 +116,29 @@ export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
     setLoading(true);
 
     try {
+      // Only send the first image (string or file URL)
+      const imageValue = typeof images[0] === 'string' ? images[0] : URL.createObjectURL(images[0]);
       const payload = {
         ...formData,
+        readTime: formData.readTime ? Number(formData.readTime) : undefined,
+        publishedAt: formData.publishedAt ? new Date(formData.publishedAt).toISOString() : undefined,
         tags: formData.tags
           .split(',')
           .map((tag) => tag.trim())
           .filter((tag) => tag),
+        image: imageValue,
       };
 
-      if (isEditing && initialData?._id) {
-        await blogsService.update(initialData._id, payload);
+      if (isEditing && initialData?.id) {
+        await blogsService.update(initialData.id, {
+          ...payload,
+          readTime: payload.readTime !== undefined ? String(payload.readTime) : '',
+        });
       } else {
-        await blogsService.create(payload);
+        await blogsService.create({
+          ...payload,
+          readTime: payload.readTime !== undefined ? String(payload.readTime) : '',
+        });
       }
 
       router.push('/admin/blog');
@@ -186,33 +211,16 @@ export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="author">
-                  Author <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="author"
-                  name="author"
-                  placeholder="Author name"
-                  value={formData.author}
-                  onChange={handleInputChange}
-                  required
-                  className="mt-1"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="readTime">Read Time</Label>
-                <Input
-                  id="readTime"
-                  name="readTime"
-                  placeholder="e.g., 5 min read"
-                  value={formData.readTime}
-                  onChange={handleInputChange}
-                  className="mt-1"
-                />
-              </div>
+            <div>
+              <Label htmlFor="readTime">Read Time</Label>
+              <Input
+                id="readTime"
+                name="readTime"
+                placeholder="e.g., 5 min read"
+                value={formData.readTime}
+                onChange={handleInputChange}
+                className="mt-1"
+              />
             </div>
           </CardContent>
         </Card>
@@ -223,37 +231,17 @@ export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
             <CardTitle>Classification</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="category">
-                  Category <span className="text-red-500">*</span>
-                </Label>
-                <Select value={formData.category} onValueChange={(val) => handleSelectChange('category', val)}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat} value={cat}>
-                        {cat}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="status">Status</Label>
-                <Select value={formData.status} onValueChange={(val) => handleSelectChange('status', val as 'draft' | 'published')}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="published">Published</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div>
+              <Label htmlFor="status">Status</Label>
+              <Select value={formData.status} onValueChange={(val) => handleSelectChange('status', val as 'draft' | 'published')}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="published">Published</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
@@ -270,24 +258,43 @@ export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
           </CardContent>
         </Card>
 
-        {/* Image and Excerpt */}
+        {/* Image Upload and Excerpt */}
         <Card>
           <CardHeader>
             <CardTitle>Featured Content</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="image">Featured Image URL</Label>
+              <Label htmlFor="images">Upload Images <span className="text-red-500">*</span></Label>
               <Input
-                id="image"
-                name="image"
-                placeholder="https://example.com/image.jpg"
-                value={formData.image}
-                onChange={handleInputChange}
+                id="images"
+                name="images"
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
                 className="mt-1"
+                ref={fileInputRef}
               />
+              <div className="flex flex-wrap gap-3 mt-2">
+                {images[0] && (
+                  <div className="relative group">
+                    <img
+                      src={typeof images[0] === 'string' ? images[0] : URL.createObjectURL(images[0])}
+                      alt="Image preview"
+                      className="w-20 h-20 object-cover rounded border"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(0)}
+                      className="absolute top-0 right-0 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-80 group-hover:opacity-100"
+                      title="Remove"
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-
             <div>
               <Label htmlFor="excerpt">
                 Excerpt <span className="text-red-500">*</span>

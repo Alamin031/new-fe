@@ -1,3 +1,4 @@
+"use client";
 import { BlogForm } from '../../../components/admin/blog-form';
 import { withProtectedRoute } from '../../../lib/auth/protected-route';
 

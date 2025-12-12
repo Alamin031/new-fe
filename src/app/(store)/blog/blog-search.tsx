@@ -2,43 +2,34 @@
 
 import { useState } from "react"
 import Image from "next/image"
-import { Calendar, User, Search } from "lucide-react"
+import { Search } from "lucide-react"
 import { Card, CardContent } from "../../components/ui/card"
 import { Input } from "../../components/ui/input"
-import { Button } from "../../components/ui/button"
+
 
 interface BlogPost {
-  id: number
-  slug: string
-  title: string
-  excerpt: string
-  content: string
-  author: string
-  date: string
-  category: string
-  image: string
-  readTime: string
+  id?: string;
+  _id?: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  image: string;
+  readTime: string;
 }
 
-interface BlogSearchClientProps {
-  posts: BlogPost[]
-  categories: string[]
+type BlogSearchClientProps = {
+  posts: BlogPost[];
 }
 
-export function BlogSearchClient({ posts, categories }: BlogSearchClientProps) {
+export function BlogSearchClient({ posts }: BlogSearchClientProps) {
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("")
-
-  const filteredPosts = posts.filter((post) => {
-    const matchesSearch =
-      post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      post.excerpt.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      post.category.toLowerCase().includes(searchTerm.toLowerCase())
-
-    const matchesCategory = !selectedCategory || post.category === selectedCategory
-
-    return matchesSearch && matchesCategory
-  })
+    const filteredPosts: BlogPost[] = posts.filter((post: BlogPost) => {
+      const matchesSearch =
+        post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        post.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesSearch;
+    });
 
   return (
     <div className="space-y-6">
@@ -52,25 +43,6 @@ export function BlogSearchClient({ posts, categories }: BlogSearchClientProps) {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant={selectedCategory === "" ? "default" : "outline"}
-            onClick={() => setSelectedCategory("")}
-            size="sm"
-          >
-            All
-          </Button>
-          {categories.map((category) => (
-            <Button
-              key={category}
-              variant={selectedCategory === category ? "default" : "outline"}
-              onClick={() => setSelectedCategory(category)}
-              size="sm"
-            >
-              {category}
-            </Button>
-          ))}
         </div>
       </div>
 
@@ -99,15 +71,10 @@ export function BlogSearchClient({ posts, categories }: BlogSearchClientProps) {
                 </div>
                 <CardContent className="flex flex-col justify-between pt-6 flex-1">
                   <div>
-                    <p className="text-xs font-medium text-primary">{post.category}</p>
                     <h3 className="mt-2 text-lg font-semibold line-clamp-2">{post.title}</h3>
                     <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{post.excerpt}</p>
                   </div>
                   <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <User className="h-3 w-3" />
-                      {post.author}
-                    </div>
                     <span>{post.readTime}</span>
                   </div>
                   <a
