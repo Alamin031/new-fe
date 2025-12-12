@@ -309,9 +309,15 @@ export function EditorJSWrapper({
       </div>
 
       <style jsx>{`
+        :global(.editor-js-container .ce-editor) {
+          background-color: white !important;
+        }
+
         :global(.editor-js-container .ce-editor__redactor) {
           padding: 2rem;
           min-height: 400px;
+          background-color: white !important;
+          color: rgb(30, 41, 59);
         }
 
         :global(.editor-js-container .ce-block) {
