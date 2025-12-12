@@ -1,14 +1,13 @@
-/* eslint-disable @next/next/no-img-element */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @next/next/no-img-element */
 'use client';
 
-import { useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { OutputData } from '@editorjs/editorjs';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import {useState, useRef} from 'react';
+import {useRouter} from 'next/navigation';
+import {Button} from '../ui/button';
+import {Input} from '../ui/input';
+import {Label} from '../ui/label';
+import {Card, CardContent, CardHeader, CardTitle} from '../ui/card';
 import {
   Select,
   SelectContent,
@@ -16,66 +15,42 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../ui/select';
-import { AlertCircle, Loader2 } from 'lucide-react';
-import { EditorJSWrapper } from './editor-js-wrapper';
-import blogsService, { BlogPost } from '../../lib/api/services/blogs';
+import {AlertCircle, Loader2, Bold, Italic} from 'lucide-react';
+import blogsService, {BlogPost} from '../../lib/api/services/blogs';
+import {RichTextEditor} from '../ui/rich-text-editor';
 
 interface BlogFormProps {
   initialData?: BlogPost;
   isEditing?: boolean;
 }
 
-
-
-export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
+export function BlogForm({initialData, isEditing = false}: BlogFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [editorData, setEditorData] = useState<OutputData>(() => {
-    if (initialData?.content) {
-      try {
-        return JSON.parse(typeof initialData.content === 'string' ? initialData.content : JSON.stringify(initialData.content));
-      } catch {
-        // Fallback if content is not valid JSON
-        return {
-          blocks: [
-            {
-              id: 'initial',
-              type: 'paragraph',
-              data: {
-                text: initialData.content || '',
-              },
-            },
-          ],
-          version: '2.28.2',
-          time: Date.now(),
-        };
-      }
-    }
-    return {
-      blocks: [],
-      version: '2.28.2',
-      time: Date.now(),
-    };
-  });
+  const [previewMode, setPreviewMode] = useState(false);
 
   const [formData, setFormData] = useState({
     title: initialData?.title || '',
     slug: initialData?.slug || '',
     excerpt: initialData?.excerpt || '',
-    publishedAt: initialData?.publishedAt ? new Date(initialData.publishedAt).toISOString().slice(0, 16) : '',
-    readTime: initialData?.readTime !== undefined && initialData?.readTime !== null ? String(initialData.readTime) : '',
+    content: initialData?.content || '',
+    publishedAt: initialData?.publishedAt
+      ? new Date(initialData.publishedAt).toISOString().slice(0, 16)
+      : '',
+    readTime:
+      initialData?.readTime !== undefined && initialData?.readTime !== null
+        ? String(initialData.readTime)
+        : '',
     status: (initialData?.status as 'draft' | 'published') || 'draft',
     tags: Array.isArray(initialData?.tags) ? initialData.tags.join(', ') : '',
   });
 
-  // For image uploads (single image for backend compatibility)
   const [images, setImages] = useState<(File | string)[]>(
-    initialData?.image ? [initialData.image] : []
+    initialData?.image ? [initialData.image] : [],
   );
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Generate slug from title
   const generateSlug = (title: string) => {
     return title
       .toLowerCase()
@@ -84,11 +59,11 @@ export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
   };
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => {
-      const updated = { ...prev, [name]: value };
+    const {name, value} = e.target;
+    setFormData(prev => {
+      const updated = {...prev, [name]: value};
       if (name === 'title' && !initialData) {
         updated.slug = generateSlug(value);
       }
@@ -96,7 +71,10 @@ export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
     });
   };
 
-  // Handle image file input
+  const handleContentChange = (content: string) => {
+    setFormData(prev => ({...prev, content}));
+  };
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
@@ -105,33 +83,47 @@ export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  // Remove image from list
   const handleRemoveImage = (idx: number) => {
     setImages([]);
   };
 
   const handleSelectChange = (name: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData(prev => ({...prev, [name]: value}));
+  };
+
+  const getPlainTextLength = (html: string) => {
+    if (!html) return 0;
+    // Remove HTML tags and count characters
+    const plainText = html.replace(/<[^>]*>/g, '');
+    return plainText.length;
   };
 
   const validateForm = () => {
     if (
       !formData.title ||
       !formData.slug ||
-      !formData.excerpt
+      !formData.excerpt ||
+      !formData.content
     ) {
       setError('Please fill in all required fields');
       return false;
     }
-    if (!editorData.blocks || editorData.blocks.length === 0) {
-      setError('Please add content to your blog post');
+
+    // Check content length without HTML tags
+    const contentLength = getPlainTextLength(formData.content);
+    if (contentLength < 100) {
+      setError(
+        `Content must be at least 100 characters (currently ${contentLength})`,
+      );
       return false;
     }
+
     // Require one image
     if (images.length === 0) {
       setError('Please upload an image');
       return false;
     }
+
     return true;
   };
 
@@ -144,30 +136,36 @@ export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
     setLoading(true);
 
     try {
-      // Prepare FormData for file upload
-      const form = new FormData();
-      form.append('title', formData.title);
-      form.append('slug', formData.slug);
-      form.append('excerpt', formData.excerpt);
-      form.append('content', JSON.stringify(editorData));
-      form.append('status', formData.status);
-      if (formData.readTime) form.append('readTime', formData.readTime);
-      if (formData.publishedAt) form.append('publishedAt', new Date(formData.publishedAt).toISOString());
-      if (formData.tags) {
-        // Send tags as comma-separated string or as array, depending on backend
-        form.append('tags', formData.tags);
-      }
-      // Only send the first image (as File or string URL)
-      if (images[0] instanceof File) {
-        form.append('image', images[0]);
-      } else if (typeof images[0] === 'string') {
-        form.append('image', images[0]);
-      }
+      // Only send the first image (string or file URL)
+      const imageValue =
+        typeof images[0] === 'string'
+          ? images[0]
+          : URL.createObjectURL(images[0]);
+      const payload = {
+        ...formData,
+        readTime: formData.readTime ? Number(formData.readTime) : undefined,
+        publishedAt: formData.publishedAt
+          ? new Date(formData.publishedAt).toISOString()
+          : undefined,
+        tags: formData.tags
+          .split(',')
+          .map(tag => tag.trim())
+          .filter(tag => tag),
+        image: imageValue,
+      };
 
       if (isEditing && initialData?.id) {
-        await blogsService.update(initialData.id, form);
+        await blogsService.update(initialData.id, {
+          ...payload,
+          readTime:
+            payload.readTime !== undefined ? String(payload.readTime) : '',
+        });
       } else {
-        await blogsService.create(form);
+        await blogsService.create({
+          ...payload,
+          readTime:
+            payload.readTime !== undefined ? String(payload.readTime) : '',
+        });
       }
 
       router.push('/admin/blog');
@@ -177,6 +175,22 @@ export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const addPublishedDateField = () => {
+    return (
+      <div>
+        <Label htmlFor="publishedAt">Publish Date & Time</Label>
+        <Input
+          id="publishedAt"
+          name="publishedAt"
+          type="datetime-local"
+          value={formData.publishedAt}
+          onChange={handleInputChange}
+          className="mt-1"
+        />
+      </div>
+    );
   };
 
   return (
@@ -200,7 +214,6 @@ export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Title and Slug */}
         <Card>
           <CardHeader>
             <CardTitle>Basic Information</CardTitle>
@@ -240,21 +253,25 @@ export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
               </p>
             </div>
 
-            <div>
-              <Label htmlFor="readTime">Read Time</Label>
-              <Input
-                id="readTime"
-                name="readTime"
-                placeholder="e.g., 5 min read"
-                value={formData.readTime}
-                onChange={handleInputChange}
-                className="mt-1"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="readTime">Read Time (minutes)</Label>
+                <Input
+                  id="readTime"
+                  name="readTime"
+                  placeholder="e.g., 5"
+                  value={formData.readTime}
+                  onChange={handleInputChange}
+                  className="mt-1"
+                  type="number"
+                  min="1"
+                />
+              </div>
+              {addPublishedDateField()}
             </div>
           </CardContent>
         </Card>
 
-        {/* Category and Status */}
         <Card>
           <CardHeader>
             <CardTitle>Classification</CardTitle>
@@ -262,7 +279,11 @@ export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
           <CardContent className="space-y-4">
             <div>
               <Label htmlFor="status">Status</Label>
-              <Select value={formData.status} onValueChange={(val) => handleSelectChange('status', val as 'draft' | 'published')}>
+              <Select
+                value={formData.status}
+                onValueChange={val =>
+                  handleSelectChange('status', val as 'draft' | 'published')
+                }>
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
@@ -283,18 +304,22 @@ export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
                 onChange={handleInputChange}
                 className="mt-1"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Tags help categorize your content
+              </p>
             </div>
           </CardContent>
         </Card>
 
-        {/* Image Upload and Excerpt */}
         <Card>
           <CardHeader>
             <CardTitle>Featured Content</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="images">Upload Images <span className="text-red-500">*</span></Label>
+              <Label htmlFor="images">
+                Featured Image <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="images"
                 name="images"
@@ -304,28 +329,31 @@ export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
                 className="mt-1"
                 ref={fileInputRef}
               />
-              {images[0] ? (
-                <div className="mt-4">
-                  <p className="text-sm font-medium text-foreground mb-2">Image Preview</p>
-                  <div className="relative inline-block group">
+              <div className="flex flex-wrap gap-3 mt-2">
+                {images[0] && (
+                  <div className="relative group">
                     <img
-                      src={typeof images[0] === 'string' ? images[0] : URL.createObjectURL(images[0])}
-                      alt="Uploaded image preview"
-                      className="max-w-xs max-h-64 object-contain rounded-lg border border-border bg-background p-2"
+                      src={
+                        typeof images[0] === 'string'
+                          ? images[0]
+                          : URL.createObjectURL(images[0])
+                      }
+                      alt="Featured image preview"
+                      className="w-32 h-32 object-cover rounded-lg border"
                     />
                     <button
                       type="button"
                       onClick={() => handleRemoveImage(0)}
-                      className="absolute -top-3 -right-3 bg-red-600 hover:bg-red-700 text-white rounded-full w-8 h-8 flex items-center justify-center text-lg font-semibold transition-all opacity-90 group-hover:opacity-100 shadow-md"
-                      title="Remove image"
-                    >
+                      className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm opacity-90 hover:opacity-100 transition-opacity"
+                      title="Remove image">
                       ×
                     </button>
                   </div>
-                </div>
-              ) : (
-                <p className="mt-2 text-sm text-muted-foreground">No image selected yet</p>
-              )}
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Recommended size: 1200×630px. Max file size: 5MB.
+              </p>
             </div>
             <div>
               <Label htmlFor="excerpt">
@@ -341,50 +369,123 @@ export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
                 className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 rows={3}
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Keep it concise, ideally 150-300 characters. Current:{' '}
+                {formData.excerpt.length}
+              </p>
             </div>
           </CardContent>
         </Card>
 
-        {/* Content */}
         <Card>
           <CardHeader>
-            <CardTitle>Content</CardTitle>
+            <CardTitle className="flex items-center justify-between">
+              <span>
+                Content <span className="text-red-500">*</span>
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setPreviewMode(!previewMode)}
+                className="text-xs">
+                {previewMode ? 'Edit Mode' : 'Preview Mode'}
+              </Button>
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <Label>
-              Full Content <span className="text-red-500">*</span>
-            </Label>
-            <div className="mt-2">
-              <EditorJSWrapper
-                value={editorData}
-                onChange={setEditorData}
-                placeholder="Write your blog post content here. Add headings, text, lists, images, code blocks, and more..."
-              />
+            <div className="space-y-4">
+              {previewMode ? (
+                <div className="border rounded-md p-6 min-h-[400px] overflow-auto bg-muted/10">
+                  <div
+                    className="prose prose-lg max-w-none"
+                    dangerouslySetInnerHTML={{__html: formData.content}}
+                  />
+                  {!formData.content && (
+                    <div className="text-center text-muted-foreground py-12">
+                      No content to preview
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <RichTextEditor
+                    value={formData.content}
+                    onChange={handleContentChange}
+                    placeholder="Write your blog post content here..."
+                    className="min-h-[400px]"
+                  />
+                  <div className="flex items-center justify-between text-sm text-muted-foreground pt-2">
+                    <div>
+                      <span className="font-medium">Character Count:</span>{' '}
+                      {getPlainTextLength(formData.content)}
+                      {getPlainTextLength(formData.content) < 100 && (
+                        <span className="text-red-500 ml-2">
+                          (Minimum 100 required)
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="inline-flex items-center gap-1 text-xs">
+                        <Bold className="h-3 w-3" /> Bold: Ctrl+B
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-xs">
+                        <Italic className="h-3 w-3" /> Italic: Ctrl+I
+                      </span>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <div className="bg-muted/20 rounded-lg p-4 border">
+                <h4 className="font-medium text-sm mb-2">Formatting Tips:</h4>
+                <ul className="text-xs text-muted-foreground space-y-1">
+                  <li>
+                    • Use toolbar buttons or keyboard shortcuts for formatting
+                  </li>
+                  <li>• Headings help structure your content (H1, H2, H3)</li>
+                  <li>
+                    • Use lists (bullet or numbered) for better readability
+                  </li>
+                  <li>• Add blockquotes for important quotes or highlights</li>
+                  <li>• Use code blocks for technical content</li>
+                </ul>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Use the toolbar to add different content blocks: headings, paragraphs, lists, images, code, quotes, and more.
-            </p>
           </CardContent>
         </Card>
 
-        {/* Actions */}
         <div className="flex items-center gap-4">
-          <Button
-            type="submit"
-            disabled={loading}
-            className="gap-2"
-          >
+          <Button type="submit" disabled={loading} className="gap-2">
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-            {isEditing ? 'Update Blog' : 'Create Blog'}
+            {isEditing ? 'Update Blog Post' : 'Publish Blog Post'}
           </Button>
           <Button
             type="button"
             variant="outline"
             onClick={() => router.back()}
-            disabled={loading}
-          >
+            disabled={loading}>
             Cancel
           </Button>
+          {isEditing && (
+            <Button
+              type="submit"
+              variant="secondary"
+              disabled={loading}
+              onClick={e => {
+                e.preventDefault();
+                setFormData(prev => ({...prev, status: 'draft'}));
+                setTimeout(() => {
+                  const submitBtn = document.querySelector(
+                    'button[type="submit"]',
+                  ) as HTMLButtonElement;
+                  if (submitBtn) submitBtn.click();
+                }, 100);
+              }}
+              className="ml-auto">
+              Save as Draft
+            </Button>
+          )}
         </div>
       </form>
     </div>

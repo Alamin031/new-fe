@@ -77,42 +77,10 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           </div>
 
           {/* Article Content */}
-          <div className="prose prose-neutral dark:prose-invert max-w-none">
-            <div className="space-y-6 text-base leading-relaxed">
-              {post.content.split("\n\n").map((paragraph: string, index: number) => {
-                if (paragraph.startsWith("##")) {
-                  return (
-                    <h2 key={index} className="text-2xl font-bold mt-8 mb-4">
-                      {paragraph.replace(/^##\s*/, "")}
-                    </h2>
-                  )
-                }
-                if (paragraph.startsWith("###")) {
-                  return (
-                    <h3 key={index} className="text-xl font-semibold mt-6 mb-2">
-                      {paragraph.replace(/^###\s*/, "")}
-                    </h3>
-                  )
-                }
-                if (paragraph.startsWith("- ")) {
-                  return (
-                    <ul key={index} className="list-disc list-inside space-y-2 ml-4">
-                      {paragraph.split("\n").map((item: string, idx: number) => (
-                        <li key={idx} className="text-muted-foreground">
-                          {item.replace(/^-\s*/, "")}
-                        </li>
-                      ))}
-                    </ul>
-                  )
-                }
-                return (
-                  <p key={index} className="text-muted-foreground">
-                    {paragraph}
-                  </p>
-                )
-              })}
-            </div>
-          </div>
+          <div
+            className="prose prose-neutral dark:prose-invert max-w-none"
+            dangerouslySetInnerHTML={{ __html: post.content }}
+          />
 
           {/* Divider */}
           <div className="border-t border-border/40 my-12" />
