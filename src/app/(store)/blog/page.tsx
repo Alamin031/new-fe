@@ -1,3 +1,4 @@
+"use client";
 import { Card, CardContent } from "@/app/components/ui/card"
 import blogsService, { BlogPost } from "@/app/lib/api/services/blogs"
 import { ArrowRight, Calendar } from "lucide-react"

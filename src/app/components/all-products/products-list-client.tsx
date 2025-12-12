@@ -3,7 +3,6 @@
 
 import { useMemo, useState } from "react"
 import { useSWRCache } from "@/app/hooks/use-swr-cache"
-import { usePagination } from "@/app/hooks/use-pagination"
 import { productsService } from "@/app/lib/api/services/products"
 import { CategoryProducts } from "@/app/components/category/category-products"
 import { Button } from "@/app/components/ui/button"
@@ -88,8 +87,14 @@ export function ProductsListClient({
           )
         })
 
+        // Ensure each product has basePrice for compatibility with ProductListResponse
+        const mappedProducts = filteredByBrand.slice(start, end).map((product: any) => ({
+          ...product,
+          basePrice: product.basePrice ?? product.price ?? 0, // fallback if basePrice is missing
+        }))
+
         return {
-          data: filteredByBrand.slice(start, end),
+          data: mappedProducts,
           pagination: {
             total: filteredByBrand.length,
             page: currentPage,
