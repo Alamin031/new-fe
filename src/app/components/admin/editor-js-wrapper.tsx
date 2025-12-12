@@ -16,7 +16,7 @@ export function EditorJSWrapper({
   placeholder = 'Write your blog post content here...',
   readOnly = false,
 }: EditorJSWrapperProps) {
-  const editorRef = useRef<EditorJS | null>(null);
+  const editorRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isReady, setIsReady] = useState(false);
 
@@ -24,86 +24,109 @@ export function EditorJSWrapper({
     if (!containerRef.current || editorRef.current) return;
 
     const initializeEditor = async () => {
-      editorRef.current = new EditorJS({
-        holder: containerRef.current!,
-        placeholder: placeholder,
-        readOnly: readOnly,
-        inlineToolbar: ['bold', 'italic', 'link'],
-        data: value || {
-          blocks: [],
-          version: EditorJS.version,
-          time: Date.now(),
-        },
-        onChange: async () => {
-          if (editorRef.current) {
-            const data = await editorRef.current.save();
-            onChange(data);
-          }
-        },
-        tools: {
-          header: {
-            class: Header,
-            config: {
-              placeholder: 'Enter a heading',
-              levels: [1, 2, 3, 4],
-              defaultLevel: 2,
-            },
-          },
-          paragraph: {
-            class: Paragraph,
-            config: {
-              placeholder: 'Type or paste your text here...',
-            },
-          },
-          list: {
-            class: List,
-            inlineToolbar: true,
-            config: {
-              defaultStyle: 'unordered',
-            },
-          },
-          code: {
-            class: Code,
-            config: {
-              placeholder: 'Enter your code here...',
-            },
-          },
-          quote: {
-            class: Quote,
-            inlineToolbar: true,
-            config: {
-              quotePlaceholder: 'Enter a quote',
-              captionPlaceholder: 'Quote author',
-            },
-          },
-          delimiter: Delimiter,
-          image: {
-            class: Image,
-            config: {
-              endpoints: {
-                byFile: '/api/upload',
-                byUrl: '/api/upload?url=',
-              },
-              additionalRequestHeaders: {
-                'X-CSRF-Token': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
-              },
-              field: 'image',
-              types: 'image/jpeg,image/gif,image/png,image/webp',
-              captionPlaceholder: 'Enter image caption',
-              buttonText: 'Upload Image',
-              errorMessage: 'Image upload failed',
-            },
-          },
-        },
-      });
+      try {
+        // Dynamically import EditorJS and tools only on client side
+        const EditorJSModule = await import('@editorjs/editorjs');
+        const HeaderModule = await import('@editorjs/header');
+        const ParagraphModule = await import('@editorjs/paragraph');
+        const ListModule = await import('@editorjs/list');
+        const CodeModule = await import('@editorjs/code');
+        const QuoteModule = await import('@editorjs/quote');
+        const DelimiterModule = await import('@editorjs/delimiter');
+        const ImageModule = await import('@editorjs/image');
 
-      setIsReady(true);
+        const EditorJS = EditorJSModule.default;
+        const Header = HeaderModule.default;
+        const Paragraph = ParagraphModule.default;
+        const List = ListModule.default;
+        const Code = CodeModule.default;
+        const Quote = QuoteModule.default;
+        const Delimiter = DelimiterModule.default;
+        const Image = ImageModule.default;
+
+        editorRef.current = new EditorJS({
+          holder: containerRef.current!,
+          placeholder: placeholder,
+          readOnly: readOnly,
+          inlineToolbar: ['bold', 'italic', 'link'],
+          data: value || {
+            blocks: [],
+            version: '2.28.2',
+            time: Date.now(),
+          },
+          onChange: async () => {
+            if (editorRef.current) {
+              const data = await editorRef.current.save();
+              onChange(data);
+            }
+          },
+          tools: {
+            header: {
+              class: Header,
+              config: {
+                placeholder: 'Enter a heading',
+                levels: [1, 2, 3, 4],
+                defaultLevel: 2,
+              },
+            },
+            paragraph: {
+              class: Paragraph,
+              config: {
+                placeholder: 'Type or paste your text here...',
+              },
+            },
+            list: {
+              class: List,
+              inlineToolbar: true,
+              config: {
+                defaultStyle: 'unordered',
+              },
+            },
+            code: {
+              class: Code,
+              config: {
+                placeholder: 'Enter your code here...',
+              },
+            },
+            quote: {
+              class: Quote,
+              inlineToolbar: true,
+              config: {
+                quotePlaceholder: 'Enter a quote',
+                captionPlaceholder: 'Quote author',
+              },
+            },
+            delimiter: Delimiter,
+            image: {
+              class: Image,
+              config: {
+                endpoints: {
+                  byFile: '/api/upload',
+                  byUrl: '/api/upload?url=',
+                },
+                additionalRequestHeaders: {
+                  'X-CSRF-Token': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
+                },
+                field: 'image',
+                types: 'image/jpeg,image/gif,image/png,image/webp',
+                captionPlaceholder: 'Enter image caption',
+                buttonText: 'Upload Image',
+                errorMessage: 'Image upload failed',
+              },
+            },
+          },
+        });
+
+        setIsReady(true);
+      } catch (error) {
+        console.error('Failed to initialize EditorJS:', error);
+      }
     };
 
     initializeEditor();
 
     return () => {
-      if (editorRef.current && editorRef.current.destroy) {
+      if (editorRef.current && typeof editorRef.current.destroy === 'function') {
         editorRef.current.destroy();
         editorRef.current = null;
       }
