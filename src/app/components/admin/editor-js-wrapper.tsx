@@ -1,14 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import EditorJS, { OutputData } from '@editorjs/editorjs';
-import Header from '@editorjs/header';
-import Paragraph from '@editorjs/paragraph';
-import List from '@editorjs/list';
-import Code from '@editorjs/code';
-import Quote from '@editorjs/quote';
-import Delimiter from '@editorjs/delimiter';
-import Image from '@editorjs/image';
+import type { OutputData } from '@editorjs/editorjs';
 
 interface EditorJSWrapperProps {
   value?: OutputData;
