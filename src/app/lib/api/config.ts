@@ -19,7 +19,7 @@ export const API_ENDPOINTS = {
     // Blog
     BLOGS_GET: '/blogs',
     BLOGS_CREATE: '/blogs',
-    BLOGS_GET_ONE_SLUG: '/blogs/{slug}',
+    BLOGS_GET_ONE_SLUG: '/blogs/slug/{slug}',
     BLOGS_UPDATE: '/blogs/{id}',
     BLOGS_DELETE: '/blogs/{id}',
   // Auth
