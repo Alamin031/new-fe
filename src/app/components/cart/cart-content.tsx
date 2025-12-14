@@ -148,11 +148,13 @@ export function CartContent() {
                     )}
                     {Object.entries(item.selectedVariants).length > 0 && (
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {Object.entries(item.selectedVariants).map(([key, value]) => (
-                          <span key={key} className="capitalize">
-                            {key}: {value}{" "}
-                          </span>
-                        ))}
+                        {Object.entries(item.selectedVariants)
+                          .filter(([key]) => key.endsWith('Name') || key === 'priceType')
+                          .map(([key, value]) => (
+                            <span key={key} className="capitalize">
+                              {key === 'regionName' ? 'Region' : key === 'colorName' ? 'Color' : key === 'storageName' ? 'Storage' : key}: {value}{" "}
+                            </span>
+                          ))}
                       </p>
                     )}
                   </div>
