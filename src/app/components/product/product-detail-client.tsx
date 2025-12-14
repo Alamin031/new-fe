@@ -38,8 +38,8 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
     // For basic products, convert directColors to a default region structure
     if (isBasicProduct && (!computedRegions || computedRegions.length === 0) && rawProduct?.directColors) {
       computedRegions = [{
-        id: "default",
-        name: "Default",
+        id: rawProduct.id || "default",
+        name: rawProduct.name || "Default",
         colors: rawProduct.directColors.map((color: any) => ({
           id: color.id,
           name: color.colorName,
@@ -49,11 +49,13 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
           regularPrice: color.regularPrice,
           discountPrice: color.discountPrice,
           stockQuantity: color.stockQuantity,
+          hasStorage: false,
         })),
         defaultStorages: [{
           id: "default-storage",
           size: "Standard",
           storageSize: "Standard",
+          isDefault: true,
           price: {
             regularPrice: rawProduct.directColors[0]?.regularPrice || 0,
             discountPrice: rawProduct.directColors[0]?.discountPrice || 0,
