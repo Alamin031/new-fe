@@ -19,7 +19,9 @@ export function CartContent() {
   const [isHydrated, setIsHydrated] = useState(false)
 
   useEffect(() => {
-    setIsHydrated(true)
+    // Defer state update to avoid synchronous setState in effect
+    const id = setTimeout(() => setIsHydrated(true), 0)
+    return () => clearTimeout(id)
   }, [])
 
   if (!isHydrated) {
@@ -79,20 +81,31 @@ export function CartContent() {
                 href={`/product/${item.product.slug}`}
                 className="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-muted"
               >
-                <Image
-                  src={
-                    Array.isArray(item.product.images) &&
-                    item.product.images.length > 0 &&
-                    item.product.images[0]
-                      ? typeof item.product.images[0] === "string"
-                        ? item.product.images[0]
-                        : item.product.images[0].imageUrl
-                      : "/placeholder.svg?height=100&width=100"
+                {(() => {
+                  let imgSrc = null;
+                  if (Array.isArray(item.product.images) && item.product.images.length > 0) {
+                    // Prefer object with imageUrl, fallback to string
+                    const firstImg = item.product.images.find(img => img && (typeof img === 'object' ? img.imageUrl : img));
+                    if (firstImg) {
+                      imgSrc = typeof firstImg === 'string' ? firstImg : firstImg.imageUrl;
+                    }
                   }
-                  alt={item.product.name}
-                  fill
-                  className="object-cover"
-                />
+                  if (!imgSrc) {
+                    return (
+                      <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                        <span className="text-xs text-gray-400">No Image</span>
+                      </div>
+                    );
+                  }
+                  return (
+                    <Image
+                      src={imgSrc}
+                      alt={item.product.name || 'Product Image'}
+                      fill
+                      className="object-cover"
+                    />
+                  );
+                })()}
               </Link>
 
               {/* Details */}
@@ -100,10 +113,14 @@ export function CartContent() {
                 <div className="flex items-start justify-between">
                   <div>
                     <Link href={`/product/${item.product.slug}`} className="font-medium hover:underline">
-                      {item.product.name}
+                      {item.product.name || 'Unnamed Product'}
                     </Link>
                     {item.product.brand && (
                       <p className="mt-0.5 text-sm text-muted-foreground">{item.product.brand.name}</p>
+                    )}
+                    {/* Fallback for brand array or brands property */}
+                    {!item.product.brand && Array.isArray(item.product.brands) && item.product.brands.length > 0 && (
+                      <p className="mt-0.5 text-sm text-muted-foreground">{item.product.brands[0].name}</p>
                     )}
                     {Object.entries(item.selectedVariants).length > 0 && (
                       <p className="mt-1 text-xs text-muted-foreground">

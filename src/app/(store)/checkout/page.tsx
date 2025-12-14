@@ -15,6 +15,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import {deliveryService, DeliveryMethod} from '../../lib/api/services/delivery';
+import ordersService from '../../lib/api/services/orders';
 import {
   Card,
   CardContent,
@@ -139,10 +140,57 @@ export default function CheckoutPage() {
 
     setIsLoadingOrder(true);
 
+
+
     try {
-      // TODO: Send order data to API
-      // For now, simulate order creation
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Prepare order payload to match backend entity, always send IDs for variants
+      const orderPayload = {
+        customer: {
+          fullName,
+          email,
+          phone,
+          division,
+          district,
+          upzila,
+          postCode,
+          address,
+          paymentMethod,
+          deliveryMethod,
+        },
+        fullName,
+        email,
+        phone,
+        division,
+        district,
+        upzila,
+        postCode,
+        address,
+        paymentMethod,
+        deliveryMethod,
+        orderItems: items.map(item => {
+          let dynamicInputs = item.dynamicInputs || item.selectedVariants?.dynamicInputs || {};
+          if (typeof dynamicInputs !== 'object' || dynamicInputs === null) {
+            dynamicInputs = {};
+          }
+          return {
+            productId: item.product.id,
+            productName: item.product.name,
+            price: item.product.price === null ? undefined : item.product.price, // <-- Fix here
+            quantity: item.quantity,
+            color: item.color || item.selectedVariants?.color || undefined,
+            storage: item.storage || item.selectedVariants?.storage || undefined,
+            RAM: item.RAM || item.selectedVariants?.RAM || item.selectedVariants?.ram || undefined,
+            sim: item.sim || item.selectedVariants?.sim || undefined,
+            image: Array.isArray(item.product.images) && item.product.images.length > 0
+              ? (typeof item.product.images[0] === 'string' ? item.product.images[0] : item.product.images[0].imageUrl)
+              : '',
+            dynamicInputs,
+          };
+        }),
+        total,
+        // Add any other fields your backend expects
+      };
+      await ordersService.create(orderPayload);
 
       toast.success('Order placed successfully!');
 
@@ -328,22 +376,7 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                <div
-                  className={`rounded-lg border p-4 ${
-                    paymentMethod === 'online'
-                      ? 'border-primary'
-                      : 'border-border'
-                  }`}>
-                  <div className="flex items-center gap-3">
-                    <RadioGroupItem value="online" id="online" />
-                    <Label htmlFor="online" className="flex-1 cursor-pointer">
-                      <span className="font-medium">Online Payment</span>
-                      <p className="text-sm text-muted-foreground">
-                        Pay securely with your card or mobile wallet
-                      </p>
-                    </Label>
-                  </div>
-                </div>
+                {/* Online Payment option removed as per request */}
 
                 <div
                   className={`rounded-lg border p-4 ${
@@ -459,33 +492,45 @@ export default function CheckoutPage() {
                   key={item.product.id}
                   className="flex gap-3 pb-4 border-b border-border last:border-0">
                   <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-muted">
-                    <Image
-                      src={
-                        Array.isArray(item.product.images) &&
-                        item.product.images.length > 0 &&
-                        item.product.images[0]
-                          ? typeof item.product.images[0] === 'string'
-                            ? item.product.images[0]
-                            : item.product.images[0].imageUrl
-                          : '/placeholder.svg'
+                    {(() => {
+                      let imgSrc = null;
+                      if (Array.isArray(item.product.images) && item.product.images.length > 0) {
+                        const firstImg = item.product.images.find(img => img && (typeof img === 'object' ? img.imageUrl : img));
+                        if (firstImg) {
+                          imgSrc = typeof firstImg === 'string' ? firstImg : firstImg.imageUrl;
+                        }
                       }
-                      alt={item.product.name}
-                      fill
-                      className="object-cover"
-                    />
+                      if (!imgSrc) {
+                        return (
+                          <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                            <span className="text-xs text-gray-400">No Image</span>
+                          </div>
+                        );
+                      }
+                      return (
+                        <Image
+                          src={imgSrc}
+                          alt={item.product.name || 'Product Image'}
+                          fill
+                          className="object-cover"
+                        />
+                      );
+                    })()}
                   </div>
                   <div className="flex-1 text-sm">
                     <p className="font-medium line-clamp-2">
-                      {item.product.name}
+                      {item.product.name || 'Unnamed Product'}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
                       Qty: {item.quantity}
                     </p>
                     <p className="font-semibold mt-2">
-                      {formatPrice(
-                        (item.product.comparePrice || item.product.price) *
-                          item.quantity,
-                      )}
+                      {item.product
+                        ? formatPrice(
+                            ((item.product?.comparePrice ?? item.product?.price ?? 0) *
+                              item.quantity),
+                          )
+                        : null}
                     </p>
                   </div>
                 </div>

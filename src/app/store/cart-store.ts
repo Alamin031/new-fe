@@ -22,18 +22,39 @@ export const useCartStore = create<CartStore>()(
         set((state) => {
           const existingItem = state.items.find((item) => item.product.id === product.id)
 
+          // Extract explicit fields from variants if present
+          const color = variants.color || undefined;
+          const storage = variants.storage || undefined;
+          const RAM = variants.RAM || variants.ram || undefined;
+          const sim = variants.sim || undefined;
+          const dynamicInputs = variants.dynamicInputs || undefined;
+
           if (existingItem) {
             return {
               items: state.items.map((item) =>
-                item.product.id === product.id ? { ...item, quantity: item.quantity + quantity } : item,
+                item.product.id === product.id
+                  ? { ...item, quantity: item.quantity + quantity }
+                  : item,
               ),
-            }
+            };
           }
 
           return {
-            items: [...state.items, { product, quantity, selectedVariants: variants }],
-          }
-        })
+            items: [
+              ...state.items,
+              {
+                product,
+                quantity,
+                selectedVariants: variants,
+                color,
+                storage,
+                RAM,
+                sim,
+                dynamicInputs,
+              },
+            ],
+          };
+        });
       },
 
       removeItem: (productId) => {

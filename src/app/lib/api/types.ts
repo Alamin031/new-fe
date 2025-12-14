@@ -330,22 +330,45 @@ export interface OrderItem {
   product?: Product
   quantity: number
   price: number
-  selectedVariants: Record<string, string>
+  selectedVariants?: Record<string, string>
+  color?: string;
+  storage?: string;
+  RAM?: string;
+  sim?: string;
+  image?: string;
+  dynamicInputs?: Record<string, any>;
 }
 
 export type OrderStatus = "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled" | "returned"
 export type PaymentStatus = "pending" | "paid" | "failed" | "refunded"
 
 export interface CreateOrderRequest {
-  items: {
-    productId: string
-    quantity: number
-    selectedVariants: Record<string, string>
-  }[]
-  shippingAddressId: string
-  billingAddressId?: string
-  paymentMethod: string
-  notes?: string
+  orderItems: {
+    productId: string;
+    productName?: string;
+    price?: number;
+    quantity: number;
+    color?: string;
+    storage?: string;
+    RAM?: string;
+    sim?: string;
+    image?: string;
+    dynamicInputs?: Record<string, any>;
+    selectedVariants?: Record<string, string>;
+  }[];
+  customer?: any;
+  fullName?: string;
+  email?: string;
+  phone?: string;
+  division?: string;
+  district?: string;
+  upzila?: string;
+  postCode?: string;
+  address?: string;
+  paymentMethod?: string;
+  deliveryMethod?: string;
+  total?: number;
+  // Add any other fields your backend expects
 }
 
 export interface UpdateOrderStatusRequest {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export interface Specification {
   id: string
   productId: string
@@ -12,22 +13,27 @@ export interface Product {
   name: string
   slug: string
   description: string
-  price: number
-  originalPrice?: number
-  comparePrice?: number
-  stockQuantity?: number
+  price: number | null
+  originalPrice?: number | null
+  comparePrice?: number | null
+  stockQuantity?: number | null
   images?: string[] | Array<{id: string; imageUrl: string; isThumbnail: boolean; altText: string; displayOrder: number; createdAt: string}>
-  category: Category
-  brand: Brand
-  variants: ProductVariant[]
-  highlights: string[]
-  specifications: Specification[]
-  stock: number
-  sku: string
-  warranty: string
-  rating: number
-  reviewCount: number
-  ratingPoint?: number
+  category?: Category | null
+  categoryIds?: string[]
+  categories?: Category[]
+  brand?: Brand | null
+  brands?: Brand[]
+  brandId?: string | null
+  brandIds?: string[]
+  variants?: ProductVariant[]
+  highlights?: string[]
+  specifications?: Specification[]
+  stock?: number | null
+  sku?: string
+  warranty?: string
+  rating?: number | null
+  reviewCount?: number | null
+  ratingPoint?: number | null
   isFeatured?: boolean
   isNew?: boolean
   createdAt: string
@@ -69,6 +75,11 @@ export interface CartItem {
   product: Product
   quantity: number
   selectedVariants: Record<string, string>
+  color?: string
+  storage?: string
+  RAM?: string
+  sim?: string
+  dynamicInputs?: Record<string, any>
 }
 
 export interface User {
