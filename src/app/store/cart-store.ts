@@ -1,7 +1,7 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import { CartItem, Product } from "../types"
-import { getProductDisplayPrice, getProductPriceWithType } from "../lib/utils/product"
+import { getProductPriceWithType } from "../lib/utils/product"
 
 interface CartStore {
   items: CartItem[]
@@ -29,6 +29,9 @@ export const useCartStore = create<CartStore>()(
           const sim = variants.sim || undefined;
           const dynamicInputs = variants.dynamicInputs || undefined;
 
+          // Calculate the price for this product with selected variants and price type
+          const price = getProductPriceWithType(product, variants);
+
           if (existingItem) {
             return {
               items: state.items.map((item) =>
@@ -51,6 +54,7 @@ export const useCartStore = create<CartStore>()(
                 RAM,
                 sim,
                 dynamicInputs,
+                price,
               },
             ],
           };
@@ -72,7 +76,7 @@ export const useCartStore = create<CartStore>()(
       clearCart: () => set({ items: [] }),
 
       getTotal: () => {
-        return get().items.reduce((total, item) => total + getProductPriceWithType(item.product, item.selectedVariants) * item.quantity, 0)
+        return get().items.reduce((total, item) => total + (item.price || 0) * item.quantity, 0)
       },
 
       getItemCount: () => {

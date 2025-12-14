@@ -11,7 +11,6 @@ import { Separator } from "../ui/separator"
 import { formatPrice } from "@/app/lib/utils/format"
 import { useCartStore } from "@/app/store/cart-store"
 import { useAuthStore } from "@/app/store/auth-store"
-import { getProductDisplayPrice } from "@/app/lib/utils/product"
 
 export function CartContent() {
   const router = useRouter()
@@ -149,11 +148,13 @@ export function CartContent() {
                     )}
                     {Object.entries(item.selectedVariants).length > 0 && (
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {Object.entries(item.selectedVariants).map(([key, value]) => (
-                          <span key={key} className="capitalize">
-                            {key}: {value}{" "}
-                          </span>
-                        ))}
+                        {Object.entries(item.selectedVariants)
+                          .filter(([key]) => key.endsWith('Name') || key === 'priceType')
+                          .map(([key, value]) => (
+                            <span key={key} className="capitalize">
+                              {key === 'regionName' ? 'Region' : key === 'colorName' ? 'Color' : key === 'storageName' ? 'Storage' : key}: {value}{" "}
+                            </span>
+                          ))}
                       </p>
                     )}
                   </div>
@@ -184,7 +185,7 @@ export function CartContent() {
                       <Plus className="h-4 w-4" />
                     </button>
                   </div>
-                  <p className="font-semibold">{formatPrice(getProductDisplayPrice(item.product) * item.quantity)}</p>
+                  <p className="font-semibold">{formatPrice((item.price || 0) * item.quantity)}</p>
                 </div>
               </div>
             </div>

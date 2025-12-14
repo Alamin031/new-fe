@@ -17,13 +17,15 @@ export function getDefaultProductPrice(product: any): {
   discount: number;
   stockQuantity: number;
 } {
-  const productType = product.productType || product.type || 'basic';
+  // Check if rawProduct exists and use it for data (API response structure)
+  const dataSource = product.rawProduct || product;
+  const productType = dataSource.productType || product.productType || product.type || 'basic';
   let regularPrice = 0;
   let discountPrice = 0;
   let stockQuantity = 0;
   if (productType === 'network') {
-    const defaultNetwork = Array.isArray(product.networks)
-      ? product.networks.find((n: any) => n.isDefault) || product.networks[0]
+    const defaultNetwork = Array.isArray(dataSource.networks)
+      ? dataSource.networks.find((n: any) => n.isDefault) || dataSource.networks[0]
       : null;
     if (defaultNetwork) {
       const defaultStorage = Array.isArray(defaultNetwork.defaultStorages)
@@ -36,8 +38,8 @@ export function getDefaultProductPrice(product: any): {
       }
     }
   } else if (productType === 'region') {
-    const defaultRegion = Array.isArray(product.regions)
-      ? product.regions.find((r: any) => r.isDefault) || product.regions[0]
+    const defaultRegion = Array.isArray(dataSource.regions)
+      ? dataSource.regions.find((r: any) => r.isDefault) || dataSource.regions[0]
       : null;
     if (defaultRegion) {
       const defaultStorage = Array.isArray(defaultRegion.defaultStorages)
@@ -50,8 +52,8 @@ export function getDefaultProductPrice(product: any): {
       }
     }
   } else {
-    const defaultColor = Array.isArray(product.directColors)
-      ? product.directColors.find((c: any) => c.isDefault) || product.directColors[0]
+    const defaultColor = Array.isArray(dataSource.directColors)
+      ? dataSource.directColors.find((c: any) => c.isDefault) || dataSource.directColors[0]
       : null;
     if (defaultColor) {
       regularPrice = Number(defaultColor.regularPrice) || 0;
@@ -83,9 +85,48 @@ export function getDefaultProductPrice(product: any): {
 /**
  * Get the display price for a product (uses discount price if available)
  */
-export function getProductDisplayPrice(product: any): number {
+export function getProductDisplayPrice(product: any, selectedVariants?: Record<string, string>): number {
+  // Check if rawProduct exists and use it for data (API response structure)
+  const dataSource = product.rawProduct || product;
+  const productType = dataSource.productType || product.productType || product.type || 'basic';
+
+  // For network-type products with selected variants, find the specific price
+  if (productType === 'network' && selectedVariants) {
+    const networkId = selectedVariants.region || selectedVariants.network;
+    const storageId = selectedVariants.storage;
+
+    if (networkId && storageId && Array.isArray(dataSource.networks)) {
+      const network = dataSource.networks.find((n: any) => n.id === networkId);
+      if (network && Array.isArray(network.defaultStorages)) {
+        const storage = network.defaultStorages.find((s: any) => s.id === storageId);
+        if (storage && storage.price) {
+          const discountPrice = Number(storage.price.discountPrice || storage.price.regularPrice) || 0;
+          if (discountPrice > 0) return discountPrice;
+        }
+      }
+    }
+  }
+
+  // For region-type products with selected variants, find the specific price
+  if (productType === 'region' && selectedVariants) {
+    const regionId = selectedVariants.region;
+    const storageId = selectedVariants.storage;
+
+    if (regionId && storageId && Array.isArray(dataSource.regions)) {
+      const region = dataSource.regions.find((r: any) => r.id === regionId);
+      if (region && Array.isArray(region.defaultStorages)) {
+        const storage = region.defaultStorages.find((s: any) => s.id === storageId);
+        if (storage && storage.price) {
+          const discountPrice = Number(storage.price.discountPrice || storage.price.regularPrice) || 0;
+          if (discountPrice > 0) return discountPrice;
+        }
+      }
+    }
+  }
+
+  // Fallback to default price
   const { discountPrice } = getDefaultProductPrice(product);
-  return discountPrice;
+  return discountPrice || 0;
 }
 
 /**
@@ -93,12 +134,53 @@ export function getProductDisplayPrice(product: any): number {
  * Used for cart items where user selected offer or regular price
  */
 export function getProductPriceWithType(product: any, selectedVariants?: Record<string, string>): number {
-  const priceData = getDefaultProductPrice(product);
-  const priceType = selectedVariants?.priceType;
-  if (priceType === 'regular') {
-    return priceData.regularPrice;
+  const dataSource = product.rawProduct || product;
+  const productType = dataSource.productType || product.productType || product.type || 'basic';
+  const priceType = selectedVariants?.priceType || 'offer';
+
+  let regularPrice = 0;
+  let discountPrice = 0;
+
+  // For network-type products with selected variants, find the specific prices
+  if (productType === 'network' && selectedVariants) {
+    const networkId = selectedVariants.region || selectedVariants.network;
+    const storageId = selectedVariants.storage;
+
+    if (networkId && storageId && Array.isArray(dataSource.networks)) {
+      const network = dataSource.networks.find((n: any) => n.id === networkId);
+      if (network && Array.isArray(network.defaultStorages)) {
+        const storage = network.defaultStorages.find((s: any) => s.id === storageId);
+        if (storage && storage.price) {
+          regularPrice = Number(storage.price.regularPrice) || 0;
+          discountPrice = Number(storage.price.discountPrice || storage.price.regularPrice) || 0;
+        }
+      }
+    }
   }
-  return priceData.discountPrice;
+  // For region-type products with selected variants, find the specific prices
+  else if (productType === 'region' && selectedVariants) {
+    const regionId = selectedVariants.region;
+    const storageId = selectedVariants.storage;
+
+    if (regionId && storageId && Array.isArray(dataSource.regions)) {
+      const region = dataSource.regions.find((r: any) => r.id === regionId);
+      if (region && Array.isArray(region.defaultStorages)) {
+        const storage = region.defaultStorages.find((s: any) => s.id === storageId);
+        if (storage && storage.price) {
+          regularPrice = Number(storage.price.regularPrice) || 0;
+          discountPrice = Number(storage.price.discountPrice || storage.price.regularPrice) || 0;
+        }
+      }
+    }
+  }
+
+  // If we found prices, use the selected price type
+  if (regularPrice > 0 || discountPrice > 0) {
+    return priceType === 'regular' ? regularPrice : discountPrice;
+  }
+
+  // Fallback to display price
+  return getProductDisplayPrice(product, selectedVariants);
 }
 
 /**
