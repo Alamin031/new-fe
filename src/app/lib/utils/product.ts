@@ -17,13 +17,15 @@ export function getDefaultProductPrice(product: any): {
   discount: number;
   stockQuantity: number;
 } {
-  const productType = product.productType || product.type || 'basic';
+  // Check if rawProduct exists and use it for data (API response structure)
+  const dataSource = product.rawProduct || product;
+  const productType = dataSource.productType || product.productType || product.type || 'basic';
   let regularPrice = 0;
   let discountPrice = 0;
   let stockQuantity = 0;
   if (productType === 'network') {
-    const defaultNetwork = Array.isArray(product.networks)
-      ? product.networks.find((n: any) => n.isDefault) || product.networks[0]
+    const defaultNetwork = Array.isArray(dataSource.networks)
+      ? dataSource.networks.find((n: any) => n.isDefault) || dataSource.networks[0]
       : null;
     if (defaultNetwork) {
       const defaultStorage = Array.isArray(defaultNetwork.defaultStorages)
@@ -36,8 +38,8 @@ export function getDefaultProductPrice(product: any): {
       }
     }
   } else if (productType === 'region') {
-    const defaultRegion = Array.isArray(product.regions)
-      ? product.regions.find((r: any) => r.isDefault) || product.regions[0]
+    const defaultRegion = Array.isArray(dataSource.regions)
+      ? dataSource.regions.find((r: any) => r.isDefault) || dataSource.regions[0]
       : null;
     if (defaultRegion) {
       const defaultStorage = Array.isArray(defaultRegion.defaultStorages)
@@ -50,8 +52,8 @@ export function getDefaultProductPrice(product: any): {
       }
     }
   } else {
-    const defaultColor = Array.isArray(product.directColors)
-      ? product.directColors.find((c: any) => c.isDefault) || product.directColors[0]
+    const defaultColor = Array.isArray(dataSource.directColors)
+      ? dataSource.directColors.find((c: any) => c.isDefault) || dataSource.directColors[0]
       : null;
     if (defaultColor) {
       regularPrice = Number(defaultColor.regularPrice) || 0;
