@@ -84,15 +84,17 @@ export function getDefaultProductPrice(product: any): {
  * Get the display price for a product (uses discount price if available)
  */
 export function getProductDisplayPrice(product: any, selectedVariants?: Record<string, string>): number {
-  const productType = product.productType || product.type || 'basic';
+  // Check if rawProduct exists and use it for data (API response structure)
+  const dataSource = product.rawProduct || product;
+  const productType = dataSource.productType || product.productType || product.type || 'basic';
 
   // For network-type products with selected variants, find the specific price
   if (productType === 'network' && selectedVariants) {
     const networkId = selectedVariants.region || selectedVariants.network;
     const storageId = selectedVariants.storage;
 
-    if (networkId && storageId && Array.isArray(product.networks)) {
-      const network = product.networks.find((n: any) => n.id === networkId);
+    if (networkId && storageId && Array.isArray(dataSource.networks)) {
+      const network = dataSource.networks.find((n: any) => n.id === networkId);
       if (network && Array.isArray(network.defaultStorages)) {
         const storage = network.defaultStorages.find((s: any) => s.id === storageId);
         if (storage && storage.price) {
@@ -108,8 +110,8 @@ export function getProductDisplayPrice(product: any, selectedVariants?: Record<s
     const regionId = selectedVariants.region;
     const storageId = selectedVariants.storage;
 
-    if (regionId && storageId && Array.isArray(product.regions)) {
-      const region = product.regions.find((r: any) => r.id === regionId);
+    if (regionId && storageId && Array.isArray(dataSource.regions)) {
+      const region = dataSource.regions.find((r: any) => r.id === regionId);
       if (region && Array.isArray(region.defaultStorages)) {
         const storage = region.defaultStorages.find((s: any) => s.id === storageId);
         if (storage && storage.price) {
