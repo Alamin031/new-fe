@@ -83,7 +83,44 @@ export function getDefaultProductPrice(product: any): {
 /**
  * Get the display price for a product (uses discount price if available)
  */
-export function getProductDisplayPrice(product: any): number {
+export function getProductDisplayPrice(product: any, selectedVariants?: Record<string, string>): number {
+  const productType = product.productType || product.type || 'basic';
+
+  // For network-type products with selected variants, find the specific price
+  if (productType === 'network' && selectedVariants) {
+    const networkId = selectedVariants.region || selectedVariants.network;
+    const storageId = selectedVariants.storage;
+
+    if (networkId && storageId && Array.isArray(product.networks)) {
+      const network = product.networks.find((n: any) => n.id === networkId);
+      if (network && Array.isArray(network.defaultStorages)) {
+        const storage = network.defaultStorages.find((s: any) => s.id === storageId);
+        if (storage && storage.price) {
+          const discountPrice = Number(storage.price.discountPrice || storage.price.regularPrice) || 0;
+          if (discountPrice > 0) return discountPrice;
+        }
+      }
+    }
+  }
+
+  // For region-type products with selected variants, find the specific price
+  if (productType === 'region' && selectedVariants) {
+    const regionId = selectedVariants.region;
+    const storageId = selectedVariants.storage;
+
+    if (regionId && storageId && Array.isArray(product.regions)) {
+      const region = product.regions.find((r: any) => r.id === regionId);
+      if (region && Array.isArray(region.defaultStorages)) {
+        const storage = region.defaultStorages.find((s: any) => s.id === storageId);
+        if (storage && storage.price) {
+          const discountPrice = Number(storage.price.discountPrice || storage.price.regularPrice) || 0;
+          if (discountPrice > 0) return discountPrice;
+        }
+      }
+    }
+  }
+
+  // Fallback to default price
   const { discountPrice } = getDefaultProductPrice(product);
   return discountPrice;
 }
