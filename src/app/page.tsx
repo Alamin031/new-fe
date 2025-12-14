@@ -10,6 +10,7 @@ import { LazySection } from "./components/home/lazy-section";
 import { HeroBanner } from "./components/home/hero-banner";
 import { BottomBanner } from "./components/home/bottom-banner";
 import { MiddleBanner } from "./components/home/middel-banner";
+import { BlogSection } from "./components/home/blog-section";
 
 export const dynamic = 'force-dynamic';
 
@@ -99,6 +100,11 @@ export default async function Page() {
         {/* Bottom Hero Banner before CTA Section */}
         <section className="mx-auto w-full max-w-7xl px-4 py-6">
           <BottomBanner />
+        </section>
+
+        {/* Blog Section */}
+        <section className="mx-auto w-full max-w-7xl px-4">
+          <BlogSection />
         </section>
 
         {/* Show Brands section only if brands exist */}
