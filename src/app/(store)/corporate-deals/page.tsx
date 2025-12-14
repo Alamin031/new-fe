@@ -235,6 +235,118 @@ export default function CorporateDealsPage() {
           </div>
         </section>
 
+        {/* Quotation Form Section */}
+        <section className="mb-12 md:mb-16">
+          <div className="rounded-2xl border border-border/30 bg-white/60 dark:bg-background/60 p-8 md:p-10">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8 text-center">Get a Customized Quote for Your Business</h2>
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Full Name */}
+              <div>
+                <label htmlFor="fullName" className="block text-sm font-semibold text-foreground mb-2">
+                  Full Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="fullName"
+                  name="fullName"
+                  value={formData.fullName}
+                  onChange={handleInputChange}
+                  placeholder="Enter full name"
+                  required
+                  className="w-full px-4 py-3 rounded-lg border border-border bg-white/50 dark:bg-background/50 placeholder-muted-foreground text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                />
+              </div>
+
+              {/* Company Name */}
+              <div>
+                <label htmlFor="companyName" className="block text-sm font-semibold text-foreground mb-2">
+                  Company Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="companyName"
+                  name="companyName"
+                  value={formData.companyName}
+                  onChange={handleInputChange}
+                  placeholder="Enter company name"
+                  required
+                  className="w-full px-4 py-3 rounded-lg border border-border bg-white/50 dark:bg-background/50 placeholder-muted-foreground text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                />
+              </div>
+
+              {/* Email Address */}
+              <div>
+                <label htmlFor="email" className="block text-sm font-semibold text-foreground mb-2">
+                  Email Address <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  placeholder="Enter email address"
+                  required
+                  className="w-full px-4 py-3 rounded-lg border border-border bg-white/50 dark:bg-background/50 placeholder-muted-foreground text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                />
+              </div>
+
+              {/* Phone Number */}
+              <div>
+                <label htmlFor="phone" className="block text-sm font-semibold text-foreground mb-2">
+                  Phone Number <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  placeholder="Enter phone number"
+                  required
+                  className="w-full px-4 py-3 rounded-lg border border-border bg-white/50 dark:bg-background/50 placeholder-muted-foreground text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                />
+              </div>
+
+              {/* Message */}
+              <div>
+                <label htmlFor="message" className="block text-sm font-semibold text-foreground mb-2">
+                  Message
+                </label>
+                <textarea
+                  id="message"
+                  name="message"
+                  value={formData.message}
+                  onChange={handleInputChange}
+                  placeholder="Type here..."
+                  rows={6}
+                  className="w-full px-4 py-3 rounded-lg border border-border bg-white/50 dark:bg-background/50 placeholder-muted-foreground text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all resize-none"
+                />
+              </div>
+
+              {/* Submit Button */}
+              <div className="flex gap-3 flex-col sm:flex-row pt-2">
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg h-12 px-6 flex-1 font-semibold">
+                  {isSubmitting ? 'Sending...' : submitSuccess ? 'Request Sent!' : 'Send Quote Request'}
+                </Button>
+              </div>
+
+              {/* Success Message */}
+              {submitSuccess && (
+                <div className="p-4 rounded-lg bg-emerald-100/50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800">
+                  <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                    ✓ Quote request sent successfully! We'll contact you within 24 hours.
+                  </p>
+                </div>
+              )}
+            </form>
+          </div>
+        </section>
+
         {/* Contact Info Card */}
         <section className="rounded-2xl border border-border/30 bg-white/60 dark:bg-background/60 p-8 md:p-10">
           <h2 className="text-xl md:text-2xl font-bold text-foreground mb-6 text-center">Get In Touch</h2>
