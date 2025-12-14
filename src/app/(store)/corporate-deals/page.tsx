@@ -1,9 +1,58 @@
 'use client'
 
+import { useState } from 'react'
 import { CheckCircle2, Award, Users, Zap, Shield, Handshake, ArrowRight, Phone, Mail } from 'lucide-react'
 import { Button } from '@/app/components/ui/button'
 
 export default function CorporateDealsPage() {
+  const [formData, setFormData] = useState({
+    fullName: '',
+    companyName: '',
+    email: '',
+    phone: '',
+    message: '',
+  })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitSuccess, setSubmitSuccess] = useState(false)
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+    }))
+  }
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+
+    try {
+      // Simulate form submission
+      await new Promise(resolve => setTimeout(resolve, 1000))
+
+      // Here you would typically send data to your backend/email service
+      console.log('Form submitted:', formData)
+
+      setSubmitSuccess(true)
+      setFormData({
+        fullName: '',
+        companyName: '',
+        email: '',
+        phone: '',
+        message: '',
+      })
+
+      setTimeout(() => {
+        setSubmitSuccess(false)
+      }, 3000)
+    } catch (error) {
+      console.error('Error submitting form:', error)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-blue-50 dark:from-emerald-950/30 dark:via-background dark:to-blue-950/30">
       <div className="mx-auto max-w-5xl px-4 py-12 md:py-16">
