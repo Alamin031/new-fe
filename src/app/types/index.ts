@@ -80,6 +80,7 @@ export interface CartItem {
   RAM?: string
   sim?: string
   dynamicInputs?: Record<string, any>
+  price?: number
 }
 
 export interface User {
