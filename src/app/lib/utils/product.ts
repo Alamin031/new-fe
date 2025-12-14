@@ -134,7 +134,52 @@ export function getProductDisplayPrice(product: any, selectedVariants?: Record<s
  * Used for cart items where user selected offer or regular price
  */
 export function getProductPriceWithType(product: any, selectedVariants?: Record<string, string>): number {
-  // Use the display price which already handles variant selection
+  const dataSource = product.rawProduct || product;
+  const productType = dataSource.productType || product.productType || product.type || 'basic';
+  const priceType = selectedVariants?.priceType || 'offer';
+
+  let regularPrice = 0;
+  let discountPrice = 0;
+
+  // For network-type products with selected variants, find the specific prices
+  if (productType === 'network' && selectedVariants) {
+    const networkId = selectedVariants.region || selectedVariants.network;
+    const storageId = selectedVariants.storage;
+
+    if (networkId && storageId && Array.isArray(dataSource.networks)) {
+      const network = dataSource.networks.find((n: any) => n.id === networkId);
+      if (network && Array.isArray(network.defaultStorages)) {
+        const storage = network.defaultStorages.find((s: any) => s.id === storageId);
+        if (storage && storage.price) {
+          regularPrice = Number(storage.price.regularPrice) || 0;
+          discountPrice = Number(storage.price.discountPrice || storage.price.regularPrice) || 0;
+        }
+      }
+    }
+  }
+  // For region-type products with selected variants, find the specific prices
+  else if (productType === 'region' && selectedVariants) {
+    const regionId = selectedVariants.region;
+    const storageId = selectedVariants.storage;
+
+    if (regionId && storageId && Array.isArray(dataSource.regions)) {
+      const region = dataSource.regions.find((r: any) => r.id === regionId);
+      if (region && Array.isArray(region.defaultStorages)) {
+        const storage = region.defaultStorages.find((s: any) => s.id === storageId);
+        if (storage && storage.price) {
+          regularPrice = Number(storage.price.regularPrice) || 0;
+          discountPrice = Number(storage.price.discountPrice || storage.price.regularPrice) || 0;
+        }
+      }
+    }
+  }
+
+  // If we found prices, use the selected price type
+  if (regularPrice > 0 || discountPrice > 0) {
+    return priceType === 'regular' ? regularPrice : discountPrice;
+  }
+
+  // Fallback to display price
   return getProductDisplayPrice(product, selectedVariants);
 }
 
