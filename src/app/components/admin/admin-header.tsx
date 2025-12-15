@@ -90,20 +90,84 @@ export function AdminHeader() {
         <Link href="/admin/notify-products">
           <Button variant="ghost" size="icon" className="relative">
             <AlertCircle className="h-5 w-5" />
-            {unreadCount > 0 && (
+            {productNotifyCount > 0 && (
               <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs font-semibold text-destructive-foreground">
-                {unreadCount}
+                {productNotifyCount}
               </span>
             )}
           </Button>
         </Link>
 
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-yellow-500 text-xs font-semibold text-white">
-            3
-          </span>
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="relative">
+              <Bell className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-yellow-500 text-xs font-semibold text-white">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-80">
+            <div className="px-3 py-2">
+              <p className="text-sm font-semibold">Notifications</p>
+            </div>
+            <DropdownMenuSeparator />
+
+            {loading ? (
+              <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+                Loading...
+              </div>
+            ) : headerNotifications.length === 0 ? (
+              <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+                No notifications
+              </div>
+            ) : (
+              <div className="max-h-96 overflow-y-auto">
+                {headerNotifications.map((notification) => (
+                  <DropdownMenuItem
+                    key={notification.id}
+                    onClick={() => handleNotificationClick(notification)}
+                    className={`flex flex-col items-start gap-1 px-3 py-2 cursor-pointer ${
+                      !notification.read ? "bg-blue-50 dark:bg-blue-950/20" : ""
+                    }`}
+                  >
+                    <div className="flex items-start gap-2 w-full">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium leading-tight line-clamp-2">
+                          {notification.title}
+                        </p>
+                        <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
+                          {notification.message}
+                        </p>
+                      </div>
+                      {!notification.read && (
+                        <div className="h-2 w-2 rounded-full bg-blue-500 mt-1 flex-shrink-0" />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                      <Clock className="h-3 w-3" />
+                      {formatTime(notification.createdAt)}
+                    </div>
+                  </DropdownMenuItem>
+                ))}
+              </div>
+            )}
+
+            {headerNotifications.length > 0 && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  asChild
+                  className="justify-center text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 py-2"
+                >
+                  <Link href="/admin/notifications">View All</Link>
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
