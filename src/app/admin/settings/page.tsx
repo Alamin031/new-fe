@@ -84,7 +84,7 @@ function AdminSettingsPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pt-4">
       {/* Header */}
       <div className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
