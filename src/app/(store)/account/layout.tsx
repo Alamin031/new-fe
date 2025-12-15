@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client"
 
 import { useEffect } from "react"
@@ -72,9 +73,17 @@ export default function AccountLayout({
           <div className="sticky top-24 rounded-lg border border-border bg-card p-6">
             {/* User Info Section */}
             <div className="mb-6 flex items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-xl font-bold text-white">
-                {getInitials(user?.name)}
-              </div>
+              {user?.image ? (
+                <img
+                  src={user.image}
+                  alt={user?.name || "User"}
+                  className="h-14 w-14 rounded-full object-cover"
+                />
+              ) : (
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-xl font-bold text-white">
+                  {getInitials(user?.name)}
+                </div>
+              )}
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold">{user?.name || "User"}</p>
                 <p className="truncate text-sm text-muted-foreground">{user?.email || "No email"}</p>

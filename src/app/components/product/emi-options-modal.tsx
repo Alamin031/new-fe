@@ -46,6 +46,13 @@ export function EmiOptionsModal({
     }
   }, [open, onOpen, plans.length])
 
+  // Set amount when modal opens
+  useEffect(() => {
+    if (open) {
+      setAmount(price.toString());
+    }
+  }, [price, open]);
+
   // Group plans by bank
   const plansByBank = useMemo(() => {
     const grouped: Record<string, { bankName: string; plans: EmiPlan[] }> = {}

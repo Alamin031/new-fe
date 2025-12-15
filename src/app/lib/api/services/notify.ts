@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { apiClient } from '../client';
 import { API_ENDPOINTS } from '../config';
 
@@ -151,8 +152,8 @@ export const notificationService = {
   /**
    * Fetch notifications for header (summary/quick view)
    */
-  getHeader: async (): Promise<Notification[]> => {
-    const response = await apiClient.get(API_ENDPOINTS.NOTIFICATIONS_HEADER);
+  getHeader: async (params?: Record<string, any>): Promise<Notification[]> => {
+    const response = await apiClient.get(API_ENDPOINTS.NOTIFICATIONS_HEADER, { params });
     return response.data;
   },
 

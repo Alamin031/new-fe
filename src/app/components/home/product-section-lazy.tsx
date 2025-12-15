@@ -20,7 +20,6 @@ interface ProductSectionLazyProps {
 export function ProductSectionLazy({
   title,
   subtitle,
-  viewAllLink,
   productIds,
   categoryId,
   brandId,
@@ -104,7 +103,6 @@ export function ProductSectionLazy({
       title={title}
       subtitle={subtitle}
       products={products}
-      viewAllLink={viewAllLink}
       isLoading={isLoading}
     />
   );

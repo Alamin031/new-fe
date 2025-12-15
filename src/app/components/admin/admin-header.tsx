@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client"
 
 import Link from "next/link"
@@ -31,7 +32,7 @@ export function AdminHeader() {
 
   const fetchNotifications = async () => {
     try {
-      const data = await notificationService.getHeader()
+      const data = await notificationService.getHeader({ isAdmin: true })
       setHeaderNotifications(data || [])
     } catch (error) {
       console.error("Failed to fetch notifications:", error)
@@ -172,9 +173,17 @@ export function AdminHeader() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-10 gap-2 px-2">
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-center text-xs font-bold leading-8 text-white">
-                {user?.name?.charAt(0).toUpperCase() || "A"}
-              </div>
+              {user?.image ? (
+                <img
+                  src={user.image}
+                  alt={user?.name || "Admin"}
+                  className="h-8 w-8 rounded-full object-cover"
+                />
+              ) : (
+                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-center text-xs font-bold leading-8 text-white">
+                  {user?.name?.charAt(0).toUpperCase() || "A"}
+                </div>
+              )}
               <div className="hidden md:block text-left">
                 <p className="text-sm font-medium leading-none">{user?.name || "Admin"}</p>
                 <p className="text-xs text-muted-foreground">{user?.email || "admin@store.com"}</p>
@@ -184,9 +193,17 @@ export function AdminHeader() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <div className="flex items-center gap-2 px-2 py-1.5">
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-center text-xs font-bold leading-8 text-white">
-                {user?.name?.charAt(0).toUpperCase() || "A"}
-              </div>
+              {user?.image ? (
+                <img
+                  src={user.image}
+                  alt={user?.name || "Admin"}
+                  className="h-8 w-8 rounded-full object-cover"
+                />
+              ) : (
+                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-center text-xs font-bold leading-8 text-white">
+                  {user?.name?.charAt(0).toUpperCase() || "A"}
+                </div>
+              )}
               <div className="flex flex-col space-y-0.5">
                 <p className="text-sm font-medium">{user?.name || "Admin"}</p>
                 <p className="text-xs text-muted-foreground">{user?.email || "admin@store.com"}</p>
