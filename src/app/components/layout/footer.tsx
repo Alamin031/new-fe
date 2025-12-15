@@ -13,6 +13,7 @@ import {Button} from '../ui/button';
 
 type FooterLink = { name: string; href: string };
 
+
 const footerLinks: {
   shop: FooterLink[];
   support: FooterLink[];
