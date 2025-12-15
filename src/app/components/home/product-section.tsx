@@ -1,10 +1,9 @@
 "use client"
 
-import Link from "next/link"
-import { ArrowRight } from "lucide-react"
+import { useRef, useEffect } from "react"
 import { ProductCard } from "../product/product-card"
-import { Button } from "../ui/button"
 import type { Product } from "@/app/types"
+
 interface ProductSectionProps {
   title: string
   subtitle?: string
@@ -14,6 +13,8 @@ interface ProductSectionProps {
   isLoading?: boolean
 }
 
+const CARD_WIDTH = 240 + 16 // card width + gap (px), adjust gap if needed
+
 export function ProductSection({
   title,
   subtitle,
@@ -22,6 +23,43 @@ export function ProductSection({
   badgeColor = "bg-foreground",
   isLoading = false,
 }: ProductSectionProps) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (products.length <= 4) return // Disable auto-scroll if 4 or fewer
+    const container = scrollRef.current
+    if (!container) return
+
+    let direction = 1
+    let currentIndex = 0
+    const visibleCards = 4
+    const cardWidth = CARD_WIDTH // px
+    const interval = 2500 // ms between scrolls
+
+    const scrollToCard = (index: number) => {
+      if (!container) return
+      container.scrollTo({
+        left: index * cardWidth,
+        behavior: "smooth",
+      })
+    }
+
+    const autoScroll = () => {
+      if (!container) return
+      const maxIndex = Math.max(0, products.length - visibleCards)
+      if (currentIndex >= maxIndex) {
+        direction = -1
+      } else if (currentIndex <= 0) {
+        direction = 1
+      }
+      currentIndex += direction
+      scrollToCard(currentIndex)
+    }
+
+    const scrollInterval = setInterval(autoScroll, interval)
+    return () => clearInterval(scrollInterval)
+  }, [isLoading, products.length])
+
   return (
     <section>
       <div className="mb-6 flex items-end justify-between">
@@ -37,7 +75,12 @@ export function ProductSection({
           {subtitle && <p className="mt-1 text-muted-foreground">{subtitle}</p>}
         </div>
       </div>
-      <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-muted-foreground/30">
+      <div
+        ref={scrollRef}
+        className={`flex gap-4 pb-2 scrollbar-thin scrollbar-thumb-muted-foreground/30 w-full ${
+          products.length > 4 ? "overflow-x-auto" : ""
+        }`}
+      >
         {isLoading ? (
           Array.from({ length: 5 }).map((_, i) => (
             <div
