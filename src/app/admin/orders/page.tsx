@@ -77,7 +77,13 @@ function AdminOrdersPage() {
   const [error, setError] = useState<string | null>(null)
   const [viewOpen, setViewOpen] = useState(false)
   const [addDrawerOpen, setAddDrawerOpen] = useState(false)
+  const [statusUpdateOpen, setStatusUpdateOpen] = useState(false)
+  const [statusUpdating, setStatusUpdating] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [statusUpdateData, setStatusUpdateData] = useState({
+    orderId: "",
+    newStatus: "",
+  })
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
   const [newOrderForm, setNewOrderForm] = useState({
     customer: "",
@@ -88,6 +94,8 @@ function AdminOrdersPage() {
     status: "Pending",
     payment: "Pending",
   })
+
+  const ORDER_STATUSES = ["Pending", "Confirmed", "Processing", "Shipped", "Delivered", "Cancelled", "Returned"]
 
   useEffect(() => {
     const fetchOrders = async () => {
