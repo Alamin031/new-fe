@@ -2,7 +2,8 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Bell, LogOut, Search, User, ChevronDown, AlertCircle } from "lucide-react"
+import { Bell, LogOut, Search, User, ChevronDown, AlertCircle, Clock } from "lucide-react"
+import { useState, useEffect } from "react"
 import { Input } from "../ui/input"
 import { Button } from "../ui/button"
 import {
@@ -14,12 +15,64 @@ import {
 } from "../ui/dropdown-menu"
 import { useAuthStore } from "@/app/store/auth-store"
 import { useProductNotifyStore } from "@/app/store/product-notify-store"
+import { notificationService } from "@/app/lib/api/services/notify"
+import type { Notification } from "@/app/lib/api/services/notify"
 
 export function AdminHeader() {
   const router = useRouter()
   const { user, logout } = useAuthStore()
-  const { notifications } = useProductNotifyStore()
-  const unreadCount = notifications.filter((n) => n.status === "pending").length
+  const { notifications: productNotifications } = useProductNotifyStore()
+  const [headerNotifications, setHeaderNotifications] = useState<Notification[]>([])
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    fetchNotifications()
+  }, [])
+
+  const fetchNotifications = async () => {
+    try {
+      const data = await notificationService.getHeader()
+      setHeaderNotifications(data || [])
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error)
+    }
+  }
+
+  const unreadCount = headerNotifications.filter((n) => n.read === false).length
+  const productNotifyCount = productNotifications.filter((n) => n.status === "pending").length
+
+  const handleNotificationClick = async (notification: Notification) => {
+    try {
+      setLoading(true)
+      await notificationService.markAsRead(notification.id)
+
+      setHeaderNotifications((prev) =>
+        prev.map((n) => (n.id === notification.id ? { ...n, read: true } : n))
+      )
+
+      if (notification.link) {
+        router.push(notification.link)
+      }
+    } catch (error) {
+      console.error("Failed to mark notification as read:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+    if (seconds < 60) return "just now"
+    const minutes = Math.floor(seconds / 60)
+    if (minutes < 60) return `${minutes}m ago`
+    const hours = Math.floor(minutes / 60)
+    if (hours < 24) return `${hours}h ago`
+    const days = Math.floor(hours / 24)
+    return `${days}d ago`
+  }
 
   const handleLogout = () => {
     logout()
