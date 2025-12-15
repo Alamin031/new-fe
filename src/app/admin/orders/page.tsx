@@ -72,7 +72,9 @@ function getPaymentColor(payment: string) {
 }
 
 function AdminOrdersPage() {
-  const [orders, setOrders] = useState<Order[]>(initialOrders)
+  const [orders, setOrders] = useState<Order[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [viewOpen, setViewOpen] = useState(false)
   const [addDrawerOpen, setAddDrawerOpen] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
@@ -86,6 +88,51 @@ function AdminOrdersPage() {
     status: "Pending",
     payment: "Pending",
   })
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const res = await ordersService.getAll(1, 100)
+        let fetchedOrders: ApiOrder[] = []
+
+        if (Array.isArray(res)) {
+          fetchedOrders = res
+        } else if (res && res.data && Array.isArray(res.data)) {
+          fetchedOrders = res.data
+        }
+
+        const mappedOrders = fetchedOrders.map((order: ApiOrder) => ({
+          id: order.id,
+          customer: order.shippingAddress?.fullName || order.shippingAddress?.name || "Unknown",
+          email: order.shippingAddress?.email || "",
+          items: (order.orderItems || []).length,
+          total: order.total,
+          status: order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : "Pending",
+          payment: order.paymentStatus ? order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1) : "Pending",
+          date: new Date(order.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }),
+          address: order.shippingAddress?.address || "",
+          phone: order.shippingAddress?.phone || "",
+          orderItems: (order.orderItems || []).map((item: any, idx: number) => ({
+            id: String(idx),
+            name: item.productName || item.name || "Product",
+            quantity: item.quantity,
+            price: item.price,
+          })),
+        }))
+
+        setOrders(mappedOrders)
+      } catch (err) {
+        setError("Failed to load orders. Please try again.")
+        console.error("Error fetching orders:", err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchOrders()
+  }, [])
 
   const validateForm = () => {
     const errors: Record<string, string> = {}
