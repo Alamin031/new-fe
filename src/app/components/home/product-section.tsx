@@ -47,21 +47,21 @@ export function ProductSection({
       </div>
       <div
         ref={scrollRef}
-        className="
-    flex flex-nowrap overflow-x-auto gap-4 pb-2 w-full
-    sm:flex-wrap sm:overflow-visible
-  ">
+        className="flex flex-nowrap overflow-x-auto gap-3 pb-2 w-full lg:gap-6 scrollbar-thin scrollbar-thumb-muted-foreground/30 scrollbar-track-transparent"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
         {isLoading
-          ? Array.from({length: 5}).map((_, i) => (
+          ? Array.from({ length: 2 }).map((_, i) => (
               <div
                 key={i}
-                className="w-[90vw] max-w-xs sm:w-[240px] min-h-[320px] bg-muted animate-pulse rounded-[2rem] flex-shrink-0 mx-auto"
+                className="w-[48vw] max-w-[180px] h-[200px] lg:w-[23%] lg:max-w-xs lg:h-[320px] bg-muted animate-pulse rounded-[1.2rem] flex-shrink-0 mx-auto"
               />
             ))
-          : products.map(product => (
+          : products.map((product) => (
               <div
                 key={product.id}
-                className="w-[90vw] max-w-xs sm:w-[240px] min-h-[320px] flex-shrink-0 flex mx-auto">
+                className="w-[48vw] max-w-[180px] h-[260px] lg:w-[23%] lg:max-w-xs lg:h-[340px] flex-shrink-0 flex mx-auto"
+              >
                 <ProductCard product={product} className="w-full h-full" emiPlans={emiPlans} />
               </div>
             ))}
