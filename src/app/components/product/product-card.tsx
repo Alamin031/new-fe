@@ -3,7 +3,7 @@
 
 import type React from 'react';
 
-import {useState} from 'react';
+import {useState, useEffect} from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {Heart, ArrowLeftRight, Eye} from 'lucide-react';
@@ -18,9 +18,7 @@ import {
 import {cn} from '@/app/lib/utils';
 import {Product} from '@/app/types';
 import {getDefaultProductPrice} from '@/app/lib/utils/product';
-
-
-import type { EmiPlan } from '@/app/lib/api/services/emi';
+import {emiService, type EmiPlan} from '@/app/lib/api/services/emi';
 
 interface ProductCardProps {
   product: Product;
