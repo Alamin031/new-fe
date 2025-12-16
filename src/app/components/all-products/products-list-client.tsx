@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect } from "react"
 import { useSWRCache } from "@/app/hooks/use-swr-cache"
 import { productsService } from "@/app/lib/api/services/products"
 import { CategoryProducts } from "@/app/components/category/category-products"
