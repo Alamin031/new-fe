@@ -160,9 +160,26 @@ export function ProductsListClient({
 
   if (error) {
     return (
-      <div className="py-12 text-center">
-        <p className="text-red-500 mb-4">Failed to load products</p>
-        <Button onClick={() => window.location.reload()}>Retry</Button>
+      <div className="space-y-8">
+        <div className="rounded-lg border border-red-200 bg-red-50 p-8 text-center">
+          <h3 className="text-lg font-semibold text-red-900 mb-2">Unable to Load Products</h3>
+          <p className="text-red-700 mb-6">We encountered an issue while loading products. Please try again.</p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <Button
+              onClick={() => window.location.reload()}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Retry
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => window.history.back()}
+              className="border-red-300"
+            >
+              Go Back
+            </Button>
+          </div>
+        </div>
       </div>
     )
   }
