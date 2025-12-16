@@ -19,12 +19,16 @@ import {cn} from '@/app/lib/utils';
 import {Product} from '@/app/types';
 import {getDefaultProductPrice} from '@/app/lib/utils/product';
 
+
+import type { EmiPlan } from '@/app/lib/api/services/emi';
+
 interface ProductCardProps {
   product: Product;
   className?: string;
+  emiPlans?: EmiPlan[];
 }
 
-export function ProductCard({product, className}: ProductCardProps) {
+export function ProductCard({product, className, emiPlans}: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
@@ -42,6 +46,7 @@ export function ProductCard({product, className}: ProductCardProps) {
   const inWishlist = isInWishlist(product.id);
   const inCompare = isInCompare(product.id);
 
+
   // Extract default variant prices based on product type
   const priceInfo = getDefaultProductPrice(product);
   const regularPrice = priceInfo.regularPrice;
@@ -49,6 +54,21 @@ export function ProductCard({product, className}: ProductCardProps) {
   const hasDiscount = priceInfo.hasDiscount;
   const discount = priceInfo.discount;
   const isOutOfStock = priceInfo.stockQuantity === 0;
+
+  // Calculate minimum EMI/month for the bank with the highest month count
+  let minEmiPerMonth: number | null = null;
+  if (emiPlans && emiPlans.length > 0 && regularPrice > 0) {
+    // Find the plan(s) with the highest month count
+    const maxMonths = Math.max(...emiPlans.map(p => p.months));
+    const maxMonthPlans = emiPlans.filter(p => p.months === maxMonths);
+    // Calculate EMI for each plan (simple interest)
+    const calculateEmi = (principal: number, monthCount: number, rate: number = 0) => {
+      const totalInterest = (principal * rate) / 100;
+      const totalAmount = principal + (totalInterest * monthCount);
+      return totalAmount / monthCount;
+    };
+    minEmiPerMonth = Math.min(...maxMonthPlans.map(plan => calculateEmi(regularPrice, plan.months, plan.interestRate)));
+  }
 
   const handleWishlistToggle = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -236,6 +256,12 @@ export function ProductCard({product, className}: ProductCardProps) {
               </span>
             )}
           </div>
+          {/* EMI info */}
+          {minEmiPerMonth !== null && (
+            <div className="text-xs text-muted-foreground mt-1">
+              EMI as low as {formatPrice(minEmiPerMonth)}/mo
+            </div>
+          )}
         </div>
 
         {/* Stock Indicator */}
