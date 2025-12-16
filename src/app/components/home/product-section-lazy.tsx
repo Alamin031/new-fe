@@ -6,15 +6,18 @@ import { ProductSection } from "@/app/components/home/product-section"
 import { productsService } from "@/app/lib/api/services/products"
 import type { Product } from "@/app/types"
 
+import type { EmiPlan } from "@/app/lib/api/services/emi";
+
 interface ProductSectionLazyProps {
-  title: string
-  subtitle?: string
-  viewAllLink?: string
-  productIds?: string[]
-  categoryId?: string
-  brandId?: string
-  limit?: number
-  products?: Product[] | undefined
+  title: string;
+  subtitle?: string;
+  viewAllLink?: string;
+  productIds?: string[];
+  categoryId?: string;
+  brandId?: string;
+  limit?: number;
+  products?: Product[] | undefined;
+  emiPlans?: EmiPlan[];
 }
 
 export function ProductSectionLazy({
@@ -25,6 +28,7 @@ export function ProductSectionLazy({
   brandId,
   limit = 10,
   products: productsProp,
+  emiPlans,
 }: ProductSectionLazyProps) {
   const cacheKey = `products_section_${title
     .toLowerCase()
@@ -104,6 +108,7 @@ export function ProductSectionLazy({
       subtitle={subtitle}
       products={products}
       isLoading={isLoading}
+      emiPlans={emiPlans}
     />
   );
 }

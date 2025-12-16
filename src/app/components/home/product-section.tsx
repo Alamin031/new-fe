@@ -4,6 +4,8 @@ import {useRef} from 'react';
 import {ProductCard} from '../product/product-card';
 import type {Product} from '@/app/types';
 
+import type { EmiPlan } from "@/app/lib/api/services/emi";
+
 interface ProductSectionProps {
   title: string;
   subtitle?: string;
@@ -11,6 +13,7 @@ interface ProductSectionProps {
   badge?: string;
   badgeColor?: string;
   isLoading?: boolean;
+  emiPlans?: EmiPlan[];
 }
 
 export function ProductSection({
@@ -20,6 +23,7 @@ export function ProductSection({
   badge,
   badgeColor = 'bg-foreground',
   isLoading = false,
+  emiPlans,
 }: ProductSectionProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -58,7 +62,7 @@ export function ProductSection({
               <div
                 key={product.id}
                 className="w-[90vw] max-w-xs sm:w-[240px] min-h-[320px] flex-shrink-0 flex mx-auto">
-                <ProductCard product={product} className="w-full h-full" />
+                <ProductCard product={product} className="w-full h-full" emiPlans={emiPlans} />
               </div>
             ))}
       </div>

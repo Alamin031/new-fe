@@ -26,21 +26,39 @@ interface ProductCardProps {
   emiPlans?: EmiPlan[];
 }
 
-export function ProductCard({product, className, emiPlans: propEmiPlans}: ProductCardProps) {
+export function ProductCard({
+  product,
+  className,
+  emiPlans: propEmiPlans,
+}: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [emiPlans, setEmiPlans] = useState<EmiPlan[]>(propEmiPlans || []);
   const [emiLoading, setEmiLoading] = useState(false);
+  const [emiError, setEmiError] = useState<string | null>(null);
 
   // Fetch EMI plans on mount if not provided as prop
   useEffect(() => {
     if (!propEmiPlans || propEmiPlans.length === 0) {
-      setEmiLoading(true);
-      emiService
-        .getPlans()
-        .then((plans) => setEmiPlans(plans))
-        .catch(() => setEmiPlans([]))
-        .finally(() => setEmiLoading(false));
+      const fetchEmiPlans = async () => {
+        setEmiLoading(true);
+        setEmiError(null);
+        try {
+          const plans = await emiService.getPlans();
+          setEmiPlans(plans);
+        } catch (err: any) {
+          setEmiPlans([]);
+          setEmiError(
+            err?.message || 'Failed to load EMI plans. Please try again later.'
+          );
+          // Log the error for debugging
+          // eslint-disable-next-line no-console
+          console.error('Error fetching EMI plans:', err);
+        } finally {
+          setEmiLoading(false);
+        }
+      };
+      fetchEmiPlans();
     } else {
       setEmiPlans(propEmiPlans);
     }
@@ -60,7 +78,6 @@ export function ProductCard({product, className, emiPlans: propEmiPlans}: Produc
   const inWishlist = isInWishlist(product.id);
   const inCompare = isInCompare(product.id);
 
-
   // Extract default variant prices based on product type
   const priceInfo = getDefaultProductPrice(product);
   const regularPrice = priceInfo.regularPrice;
@@ -76,12 +93,20 @@ export function ProductCard({product, className, emiPlans: propEmiPlans}: Produc
     const maxMonths = Math.max(...emiPlans.map(p => p.months));
     const maxMonthPlans = emiPlans.filter(p => p.months === maxMonths);
     // Calculate EMI for each plan (simple interest)
-    const calculateEmi = (principal: number, monthCount: number, rate: number = 0) => {
+    const calculateEmi = (
+      principal: number,
+      monthCount: number,
+      rate: number = 0,
+    ) => {
       const totalInterest = (principal * rate) / 100;
-      const totalAmount = principal + (totalInterest * monthCount);
+      const totalAmount = principal + totalInterest * monthCount;
       return totalAmount / monthCount;
     };
-    minEmiPerMonth = Math.min(...maxMonthPlans.map(plan => calculateEmi(regularPrice, plan.months, plan.interestRate)));
+    minEmiPerMonth = Math.min(
+      ...maxMonthPlans.map(plan =>
+        calculateEmi(regularPrice, plan.months, plan.interestRate),
+      ),
+    );
   }
 
   const handleWishlistToggle = (e: React.MouseEvent) => {
@@ -224,25 +249,59 @@ export function ProductCard({product, className, emiPlans: propEmiPlans}: Produc
 
         {/* Rating */}
         {(product.rating ?? 0) > 0 && (
-          <div className="mt-2 flex items-center gap-1">
-            <div className="flex">
-              {Array.from({length: 5}).map((_, i) => (
-                <svg
-                  key={i}
-                  className={cn(
-                    'h-3.5 w-3.5',
-                    i < Math.floor(product.rating ?? 0)
-                      ? 'fill-[oklch(0.75_0.15_85)] text-[oklch(0.75_0.15_85)]'
-                      : 'fill-muted text-muted',
-                  )}
-                  viewBox="0 0 20 20">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
-              ))}
+          <div className="mt-2 flex flex-col gap-0.5">
+            <div className="flex items-center gap-1">
+              <div className="flex">
+                {Array.from({length: 5}).map((_, i) => (
+                  <svg
+                    key={i}
+                    className={cn(
+                      'h-3.5 w-3.5',
+                      i < Math.floor(product.rating ?? 0)
+                        ? 'fill-[oklch(0.75_0.15_85)] text-[oklch(0.75_0.15_85)]'
+                        : 'fill-muted text-muted',
+                    )}
+                    viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
+              </div>
+              <span className="text-xs text-muted-foreground">
+                ({product.reviewCount})
+              </span>
             </div>
-            <span className="text-xs text-muted-foreground">
-              ({product.reviewCount})
-            </span>
+            {/* ratingPoint as stars */}
+            {(() => {
+              let ratingPointNum = 0;
+              if (typeof product.ratingPoint === 'number') {
+                ratingPointNum = product.ratingPoint;
+              } else if (typeof product.ratingPoint === 'string') {
+                const parsed = parseFloat(product.ratingPoint);
+                if (!isNaN(parsed)) ratingPointNum = parsed;
+              }
+              return ratingPointNum > 0 ? (
+                <div className="flex items-center gap-1 mt-0.5">
+                  <div className="flex">
+                    {Array.from({length: 5}).map((_, i) => (
+                      <svg
+                        key={i}
+                        className={cn(
+                          'h-3 w-3',
+                          i < Math.round(ratingPointNum)
+                            ? 'fill-yellow-400 text-yellow-400'
+                            : 'fill-muted text-muted',
+                        )}
+                        viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    ))}
+                  </div>
+                  <span className="text-xs text-yellow-700 font-medium ml-1">
+                    {ratingPointNum.toFixed(1)}
+                  </span>
+                </div>
+              ) : null;
+            })()}
           </div>
         )}
 
@@ -271,7 +330,12 @@ export function ProductCard({product, className, emiPlans: propEmiPlans}: Produc
             )}
           </div>
           {/* EMI info */}
-          {minEmiPerMonth !== null && (
+          {emiError && (
+            <div className="text-xs text-red-600 mt-1">
+              EMI info unavailable
+            </div>
+          )}
+          {!emiError && minEmiPerMonth !== null && (
             <div className="text-xs text-muted-foreground mt-1">
               EMI as low as {formatPrice(minEmiPerMonth)}/mo
             </div>
