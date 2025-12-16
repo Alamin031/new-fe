@@ -3,7 +3,7 @@
 
 import type React from 'react';
 
-import {useState} from 'react';
+import {useState, useEffect} from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {Heart, ArrowLeftRight, Eye} from 'lucide-react';
@@ -18,9 +18,7 @@ import {
 import {cn} from '@/app/lib/utils';
 import {Product} from '@/app/types';
 import {getDefaultProductPrice} from '@/app/lib/utils/product';
-
-
-import type { EmiPlan } from '@/app/lib/api/services/emi';
+import {emiService, type EmiPlan} from '@/app/lib/api/services/emi';
 
 interface ProductCardProps {
   product: Product;
@@ -28,9 +26,25 @@ interface ProductCardProps {
   emiPlans?: EmiPlan[];
 }
 
-export function ProductCard({product, className, emiPlans}: ProductCardProps) {
+export function ProductCard({product, className, emiPlans: propEmiPlans}: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [emiPlans, setEmiPlans] = useState<EmiPlan[]>(propEmiPlans || []);
+  const [emiLoading, setEmiLoading] = useState(false);
+
+  // Fetch EMI plans on mount if not provided as prop
+  useEffect(() => {
+    if (!propEmiPlans || propEmiPlans.length === 0) {
+      setEmiLoading(true);
+      emiService
+        .getPlans()
+        .then((plans) => setEmiPlans(plans))
+        .catch(() => setEmiPlans([]))
+        .finally(() => setEmiLoading(false));
+    } else {
+      setEmiPlans(propEmiPlans);
+    }
+  }, [propEmiPlans]);
 
   const {
     addItem: addToWishlist,
