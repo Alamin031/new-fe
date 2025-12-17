@@ -261,8 +261,8 @@ export function ProductGallery({ images, name, isEmi, isCare, selectedColorImage
 
             {/* Thumbnail Carousel in Lightbox */}
             {displayImages.length > 1 && (
-              <div className="absolute bottom-20 left-0 right-0 flex justify-center gap-2 px-4 overflow-x-auto">
-                <div className="flex gap-2">
+              <div className="absolute bottom-20 left-0 right-0 flex justify-center px-4">
+                <div className="flex gap-2 overflow-x-auto max-w-full scrollbar-hide pb-2">
                   {displayImages.map((image, index) => (
                     <button
                       key={index}
