@@ -32,15 +32,15 @@ export function ProductTabs({ product, faqs = [] }: ProductTabsProps) {
   ];
 
   return (
-    <div className="w-full">
+    <div className="w-full max-w-full overflow-hidden">
       {/* Tab Headers */}
-      <div className="flex gap-1 border-b border-border overflow-x-auto">
+      <div className="flex gap-1 border-b border-border overflow-x-auto scrollbar-hide -mx-2 px-2 sm:-mx-4 sm:px-4">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "shrink-0 pb-4 px-2 md:px-6 text-sm md:text-base font-medium transition-all duration-200 relative",
+              "shrink-0 pb-4 px-2 md:px-6 text-sm md:text-base font-medium transition-all duration-200 relative whitespace-nowrap",
               activeTab === tab.id
                 ? "text-foreground"
                 : "text-muted-foreground hover:text-foreground",
@@ -55,10 +55,10 @@ export function ProductTabs({ product, faqs = [] }: ProductTabsProps) {
       </div>
 
       {/* Tab Content */}
-      <div className="py-12 animate-in fade-in-0 duration-300">
+      <div className="py-12 animate-in fade-in-0 duration-300 overflow-hidden">
         {activeTab === "specifications" && (
-          <div className="overflow-hidden rounded-2xl border border-border">
-            <table className="w-full">
+          <div className="overflow-x-auto rounded-2xl border border-border scrollbar-hide">
+            <table className="w-full min-w-full">
               <tbody>
                 {Object.entries(product.specifications ?? {}).map(([key, value], index) => (
                   <tr
@@ -68,8 +68,8 @@ export function ProductTabs({ product, faqs = [] }: ProductTabsProps) {
                       index % 2 === 0 ? "bg-muted/30" : "bg-card",
                     )}
                   >
-                    <td className="px-6 py-4 text-sm font-semibold text-muted-foreground w-1/3 uppercase tracking-wide">{key}</td>
-                    <td className="px-6 py-4 text-sm font-medium text-foreground">{String(value)}</td>
+                    <td className="px-4 sm:px-6 py-4 text-sm font-semibold text-muted-foreground w-1/3 uppercase tracking-wide whitespace-normal">{key}</td>
+                    <td className="px-4 sm:px-6 py-4 text-sm font-medium text-foreground">{String(value)}</td>
                   </tr>
                 ))}
               </tbody>

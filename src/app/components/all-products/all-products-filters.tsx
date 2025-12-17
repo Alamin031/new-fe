@@ -30,12 +30,19 @@ export function AllProductsFilters({
 }: AllProductsFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [isHydrated, setIsHydrated] = useState(false);
   const [activeCategories, setActiveCategories] =
     useState<string[]>(selectedCategories);
   const [activeBrands, setActiveBrands] = useState<string[]>(selectedBrands);
   const [expandedSections, setExpandedSections] = useState({
     categories: true,
+    brands: true,
   });
+
+  // Ensure hydration happens on client side only
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
@@ -83,7 +90,7 @@ export function AllProductsFilters({
     router.push(newUrl, { scroll: false });
   }, [activeCategories, activeBrands, router]);
 
-  const hasActiveFilters = activeCategories.length > 0;
+  const hasActiveFilters = activeCategories.length > 0 || activeBrands.length > 0;
 
   const FilterContent = () => (
     <div className="space-y-6">
@@ -113,6 +120,21 @@ export function AllProductsFilters({
                   onClick={() => toggleCategory(categorySlug)}
                 >
                   {cat?.name}
+                  <X className="h-3 w-3" />
+                </Button>
+              );
+            })}
+            {activeBrands.map((brandSlug) => {
+              const brand = brands.find((b) => b.slug === brandSlug);
+              return (
+                <Button
+                  key={brandSlug}
+                  variant="secondary"
+                  size="sm"
+                  className="h-7 gap-1 text-xs"
+                  onClick={() => toggleBrand(brandSlug)}
+                >
+                  {brand?.name}
                   <X className="h-3 w-3" />
                 </Button>
               );
@@ -159,6 +181,44 @@ export function AllProductsFilters({
         )}
       </div>
 
+      {/* Brands */}
+      <div>
+        <button
+          onClick={() => toggleSection("brands")}
+          className="flex w-full items-center justify-between py-2 font-semibold"
+        >
+          Brands
+          <ChevronDown
+            className={cn(
+              "h-4 w-4 transition-transform",
+              expandedSections.brands && "rotate-180"
+            )}
+          />
+        </button>
+        {expandedSections.brands && (
+          <div className="mt-2 space-y-2">
+            {brands && brands.length > 0 ? (
+              brands.map((brand) => (
+                <label
+                  key={brand.id}
+                  className="flex cursor-pointer items-center gap-3"
+                >
+                  <Checkbox
+                    checked={activeBrands.includes(brand.slug)}
+                    onCheckedChange={() => toggleBrand(brand.slug)}
+                  />
+                  <span className="text-sm">{brand.name}</span>
+                </label>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No brands available
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
     </div>
   );
 
@@ -173,7 +233,55 @@ export function AllProductsFilters({
       </div>
 
       {/* Mobile Filters */}
-      <div className="lg:hidden">
+      <div className="space-y-4 lg:hidden">
+        {/* Active Filter Tags - Always render but hide when empty */}
+        <div className={cn("space-y-2", !hasActiveFilters && "hidden")}>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium">Active Filters</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 text-xs text-muted-foreground hover:text-foreground"
+              onClick={clearAllFilters}
+            >
+              Clear All
+            </Button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {activeCategories.map((categorySlug) => {
+              const cat = categories.find((c) => c.slug === categorySlug);
+              return (
+                <Button
+                  key={categorySlug}
+                  variant="secondary"
+                  size="sm"
+                  className="h-7 gap-1 text-xs"
+                  onClick={() => toggleCategory(categorySlug)}
+                >
+                  {cat?.name}
+                  <X className="h-3 w-3" />
+                </Button>
+              );
+            })}
+            {activeBrands.map((brandSlug) => {
+              const brand = brands.find((b) => b.slug === brandSlug);
+              return (
+                <Button
+                  key={brandSlug}
+                  variant="secondary"
+                  size="sm"
+                  className="h-7 gap-1 text-xs"
+                  onClick={() => toggleBrand(brandSlug)}
+                >
+                  {brand?.name}
+                  <X className="h-3 w-3" />
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Filters Drawer */}
         <Sheet>
           <SheetTrigger asChild>
             <Button variant="outline" className="w-full gap-2 bg-transparent">
@@ -181,7 +289,7 @@ export function AllProductsFilters({
               Filters
               {hasActiveFilters && (
                 <span className="rounded-full bg-foreground px-2 py-0.5 text-xs text-background">
-                  {activeCategories.length}
+                  {activeCategories.length + activeBrands.length}
                 </span>
               )}
             </Button>
