@@ -586,13 +586,10 @@ function AdminProductsPage() {
         onOpenChange={setEditOpen}
         product={selectedProduct}
         onSuccess={updatedProduct => {
-          setProducts(
-            products.map(p =>
-              p.id === updatedProduct.id ? {...p, ...updatedProduct} : p,
-            ),
-          );
           // Clear cache to ensure fresh data is fetched from API
           cacheRef.current.clear();
+          // Reset to page 1 to trigger re-fetch with fresh data
+          setCurrentPage(1);
         }}
       />
 
