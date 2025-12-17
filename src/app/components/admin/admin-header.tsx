@@ -17,6 +17,7 @@ import {
 import { useAuthStore } from "@/app/store/auth-store"
 import { useProductNotifyStore } from "@/app/store/product-notify-store"
 import { notificationService } from "@/app/lib/api/services/notify"
+import AuthService from "@/app/lib/api/services/auth.service"
 import type { Notification } from "@/app/lib/api/services/notify"
 
 export function AdminHeader() {
