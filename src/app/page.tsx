@@ -88,6 +88,9 @@ export default async function Page() {
           </section>
         )}
 
+        {/* Flash Sale Section */}
+        <FlashSaleSection />
+
         {/* Dynamic Homecategory Sections (first 2) using ProductSectionLazy - Eager render (above fold) */}
         {sortedHomecategories.slice(0, 2).map(hc => (
           <section key={hc.id} className="mx-auto w-full max-w-7xl px-4 py-8">
