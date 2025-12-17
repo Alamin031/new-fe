@@ -175,6 +175,44 @@ export function AllProductsFilters({
         )}
       </div>
 
+      {/* Brands */}
+      <div>
+        <button
+          onClick={() => toggleSection("brands")}
+          className="flex w-full items-center justify-between py-2 font-semibold"
+        >
+          Brands
+          <ChevronDown
+            className={cn(
+              "h-4 w-4 transition-transform",
+              expandedSections.brands && "rotate-180"
+            )}
+          />
+        </button>
+        {expandedSections.brands && (
+          <div className="mt-2 space-y-2">
+            {brands && brands.length > 0 ? (
+              brands.map((brand) => (
+                <label
+                  key={brand.id}
+                  className="flex cursor-pointer items-center gap-3"
+                >
+                  <Checkbox
+                    checked={activeBrands.includes(brand.slug)}
+                    onCheckedChange={() => toggleBrand(brand.slug)}
+                  />
+                  <span className="text-sm">{brand.name}</span>
+                </label>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No brands available
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
     </div>
   );
 
