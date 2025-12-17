@@ -336,10 +336,10 @@ function FlashSellDetailContent() {
 
 export default function FlashSellPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex flex-col min-h-screen">
-          <Navbar initialCategories={[]} initialBrands={[]} />
+    <div className="flex flex-col min-h-screen">
+      <Navbar initialCategories={[]} initialBrands={[]} />
+      <Suspense
+        fallback={
           <main className="flex-1 flex flex-col">
             <div className="mx-auto w-full max-w-7xl px-4 py-8">
               <div className="space-y-4">
@@ -351,12 +351,12 @@ export default function FlashSellPage() {
               </div>
             </div>
           </main>
-          <Footer />
-          <MobileBottomNav />
-        </div>
-      }
-    >
-      <FlashSellDetailContent />
-    </Suspense>
+        }
+      >
+        <FlashSellDetailContent />
+      </Suspense>
+      <Footer />
+      <MobileBottomNav />
+    </div>
   )
 }
