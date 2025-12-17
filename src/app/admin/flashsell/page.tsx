@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/ca
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
 import { Label } from "../../components/ui/label"
+import { Checkbox } from "../../components/ui/checkbox"
 import {
   Dialog,
   DialogContent,
@@ -13,38 +14,53 @@ import {
   DialogDescription,
 } from "../../components/ui/dialog"
 import { Badge } from "../../components/ui/badge"
-import { Plus, Edit2, Trash2, Zap, Calendar, AlertCircle } from "lucide-react"
-import { flashsellService, type Flashsell, type CreateFlashsellRequest } from "../../lib/api/services/flashsell"
+import { Plus, Edit2, Trash2, Zap, Calendar, AlertCircle, Image as ImageIcon } from "lucide-react"
+import { flashsellService, type Flashsell } from "../../lib/api/services/flashsell"
+import { productsService } from "../../lib/api/services"
+import type { Product } from "../../lib/api/types"
 import { withProtectedRoute } from "../../lib/auth/protected-route"
 import { toast } from "sonner"
+import Image from "next/image"
 
 interface FormData {
-  name: string
-  description: string
+  title: string
+  bannerImg: File | string | null
+  productIds: string[]
   startTime: string
   endTime: string
-  products: string
+  discountPrice: number
+  stock: number
+}
+
+interface ProductWithSelected extends Product {
+  selected?: boolean
 }
 
 function AdminFlashsellPage() {
   const [flashsells, setFlashsells] = useState<Flashsell[]>([])
+  const [allProducts, setAllProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [editMode, setEditMode] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<Flashsell | null>(null)
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null)
+  const [productSearch, setProductSearch] = useState("")
 
   const [form, setForm] = useState<FormData>({
-    name: "",
-    description: "",
+    title: "",
+    bannerImg: null,
+    productIds: [],
     startTime: "",
     endTime: "",
-    products: "",
+    discountPrice: 0,
+    stock: 0,
   })
 
   useEffect(() => {
     fetchFlashsells()
+    fetchAllProducts()
   }, [])
 
   const fetchFlashsells = async () => {
@@ -56,27 +72,45 @@ function AdminFlashsellPage() {
     }
   }
 
+  const fetchAllProducts = async () => {
+    try {
+      const response = await productsService.getAllLite({}, 1, 1000)
+      const products = Array.isArray(response) ? response : response.data || []
+      setAllProducts(products)
+    } catch (error) {
+      toast.error("Failed to load products")
+    }
+  }
+
   const handleModalClose = () => {
     setModalOpen(false)
     setEditMode(false)
     setEditingId(null)
+    setBannerPreview(null)
+    setProductSearch("")
     setForm({
-      name: "",
-      description: "",
+      title: "",
+      bannerImg: null,
+      productIds: [],
       startTime: "",
       endTime: "",
-      products: "",
+      discountPrice: 0,
+      stock: 0,
     })
   }
 
   const handleAddClick = () => {
     setForm({
-      name: "",
-      description: "",
+      title: "",
+      bannerImg: null,
+      productIds: [],
       startTime: "",
       endTime: "",
-      products: "",
+      discountPrice: 0,
+      stock: 0,
     })
+    setBannerPreview(null)
+    setProductSearch("")
     setEditMode(false)
     setEditingId(null)
     setModalOpen(true)
@@ -84,12 +118,16 @@ function AdminFlashsellPage() {
 
   const handleEditClick = (flashsell: Flashsell) => {
     setForm({
-      name: flashsell.name,
-      description: flashsell.description || "",
+      title: flashsell.title,
+      bannerImg: flashsell.bannerImg,
+      productIds: flashsell.productIds,
       startTime: flashsell.startTime,
       endTime: flashsell.endTime,
-      products: flashsell.products.join(","),
+      discountPrice: flashsell.discountPrice,
+      stock: flashsell.stock,
     })
+    setBannerPreview(flashsell.bannerImg)
+    setProductSearch("")
     setEditingId(flashsell.id)
     setEditMode(true)
     setModalOpen(true)
@@ -102,12 +140,43 @@ function AdminFlashsellPage() {
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
-    setForm((prev) => ({ ...prev, [name]: value }))
+    if (name === "discountPrice" || name === "stock") {
+      setForm((prev) => ({ ...prev, [name]: parseFloat(value) || 0 }))
+    } else {
+      setForm((prev) => ({ ...prev, [name]: value }))
+    }
+  }
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setForm((prev) => ({ ...prev, bannerImg: file }))
+
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setBannerPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleProductToggle = (productId: string) => {
+    setForm((prev) => ({
+      ...prev,
+      productIds: prev.productIds.includes(productId)
+        ? prev.productIds.filter((id) => id !== productId)
+        : [...prev.productIds, productId],
+    }))
   }
 
   const handleSave = async () => {
-    if (!form.name || !form.startTime || !form.endTime) {
-      toast.error("Please fill in all required fields")
+    if (!form.title || !form.startTime || !form.endTime || form.productIds.length === 0) {
+      toast.error("Please fill in all required fields and select at least one product")
+      return
+    }
+
+    if (form.discountPrice <= 0 || form.stock <= 0) {
+      toast.error("Discount price and stock must be greater than 0")
       return
     }
 
@@ -121,22 +190,11 @@ function AdminFlashsellPage() {
 
     setLoading(true)
     try {
-      const payload: CreateFlashsellRequest = {
-        name: form.name,
-        description: form.description || undefined,
-        startTime: form.startTime,
-        endTime: form.endTime,
-        products: form.products
-          .split(",")
-          .map((p) => p.trim())
-          .filter((p) => p.length > 0),
-      }
-
       if (editMode && editingId) {
-        await flashsellService.update(editingId, payload)
+        await flashsellService.update(editingId, form)
         toast.success("Flashsell updated successfully!")
       } else {
-        await flashsellService.create(payload)
+        await flashsellService.create(form)
         toast.success("Flashsell created successfully!")
       }
 
@@ -187,6 +245,10 @@ function AdminFlashsellPage() {
     return date.toLocaleString()
   }
 
+  const filteredProducts = allProducts.filter((product) =>
+    product.name?.toLowerCase().includes(productSearch.toLowerCase())
+  )
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -219,46 +281,54 @@ function AdminFlashsellPage() {
               <Card key={flashsell.id}>
                 <CardContent className="p-6">
                   <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3">
-                        <h3 className="text-lg font-semibold">{flashsell.name}</h3>
-                        <Badge className={status.color} variant="secondary">
-                          {status.label}
-                        </Badge>
-                      </div>
-
-                      {flashsell.description && (
-                        <p className="mt-2 text-sm text-muted-foreground">{flashsell.description}</p>
+                    <div className="flex flex-1 gap-4">
+                      {flashsell.bannerImg && (
+                        <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-muted">
+                          <Image
+                            src={flashsell.bannerImg}
+                            alt={flashsell.title}
+                            width={80}
+                            height={80}
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
                       )}
-
-                      <div className="mt-4 space-y-2">
-                        <div className="flex items-center gap-2 text-sm">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">Start:</span>
-                          <span className="font-medium">{formatDateTime(flashsell.startTime)}</span>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                          <h3 className="text-lg font-semibold">{flashsell.title}</h3>
+                          <Badge className={status.color} variant="secondary">
+                            {status.label}
+                          </Badge>
                         </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">End:</span>
-                          <span className="font-medium">{formatDateTime(flashsell.endTime)}</span>
-                        </div>
-                      </div>
 
-                      {flashsell.products && flashsell.products.length > 0 && (
-                        <div className="mt-4">
-                          <p className="text-sm font-medium text-muted-foreground">Products ({flashsell.products.length})</p>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {flashsell.products.slice(0, 5).map((productId) => (
-                              <Badge key={productId} variant="outline" className="font-mono text-xs">
-                                {productId}
-                              </Badge>
-                            ))}
-                            {flashsell.products.length > 5 && (
-                              <Badge variant="outline">+{flashsell.products.length - 5} more</Badge>
-                            )}
+                        <div className="mt-3 space-y-1 text-sm">
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">Discount Price:</span>
+                            <span className="font-medium">৳ {flashsell.discountPrice}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">Stock:</span>
+                            <span className="font-medium">{flashsell.stock} units</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">Products:</span>
+                            <span className="font-medium">{flashsell.productIds.length}</span>
                           </div>
                         </div>
-                      )}
+
+                        <div className="mt-3 space-y-1 text-xs">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-muted-foreground">Start:</span>
+                            <span>{formatDateTime(flashsell.startTime)}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-muted-foreground">End:</span>
+                            <span>{formatDateTime(flashsell.endTime)}</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
 
                     <div className="flex gap-2">
@@ -291,7 +361,7 @@ function AdminFlashsellPage() {
 
       {/* Create/Edit Modal */}
       <Dialog open={modalOpen} onOpenChange={handleModalClose}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Zap className="h-5 w-5" />
@@ -303,31 +373,79 @@ function AdminFlashsellPage() {
           </DialogHeader>
 
           <div className="space-y-4">
+            {/* Title */}
             <div className="space-y-2">
-              <Label htmlFor="name">Event Name *</Label>
+              <Label htmlFor="title">Title *</Label>
               <Input
-                id="name"
-                name="name"
+                id="title"
+                name="title"
                 placeholder="e.g., Summer Flash Sale"
-                value={form.name}
+                value={form.title}
                 onChange={handleFormChange}
                 disabled={loading}
               />
             </div>
 
+            {/* Banner Image Upload */}
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <textarea
-                id="description"
-                name="description"
-                placeholder="Event description (optional)"
-                value={form.description}
-                onChange={handleFormChange}
-                disabled={loading}
-                className="flex min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              />
+              <Label>Banner Image *</Label>
+              <div className="flex flex-col gap-3">
+                {bannerPreview && (
+                  <div className="relative h-40 w-full overflow-hidden rounded-lg border border-border bg-muted">
+                    <Image
+                      src={bannerPreview}
+                      alt="Banner preview"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                )}
+                <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-border px-4 py-6 transition-colors hover:bg-muted/50">
+                  <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Click to upload banner image</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    disabled={loading}
+                    className="hidden"
+                  />
+                </label>
+              </div>
             </div>
 
+            {/* Price and Stock */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="discountPrice">Discount Price (৳) *</Label>
+                <Input
+                  id="discountPrice"
+                  name="discountPrice"
+                  type="number"
+                  placeholder="0"
+                  value={form.discountPrice || ""}
+                  onChange={handleFormChange}
+                  disabled={loading}
+                  min="0"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="stock">Stock Quantity *</Label>
+                <Input
+                  id="stock"
+                  name="stock"
+                  type="number"
+                  placeholder="0"
+                  value={form.stock || ""}
+                  onChange={handleFormChange}
+                  disabled={loading}
+                  min="0"
+                />
+              </div>
+            </div>
+
+            {/* Time */}
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="startTime">Start Time *</Label>
@@ -354,18 +472,45 @@ function AdminFlashsellPage() {
               </div>
             </div>
 
+            {/* Product Selection */}
             <div className="space-y-2">
-              <Label htmlFor="products">Product IDs</Label>
-              <textarea
-                id="products"
-                name="products"
-                placeholder="Enter product IDs separated by commas (e.g., prod1,prod2,prod3)"
-                value={form.products}
-                onChange={handleFormChange}
+              <div className="flex items-center justify-between">
+                <Label>Select Products * ({form.productIds.length} selected)</Label>
+              </div>
+              <Input
+                type="text"
+                placeholder="Search products..."
+                value={productSearch}
+                onChange={(e) => setProductSearch(e.target.value)}
                 disabled={loading}
-                className="flex min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="mb-2"
               />
-              <p className="text-xs text-muted-foreground">Separate multiple product IDs with commas</p>
+              <div className="max-h-64 space-y-2 overflow-y-auto rounded-lg border border-border p-3">
+                {filteredProducts.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No products found</p>
+                ) : (
+                  filteredProducts.map((product) => (
+                    <div
+                      key={product.id}
+                      className="flex items-center gap-3 rounded-lg p-2 hover:bg-muted/50"
+                    >
+                      <Checkbox
+                        id={`product-${product.id}`}
+                        checked={form.productIds.includes(product.id)}
+                        onCheckedChange={() => handleProductToggle(product.id)}
+                        disabled={loading}
+                      />
+                      <label
+                        htmlFor={`product-${product.id}`}
+                        className="flex-1 cursor-pointer text-sm"
+                      >
+                        <p className="font-medium">{product.name}</p>
+                        <p className="text-xs text-muted-foreground">{product.sku || product.id}</p>
+                      </label>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
 
             <div className="flex gap-2 pt-4">
@@ -389,7 +534,7 @@ function AdminFlashsellPage() {
               Delete Flash Sell
             </DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{deleteTarget?.name}"? This action cannot be undone.
+              Are you sure you want to delete "{deleteTarget?.title}"? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
 
