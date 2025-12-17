@@ -240,7 +240,7 @@ export default async function Page({ searchParams }: AllProductsPageProps) {
         {/* Products Grid */}
         <main className="flex-1 min-w-0">
           {/* Mobile Filters - shown above products */}
-          <div className="lg:hidden mb-6">
+          <div className="lg:hidden mb-6" suppressHydrationWarning>
             <AllProductsFilters
               categories={categories}
               brands={brands}
