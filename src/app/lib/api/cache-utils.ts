@@ -10,27 +10,38 @@ export class ProductCacheUtils {
    * Handles all combinations of: tabs (all/basic/network/region) + categories + pagination
    */
   static invalidateProductLists(): void {
-    // Clear all cache entries that start with these patterns
-    const patterns = [
-      'products_list_',
-      'all-', // matches the cache key pattern used in admin/products/page.tsx
-      'basic-',
-      'network-',
-      'region-',
-    ];
+    if (typeof window === 'undefined') return;
 
-    // Get all cache keys from localStorage
-    const keys = Object.keys(localStorage);
-    keys.forEach(key => {
-      // Check if it's a product cache key (has __cache__ prefix)
-      if (key.startsWith('__cache__')) {
-        const cacheKey = key.replace('__cache__', '');
-        // Remove if it matches any product list pattern
-        if (patterns.some(pattern => cacheKey.startsWith(pattern))) {
-          CacheManager.remove(cacheKey);
+    try {
+      const cacheKeyPrefix = '__cache__';
+      // Clear all cache entries that relate to product lists
+      const keys = Object.keys(localStorage);
+      keys.forEach(key => {
+        // Check if it's a cache key
+        if (key.startsWith(cacheKeyPrefix)) {
+          // Decode the cache key
+          const cacheKey = key.substring(cacheKeyPrefix.length);
+
+          // Match patterns:
+          // 1. admin/products page uses: "{tab}-{category}-{page}" (e.g., "all-all-1", "basic-cat-id-1")
+          // 2. Other patterns like "products_list_*" or keys containing "product"
+          const isProductListCache =
+            // Tab-category-page pattern (all-, basic-, network-, region-)
+            /^(all|basic|network|region)-/.test(cacheKey) ||
+            // Product list API patterns
+            cacheKey.startsWith('products_list_') ||
+            cacheKey.includes('getAllLite') ||
+            // Generic product patterns
+            cacheKey.startsWith('products');
+
+          if (isProductListCache) {
+            CacheManager.remove(cacheKey);
+          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      // Silently fail if localStorage is not available
+    }
   }
 
   /**
@@ -38,26 +49,26 @@ export class ProductCacheUtils {
    */
   static invalidateProductDetail(productId: string): void {
     CacheManager.remove(`product_${productId}`);
+    CacheManager.remove(`product-${productId}`);
   }
 
   /**
-   * Clear all product caches (lists + details)
+   * Clear all product-related caches (lists + details)
    * Use this for bulk operations or when unsure which caches to clear
    */
   static invalidateAllProductCaches(): void {
-    // Clear all cache entries related to products
-    const keys = Object.keys(localStorage);
-    keys.forEach(key => {
-      if (
-        key.startsWith('__cache__') &&
-        (key.includes('product') ||
-          key.includes('all-') ||
-          key.includes('basic-') ||
-          key.includes('network-') ||
-          key.includes('region-'))
-      ) {
-        localStorage.removeItem(key);
-      }
-    });
+    this.invalidateProductLists();
+    // Also clear any product detail caches
+    if (typeof window !== 'undefined') {
+      const keys = Object.keys(localStorage);
+      keys.forEach(key => {
+        if (
+          key.startsWith('__cache__') &&
+          (key.includes('product_') || key.includes('product-'))
+        ) {
+          localStorage.removeItem(key);
+        }
+      });
+    }
   }
 }
