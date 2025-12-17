@@ -120,7 +120,7 @@ function FlashSellDetailContent() {
         if (flashsellData.productIds && flashsellData.productIds.length > 0) {
           const productsData = await Promise.all(
             flashsellData.productIds.map((id) =>
-              productsService.getOne(id).catch(() => null)
+              productsService.getById(id).catch(() => null)
             )
           )
           const validProducts = productsData.filter(
