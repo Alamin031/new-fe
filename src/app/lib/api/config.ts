@@ -129,12 +129,12 @@ export const API_ENDPOINTS = {
   WARRANTY_LOGS: '/warranty/{id}/logs',
 
   // Giveaways
-  GIVEAWAYS_CREATE: '/give',
-  GIVEAWAYS_GET: '/give',
-  GIVEAWAYS_GET_ONE: '/give/{id}',
-  GIVEAWAYS_GET_BY_PRODUCT: '/give/product',
-  GIVEAWAYS_EXPORT: '/give/export',
-  GIVEAWAYS_DELETE: '/give/{id}',
+  GIVEAWAYS_CREATE: '/giveaways',
+  GIVEAWAYS_GET: '/giveaways',
+  GIVEAWAYS_GET_ONE: '/giveaways/{id}',
+  GIVEAWAYS_GET_BY_PRODUCT: '/giveaways/product',
+  GIVEAWAYS_EXPORT: '/giveaways/export',
+  GIVEAWAYS_DELETE: '/giveaways/{id}',
 
   // Policies
   POLICIES_CREATE: '/policies',
@@ -218,11 +218,11 @@ export const API_ENDPOINTS = {
   HEROBANNER_MIDDLE_DELETE: '/herobanner/middle/{id}',
 
   // Hero Banner Giveaway
-  HEROBANNER_GIVEAWAY_CREATE: '/herobanner/giveaway',
-  HEROBANNER_GIVEAWAY_GET_ALL: '/herobanner/giveaway',
-  HEROBANNER_GIVEAWAY_GET_ONE: '/herobanner/giveaway/{id}',
-  HEROBANNER_GIVEAWAY_UPDATE: '/herobanner/giveaway/{id}',
-  HEROBANNER_GIVEAWAY_DELETE: '/herobanner/giveaway/{id}',
+  HEROBANNER_GIVEAWAY_CREATE: '/herobanner/give',
+  HEROBANNER_GIVEAWAY_GET_ALL: '/herobanner/give',
+  HEROBANNER_GIVEAWAY_GET_ONE: '/herobanner/give/{id}',
+  HEROBANNER_GIVEAWAY_UPDATE: '/herobanner/give/{id}',
+  HEROBANNER_GIVEAWAY_DELETE: '/herobanner/give/{id}',
 
   // EMI
   EMI_PLAN_CREATE: '/emi/plan',
