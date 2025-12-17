@@ -1,17 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { CategorySlider } from "./components/home/category-slider";
-import { categoriesService } from "./lib/api/services/categories";
-import { ProductSectionLazy } from "./components/home/product-section-lazy";
-import { BrandSlider } from "./components/home/brand-slider";
-import { brandsService } from "./lib/api/services/brands";
-import { Navbar } from "./components/layout/navbar";
-import { Footer } from "./components/layout/footer";
-import { homecategoriesService } from "./lib/api/services/homecategories";
-import { LazySection } from "./components/home/lazy-section";
-import { HeroBanner } from "./components/home/hero-banner";
-import { BottomBanner } from "./components/home/bottom-banner";
-import { MiddleBanner } from "./components/home/middel-banner";
-import { BlogSection } from "./components/home/blog-section";
+import {CategorySlider} from './components/home/category-slider';
+import {categoriesService} from './lib/api/services/categories';
+import {ProductSectionLazy} from './components/home/product-section-lazy';
+import {BrandSlider} from './components/home/brand-slider';
+import {brandsService} from './lib/api/services/brands';
+import {Navbar} from './components/layout/navbar';
+import {Footer} from './components/layout/footer';
+import {homecategoriesService} from './lib/api/services/homecategories';
+import {LazySection} from './components/home/lazy-section';
+import {HeroBanner} from './components/home/hero-banner';
+import {BottomBanner} from './components/home/bottom-banner';
+import {MiddleBanner} from './components/home/middel-banner';
+import {BlogSection} from './components/home/blog-section';
+import {MobileBottomNav} from './components/layout/mobile-bottom-nav';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,14 +53,14 @@ export default async function Page() {
   }
 
   // Ensure slug is always a string to match the app types
-  const normalizedCategories: import("./types").Category[] = categories.map(
-    (c) => ({
+  const normalizedCategories: import('./types').Category[] = categories.map(
+    c => ({
       ...c,
-      slug: c.slug ?? "",
-    })
+      slug: c.slug ?? '',
+    }),
   );
   const sortedHomecategories = [...homecategories].sort(
-    (a, b) => (a.priority ?? 999) - (b.priority ?? 999)
+    (a, b) => (a.priority ?? 999) - (b.priority ?? 999),
   );
 
   // Use products directly from homecategory response
@@ -87,7 +88,7 @@ export default async function Page() {
         )}
 
         {/* Dynamic Homecategory Sections (first 2) using ProductSectionLazy - Eager render (above fold) */}
-        {sortedHomecategories.slice(0, 2).map((hc) => (
+        {sortedHomecategories.slice(0, 2).map(hc => (
           <section key={hc.id} className="mx-auto w-full max-w-7xl px-4 py-8">
             <ProductSectionLazy
               title={hc.name}
@@ -108,7 +109,7 @@ export default async function Page() {
         </section>
 
         {/* Dynamic Homecategory Sections (remaining) using LazySection and ProductSectionLazy */}
-        {sortedHomecategories.slice(2).map((hc) => (
+        {sortedHomecategories.slice(2).map(hc => (
           <section key={hc.id} className="mx-auto w-full max-w-7xl px-4 py-8">
             <LazySection>
               <ProductSectionLazy
@@ -158,8 +159,7 @@ export default async function Page() {
               />
               <button
                 type="submit"
-                className="rounded-lg bg-foreground px-6 py-2 text-sm font-medium text-background transition-colors hover:bg-foreground/90"
-              >
+                className="rounded-lg bg-foreground px-6 py-2 text-sm font-medium text-background transition-colors hover:bg-foreground/90">
                 Subscribe
               </button>
             </form>
@@ -167,6 +167,7 @@ export default async function Page() {
         </section>
       </main>
       <Footer />
+      <MobileBottomNav />
     </div>
   );
 }
