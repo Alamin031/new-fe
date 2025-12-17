@@ -217,12 +217,12 @@ export const API_ENDPOINTS = {
   HEROBANNER_MIDDLE_UPDATE: '/herobanner/middle/{id}',
   HEROBANNER_MIDDLE_DELETE: '/herobanner/middle/{id}',
 
-  // Hero Banner Give
-  HEROBANNER_GIVE_CREATE: '/herobanner/give',
-  HEROBANNER_GIVE_GET_ALL: '/herobanner/give',
-  HEROBANNER_GIVE_GET_ONE: '/herobanner/give/{id}',
-  HEROBANNER_GIVE_UPDATE: '/herobanner/give/{id}',
-  HEROBANNER_GIVE_DELETE: '/herobanner/give/{id}',
+  // Hero Banner Giveaway
+  HEROBANNER_GIVEAWAY_CREATE: '/herobanner/giveaway',
+  HEROBANNER_GIVEAWAY_GET_ALL: '/herobanner/giveaway',
+  HEROBANNER_GIVEAWAY_GET_ONE: '/herobanner/giveaway/{id}',
+  HEROBANNER_GIVEAWAY_UPDATE: '/herobanner/giveaway/{id}',
+  HEROBANNER_GIVEAWAY_DELETE: '/herobanner/giveaway/{id}',
 
   // EMI
   EMI_PLAN_CREATE: '/emi/plan',
