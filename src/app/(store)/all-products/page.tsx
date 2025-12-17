@@ -49,13 +49,41 @@ export default async function Page({ searchParams }: AllProductsPageProps) {
       : [params.brands]
     : [];
 
-  // Parallelize API calls for better performance
-  const [categoriesRaw, brandsRaw, productsRaw] = await Promise.all([
-    categoriesService.getAll(),
-    brandsService.findAll().catch(() => []),
-    // Fetch products with full relations for complete product data
-    productsService.getAll({}, 1, 1000).catch(() => null),
-  ]);
+  // Parallelize API calls with graceful error handling
+  let categoriesRaw: any = [];
+  let brandsRaw: any = [];
+  let productsRaw: any = null;
+
+  try {
+    const results = await Promise.allSettled([
+      categoriesService.getAll(),
+      brandsService.findAll(),
+      // Fetch products with relations to ensure brand and category data is included
+      productsService.getAll({includeRelations: 'true'}, 1, 500),
+    ]);
+
+    // Extract successful results or use empty arrays as fallback
+    if (results[0].status === 'fulfilled') {
+      categoriesRaw = results[0].value;
+    }
+    if (results[1].status === 'fulfilled') {
+      brandsRaw = results[1].value;
+    }
+    if (results[2].status === 'fulfilled') {
+      productsRaw = results[2].value;
+    }
+
+    // Log failures for monitoring
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        const names = ['categories', 'brands', 'products'];
+        console.error(`Failed to load ${names[index]}:`, result.reason);
+      }
+    });
+  } catch (error) {
+    console.error('Error loading all-products page data:', error);
+    // Continue with empty arrays - page will still render with available data
+  }
 
   const categories: Category[] = (categoriesRaw as unknown as RawCategory[]).map(
     (c: RawCategory) => ({
@@ -85,7 +113,7 @@ export default async function Page({ searchParams }: AllProductsPageProps) {
     })
   );
 
-  const brands: Brand[] = brandsRaw ?? [];
+  const brands: Brand[] = Array.isArray(brandsRaw) ? brandsRaw : [];
 
   let products: Product[] = [];
   if (productsRaw && typeof productsRaw === "object") {
@@ -100,40 +128,81 @@ export default async function Page({ searchParams }: AllProductsPageProps) {
     products = productsRaw as Product[];
   }
 
+  // Create a brand ID lookup for enriching products
+  const brandIdLookup = brands.reduce((acc, brand) => {
+    acc[brand.id] = brand;
+    return acc;
+  }, {} as Record<string, Brand>);
+
+  // Enrich products with brand information if missing
+  products = products.map((product: any) => {
+    const enrichedProduct = { ...product };
+    if (enrichedProduct.brand && enrichedProduct.brand.id && !enrichedProduct.brandId) {
+      enrichedProduct.brandId = enrichedProduct.brand.id;
+    }
+    if (enrichedProduct.brandId && !enrichedProduct.brand) {
+      enrichedProduct.brand = brandIdLookup[enrichedProduct.brandId];
+    }
+    return enrichedProduct;
+  });
+
+
+  // Build lookup tables for faster searching
+  const categoryLookupBySlug = categories.reduce((acc, c) => {
+    acc[c.slug] = c;
+    return acc;
+  }, {} as Record<string, Category>);
+
+  const brandLookupBySlug = brands.reduce((acc, b) => {
+    acc[b.slug] = b;
+    return acc;
+  }, {} as Record<string, Brand>);
+
   // Filter products based on selected categories and brands
-  const filteredProducts = products.filter((product) => {
+  let filteredProducts = products.filter((product) => {
+    // If no filters selected, include all products
+    if (selectedCategories.length === 0 && selectedBrands.length === 0) {
+      return true;
+    }
+
+    // Check category match
     const matchesCategory =
       selectedCategories.length === 0 ||
       selectedCategories.some((categorySlug) => {
-        const category = categories.find((c) => c.slug === categorySlug);
+        const category = categoryLookupBySlug[categorySlug];
         if (!category) return false;
 
-        // Handle both categoryId (singular) and categoryIds (plural array)
         const productCategoryId = (product as any).categoryId;
         const productCategoryIds = (product as any).categoryIds as string[] | undefined;
 
-        if (productCategoryId === category.id) return true;
-        if (productCategoryIds && productCategoryIds.includes(category.id)) return true;
-        return false;
+        return (
+          productCategoryId === category.id ||
+          (productCategoryIds?.includes(category.id) ?? false)
+        );
       });
 
+    // Check brand match
     const matchesBrand =
       selectedBrands.length === 0 ||
       selectedBrands.some((brandSlug) => {
-        const brand = brands.find((b) => b.slug === brandSlug);
-        if (!brand) return false;
+        const brand = brandLookupBySlug[brandSlug];
+        if (!brand) {
+          console.warn(`Brand with slug "${brandSlug}" not found in brands list`);
+          return false;
+        }
 
-        // Handle both brandId (singular) and brandIds (plural array)
         const productBrandId = (product as any).brandId;
         const productBrandIds = (product as any).brandIds as string[] | undefined;
 
-        if (productBrandId === brand.id) return true;
-        if (productBrandIds && productBrandIds.includes(brand.id)) return true;
-        return false;
+        return (
+          productBrandId === brand.id ||
+          (productBrandIds?.includes(brand.id) ?? false)
+        );
       });
 
     return matchesCategory && matchesBrand;
   });
+
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">

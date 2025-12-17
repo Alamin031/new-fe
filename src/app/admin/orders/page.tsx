@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Search, Filter, Eye, MoreVertical, Download, Printer, Plus, Mail, X } from "lucide-react"
 import { withProtectedRoute } from "../../lib/auth/protected-route"
@@ -17,6 +18,7 @@ import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetT
 import { Label } from "../../components/ui/label"
 import { Textarea } from "../../components/ui/textarea"
 import { formatPrice } from "../../lib/utils/format"
+import { ordersService } from "../../lib/api/services"
 
 interface OrderItem {
   id: string
@@ -38,86 +40,6 @@ interface Order {
   phone?: string
   orderItems?: OrderItem[]
 }
-
-const initialOrders: Order[] = [
-  {
-    id: "ORD-2024-001",
-    customer: "John Doe",
-    email: "john@example.com",
-    items: 2,
-    total: 148399,
-    status: "Processing",
-    payment: "Paid",
-    date: "Nov 20, 2024",
-    address: "123 Main Street, Dhaka, Bangladesh",
-    phone: "+880 1234567890",
-    orderItems: [
-      { id: "1", name: "iPhone 15 Pro Max", quantity: 1, price: 129999 },
-      { id: "2", name: "Sony WH-1000XM5", quantity: 1, price: 29999 },
-    ],
-  },
-  {
-    id: "ORD-2024-002",
-    customer: "Jane Smith",
-    email: "jane@example.com",
-    items: 1,
-    total: 49999,
-    status: "Shipped",
-    payment: "Paid",
-    date: "Nov 19, 2024",
-    address: "456 Oak Avenue, Chittagong, Bangladesh",
-    phone: "+880 9876543210",
-    orderItems: [
-      { id: "3", name: "iPad Pro 12.9", quantity: 1, price: 49999 },
-    ],
-  },
-  {
-    id: "ORD-2024-003",
-    customer: "Bob Wilson",
-    email: "bob@example.com",
-    items: 3,
-    total: 79999,
-    status: "Delivered",
-    payment: "Paid",
-    date: "Nov 18, 2024",
-    address: "789 Pine Road, Sylhet, Bangladesh",
-    phone: "+880 5555555555",
-    orderItems: [
-      { id: "4", name: "Samsung Galaxy S24 Ultra", quantity: 1, price: 89999 },
-    ],
-  },
-  {
-    id: "ORD-2024-004",
-    customer: "Alice Brown",
-    email: "alice@example.com",
-    items: 1,
-    total: 15999,
-    status: "Pending",
-    payment: "Pending",
-    date: "Nov 17, 2024",
-    address: "321 Elm Street, Rajshahi, Bangladesh",
-    phone: "+880 3333333333",
-    orderItems: [
-      { id: "5", name: "Wireless Earbuds", quantity: 1, price: 15999 },
-    ],
-  },
-  {
-    id: "ORD-2024-005",
-    customer: "Charlie Davis",
-    email: "charlie@example.com",
-    items: 2,
-    total: 249999,
-    status: "Cancelled",
-    payment: "Refunded",
-    date: "Nov 16, 2024",
-    address: "654 Birch Lane, Khulna, Bangladesh",
-    phone: "+880 7777777777",
-    orderItems: [
-      { id: "6", name: "MacBook Air M3", quantity: 1, price: 79999 },
-      { id: "7", name: "Magic Mouse", quantity: 1, price: 10000 },
-    ],
-  },
-]
 
 function getStatusColor(status: string) {
   switch (status) {
@@ -150,10 +72,18 @@ function getPaymentColor(payment: string) {
 }
 
 function AdminOrdersPage() {
-  const [orders, setOrders] = useState<Order[]>(initialOrders)
+  const [orders, setOrders] = useState<Order[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [viewOpen, setViewOpen] = useState(false)
   const [addDrawerOpen, setAddDrawerOpen] = useState(false)
+  const [statusUpdateOpen, setStatusUpdateOpen] = useState(false)
+  const [statusUpdating, setStatusUpdating] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [statusUpdateData, setStatusUpdateData] = useState({
+    orderId: "",
+    newStatus: "",
+  })
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
   const [newOrderForm, setNewOrderForm] = useState({
     customer: "",
@@ -164,6 +94,55 @@ function AdminOrdersPage() {
     status: "Pending",
     payment: "Pending",
   })
+
+  const ORDER_STATUSES = ["Pending", "Confirmed", "Processing", "Shipped", "Delivered", "Cancelled", "Returned"]
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const res = await ordersService.getAll(1, 100)
+        let fetchedOrders: any[] = []
+
+        if (Array.isArray(res)) {
+          fetchedOrders = res
+        } else if (res && res.data && Array.isArray(res.data)) {
+          fetchedOrders = res.data
+        }
+
+        const mappedOrders = fetchedOrders.map((order: any) => ({
+          id: order.id,
+          customer: order.fullName || order.customer?.fullName || "Unknown",
+          email: order.email || order.customer?.email || "",
+          items: (order.orderItems || []).length,
+          total: order.total,
+          status: order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : "Pending",
+          payment: order.paymentStatus ? order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1) : "Pending",
+          date: order.createdAt
+            ? new Date(order.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+            : "",
+          address: order.address || order.customer?.address || "",
+          phone: order.phone || order.customer?.phone || "",
+          orderItems: (order.orderItems || []).map((item: any, idx: number) => ({
+            id: item.id || String(idx),
+            name: item.productName || "Product",
+            quantity: item.quantity,
+            price: item.price,
+          })),
+        }))
+
+        setOrders(mappedOrders)
+      } catch (err) {
+        setError("Failed to load orders. Please try again.")
+        console.error("Error fetching orders:", err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchOrders()
+  }, [])
 
   const validateForm = () => {
     const errors: Record<string, string> = {}
@@ -318,43 +297,108 @@ function AdminOrdersPage() {
     alert(`Invoice email sent to ${order.email}`)
   }
 
-  const handleAddOrder = () => {
+  const handleStatusUpdate = async () => {
+    if (!statusUpdateData.newStatus) {
+      setFormErrors({ status: "Please select a status" })
+      return
+    }
+
+    setStatusUpdating(true)
+    try {
+      const statusLowerCase = statusUpdateData.newStatus.toLowerCase()
+      await ordersService.updateStatus(statusUpdateData.orderId, {
+        status: statusLowerCase as any,
+      })
+
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order.id === statusUpdateData.orderId
+            ? {
+                ...order,
+                status: statusUpdateData.newStatus,
+              }
+            : order
+        )
+      )
+
+      setStatusUpdateOpen(false)
+      setStatusUpdateData({ orderId: "", newStatus: "" })
+      setFormErrors({})
+    } catch (err) {
+      setFormErrors({ status: "Failed to update status. Please try again." })
+      console.error("Error updating status:", err)
+    } finally {
+      setStatusUpdating(false)
+    }
+  }
+
+  const openStatusUpdateDialog = (order: Order) => {
+    setStatusUpdateData({
+      orderId: order.id,
+      newStatus: order.status,
+    })
+    setStatusUpdateOpen(true)
+    setFormErrors({})
+  }
+
+  const handleAddOrder = async () => {
     if (!validateForm()) {
       return
     }
 
     const validItems = newOrderForm.items.filter(item => item.name.trim() !== "")
     const totalAmount = validItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
-    const newOrder: Order = {
-      id: `ORD-2024-${String(orders.length + 1).padStart(3, "0")}`,
-      customer: newOrderForm.customer,
-      email: newOrderForm.email,
-      items: validItems.length,
-      total: totalAmount,
-      status: newOrderForm.status,
-      payment: newOrderForm.payment,
-      date: new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }),
-      address: newOrderForm.address,
-      phone: newOrderForm.phone,
-      orderItems: validItems.map((item, idx) => ({
-        id: String(idx),
-        name: item.name,
-        quantity: item.quantity,
-        price: item.price,
-      })),
+
+    try {
+      const orderData = {
+        fullName: newOrderForm.customer,
+        email: newOrderForm.email,
+        phone: newOrderForm.phone,
+        address: newOrderForm.address,
+        orderItems: validItems.map((item) => ({
+          productName: item.name,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+        total: totalAmount,
+      }
+
+      await ordersService.create(orderData as any)
+
+      const newOrder: Order = {
+        id: `ORD-${Date.now()}`,
+        customer: newOrderForm.customer,
+        email: newOrderForm.email,
+        items: validItems.length,
+        total: totalAmount,
+        status: newOrderForm.status,
+        payment: newOrderForm.payment,
+        date: new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }),
+        address: newOrderForm.address,
+        phone: newOrderForm.phone,
+        orderItems: validItems.map((item, idx) => ({
+          id: String(idx),
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+      }
+      setOrders([newOrder, ...orders])
+      setAddDrawerOpen(false)
+      setFormErrors({})
+      setNewOrderForm({
+        customer: "",
+        email: "",
+        phone: "",
+        address: "",
+        items: [{ name: "", quantity: 1, price: 0 }],
+        status: "Pending",
+        payment: "Pending",
+      })
+    } catch (err) {
+      setFormErrors({ submit: "Failed to create order. Please try again." })
+      console.error("Error creating order:", err)
     }
-    setOrders([newOrder, ...orders])
-    setAddDrawerOpen(false)
-    setFormErrors({})
-    setNewOrderForm({
-      customer: "",
-      email: "",
-      phone: "",
-      address: "",
-      items: [{ name: "", quantity: 1, price: 0 }],
-      status: "Pending",
-      payment: "Pending",
-    })
   }
 
   const addOrderItem = () => {
@@ -398,129 +442,339 @@ function AdminOrdersPage() {
 
       <Card>
         <CardContent className="p-6">
-          <Tabs defaultValue="all">
-            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <TabsList>
-                <TabsTrigger value="all">All (234)</TabsTrigger>
-                <TabsTrigger value="pending">Pending (12)</TabsTrigger>
-                <TabsTrigger value="processing">Processing (8)</TabsTrigger>
-                <TabsTrigger value="shipped">Shipped (15)</TabsTrigger>
-                <TabsTrigger value="delivered">Delivered (189)</TabsTrigger>
-              </TabsList>
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <p className="text-muted-foreground">Loading orders...</p>
             </div>
-
-            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
-              <div className="relative flex-1 sm:max-w-xs">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input placeholder="Search orders..." className="pl-9" />
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <p className="text-red-500">{error}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-4"
+                onClick={() => window.location.reload()}
+              >
+                Try Again
+              </Button>
+            </div>
+          ) : (
+            <Tabs defaultValue="all">
+              <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <TabsList>
+                  <TabsTrigger value="all">All ({orders.length})</TabsTrigger>
+                  <TabsTrigger value="pending">
+                    Pending ({orders.filter((o) => o.status === "Pending").length})
+                  </TabsTrigger>
+                  <TabsTrigger value="processing">
+                    Processing ({orders.filter((o) => o.status === "Processing").length})
+                  </TabsTrigger>
+                  <TabsTrigger value="shipped">
+                    Shipped ({orders.filter((o) => o.status === "Shipped").length})
+                  </TabsTrigger>
+                  <TabsTrigger value="delivered">
+                    Delivered ({orders.filter((o) => o.status === "Delivered").length})
+                  </TabsTrigger>
+                </TabsList>
               </div>
-              <Select defaultValue="all">
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Payment" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Payments</SelectItem>
-                  <SelectItem value="paid">Paid</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="refunded">Refunded</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button variant="outline" size="sm" className="gap-2 bg-transparent">
-                <Filter className="h-4 w-4" />
-                More Filters
-              </Button>
-            </div>
 
-            <TabsContent value="all">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-border text-left text-sm text-muted-foreground">
-                      <th className="pb-3 pr-4">
-                        <Checkbox />
-                      </th>
-                      <th className="pb-3 pr-4">Order</th>
-                      <th className="pb-3 pr-4">Customer</th>
-                      <th className="pb-3 pr-4">Items</th>
-                      <th className="pb-3 pr-4">Total</th>
-                      <th className="pb-3 pr-4">Status</th>
-                      <th className="pb-3 pr-4">Payment</th>
-                      <th className="pb-3 pr-4">Date</th>
-                      <th className="pb-3">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {orders.map((order) => (
-                      <tr key={order.id} className="border-b border-border">
-                        <td className="py-4 pr-4">
-                          <Checkbox />
-                        </td>
-                        <td className="py-4 pr-4">
-                          <Link href={`/admin/orders/${order.id}`} className="font-medium hover:underline">
-                            {order.id}
-                          </Link>
-                        </td>
-                        <td className="py-4 pr-4">
-                          <div>
-                            <p className="font-medium">{order.customer}</p>
-                            <p className="text-sm text-muted-foreground">{order.email}</p>
-                          </div>
-                        </td>
-                        <td className="py-4 pr-4">{order.items}</td>
-                        <td className="py-4 pr-4 font-medium">{formatPrice(order.total)}</td>
-                        <td className="py-4 pr-4">
-                          <Badge variant="secondary" className={getStatusColor(order.status)}>
-                            {order.status}
-                          </Badge>
-                        </td>
-                        <td className="py-4 pr-4">
-                          <Badge variant="secondary" className={getPaymentColor(order.payment)}>
-                            {order.payment}
-                          </Badge>
-                        </td>
-                        <td className="py-4 pr-4 text-sm text-muted-foreground">{order.date}</td>
-                        <td className="py-4">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleViewClick(order)}>
-                                <Eye className="mr-2 h-4 w-4" />
-                                View Details
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handlePrintInvoice(order)}>
-                                <Printer className="mr-2 h-4 w-4" />
-                                Print Invoice
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleSendInvoiceEmail(order)}>
-                                <Mail className="mr-2 h-4 w-4" />
-                                Send Invoice
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
+                <div className="relative flex-1 sm:max-w-xs">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input placeholder="Search orders..." className="pl-9" />
+                </div>
+                <Select defaultValue="all">
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Payment" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Payments</SelectItem>
+                    <SelectItem value="paid">Paid</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="refunded">Refunded</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button variant="outline" size="sm" className="gap-2 bg-transparent">
+                  <Filter className="h-4 w-4" />
+                  More Filters
+                </Button>
               </div>
-            </TabsContent>
-          </Tabs>
 
-          <div className="mt-6 flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">Showing 1-5 of 234 orders</p>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" disabled>
-                Previous
-              </Button>
-              <Button variant="outline" size="sm">
-                Next
-              </Button>
+              <TabsContent value="all">
+                {orders.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <p className="text-muted-foreground">No orders found</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-border text-left text-sm text-muted-foreground">
+                          <th className="pb-3 pr-4">
+                            <Checkbox />
+                          </th>
+                          <th className="pb-3 pr-4">Order</th>
+                          <th className="pb-3 pr-4">Customer</th>
+                          <th className="pb-3 pr-4">Items</th>
+                          <th className="pb-3 pr-4">Total</th>
+                          <th className="pb-3 pr-4">Status</th>
+                          <th className="pb-3 pr-4">Payment</th>
+                          <th className="pb-3 pr-4">Date</th>
+                          <th className="pb-3">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {orders.map((order) => (
+                          <tr key={order.id} className="border-b border-border">
+                            <td className="py-4 pr-4">
+                              <Checkbox />
+                            </td>
+                            <td className="py-4 pr-4">
+                              <Link href={`/admin/orders/${order.id}`} className="font-medium hover:underline">
+                                {order.id}
+                              </Link>
+                            </td>
+                            <td className="py-4 pr-4">
+                              <div>
+                                <p className="font-medium">{order.customer}</p>
+                                <p className="text-sm text-muted-foreground">{order.email}</p>
+                              </div>
+                            </td>
+                            <td className="py-4 pr-4">{order.items}</td>
+                            <td className="py-4 pr-4 font-medium">{formatPrice(order.total)}</td>
+                            <td className="py-4 pr-4">
+                              <Badge variant="secondary" className={getStatusColor(order.status)}>
+                                {order.status}
+                              </Badge>
+                            </td>
+                            <td className="py-4 pr-4">
+                              <Badge variant="secondary" className={getPaymentColor(order.payment)}>
+                                {order.payment}
+                              </Badge>
+                            </td>
+                            <td className="py-4 pr-4 text-sm text-muted-foreground">{order.date}</td>
+                            <td className="py-4">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                    <MoreVertical className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => handleViewClick(order)}>
+                                    <Eye className="mr-2 h-4 w-4" />
+                                    View Details
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => openStatusUpdateDialog(order)}>
+                                    <span className="mr-2">📊</span>
+                                    Update Status
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handlePrintInvoice(order)}>
+                                    <Printer className="mr-2 h-4 w-4" />
+                                    Print Invoice
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleSendInvoiceEmail(order)}>
+                                    <Mail className="mr-2 h-4 w-4" />
+                                    Send Invoice
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="pending">
+                {orders.filter((o) => o.status === "Pending").length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <p className="text-muted-foreground">No pending orders</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-border text-left text-sm text-muted-foreground">
+                          <th className="pb-3 pr-4"><Checkbox /></th>
+                          <th className="pb-3 pr-4">Order</th>
+                          <th className="pb-3 pr-4">Customer</th>
+                          <th className="pb-3 pr-4">Items</th>
+                          <th className="pb-3 pr-4">Total</th>
+                          <th className="pb-3 pr-4">Status</th>
+                          <th className="pb-3 pr-4">Payment</th>
+                          <th className="pb-3 pr-4">Date</th>
+                          <th className="pb-3">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {orders
+                          .filter((o) => o.status === "Pending")
+                          .map((order) => (
+                            <tr key={order.id} className="border-b border-border">
+                              <td className="py-4 pr-4"><Checkbox /></td>
+                              <td className="py-4 pr-4"><Link href={`/admin/orders/${order.id}`} className="font-medium hover:underline">{order.id}</Link></td>
+                              <td className="py-4 pr-4"><div><p className="font-medium">{order.customer}</p><p className="text-sm text-muted-foreground">{order.email}</p></div></td>
+                              <td className="py-4 pr-4">{order.items}</td>
+                              <td className="py-4 pr-4 font-medium">{formatPrice(order.total)}</td>
+                              <td className="py-4 pr-4"><Badge variant="secondary" className={getStatusColor(order.status)}>{order.status}</Badge></td>
+                              <td className="py-4 pr-4"><Badge variant="secondary" className={getPaymentColor(order.payment)}>{order.payment}</Badge></td>
+                              <td className="py-4 pr-4 text-sm text-muted-foreground">{order.date}</td>
+                              <td className="py-4"><DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => handleViewClick(order)}><Eye className="mr-2 h-4 w-4" />View Details</DropdownMenuItem><DropdownMenuItem onClick={() => openStatusUpdateDialog(order)}><span className="mr-2">📊</span>Update Status</DropdownMenuItem><DropdownMenuItem onClick={() => handlePrintInvoice(order)}><Printer className="mr-2 h-4 w-4" />Print Invoice</DropdownMenuItem><DropdownMenuItem onClick={() => handleSendInvoiceEmail(order)}><Mail className="mr-2 h-4 w-4" />Send Invoice</DropdownMenuItem></DropdownMenuContent></DropdownMenu></td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="processing">
+                {orders.filter((o) => o.status === "Processing").length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <p className="text-muted-foreground">No processing orders</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-border text-left text-sm text-muted-foreground">
+                          <th className="pb-3 pr-4"><Checkbox /></th>
+                          <th className="pb-3 pr-4">Order</th>
+                          <th className="pb-3 pr-4">Customer</th>
+                          <th className="pb-3 pr-4">Items</th>
+                          <th className="pb-3 pr-4">Total</th>
+                          <th className="pb-3 pr-4">Status</th>
+                          <th className="pb-3 pr-4">Payment</th>
+                          <th className="pb-3 pr-4">Date</th>
+                          <th className="pb-3">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {orders
+                          .filter((o) => o.status === "Processing")
+                          .map((order) => (
+                            <tr key={order.id} className="border-b border-border">
+                              <td className="py-4 pr-4"><Checkbox /></td>
+                              <td className="py-4 pr-4"><Link href={`/admin/orders/${order.id}`} className="font-medium hover:underline">{order.id}</Link></td>
+                              <td className="py-4 pr-4"><div><p className="font-medium">{order.customer}</p><p className="text-sm text-muted-foreground">{order.email}</p></div></td>
+                              <td className="py-4 pr-4">{order.items}</td>
+                              <td className="py-4 pr-4 font-medium">{formatPrice(order.total)}</td>
+                              <td className="py-4 pr-4"><Badge variant="secondary" className={getStatusColor(order.status)}>{order.status}</Badge></td>
+                              <td className="py-4 pr-4"><Badge variant="secondary" className={getPaymentColor(order.payment)}>{order.payment}</Badge></td>
+                              <td className="py-4 pr-4 text-sm text-muted-foreground">{order.date}</td>
+                              <td className="py-4"><DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => handleViewClick(order)}><Eye className="mr-2 h-4 w-4" />View Details</DropdownMenuItem><DropdownMenuItem onClick={() => openStatusUpdateDialog(order)}><span className="mr-2">📊</span>Update Status</DropdownMenuItem><DropdownMenuItem onClick={() => handlePrintInvoice(order)}><Printer className="mr-2 h-4 w-4" />Print Invoice</DropdownMenuItem><DropdownMenuItem onClick={() => handleSendInvoiceEmail(order)}><Mail className="mr-2 h-4 w-4" />Send Invoice</DropdownMenuItem></DropdownMenuContent></DropdownMenu></td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="shipped">
+                {orders.filter((o) => o.status === "Shipped").length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <p className="text-muted-foreground">No shipped orders</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-border text-left text-sm text-muted-foreground">
+                          <th className="pb-3 pr-4"><Checkbox /></th>
+                          <th className="pb-3 pr-4">Order</th>
+                          <th className="pb-3 pr-4">Customer</th>
+                          <th className="pb-3 pr-4">Items</th>
+                          <th className="pb-3 pr-4">Total</th>
+                          <th className="pb-3 pr-4">Status</th>
+                          <th className="pb-3 pr-4">Payment</th>
+                          <th className="pb-3 pr-4">Date</th>
+                          <th className="pb-3">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {orders
+                          .filter((o) => o.status === "Shipped")
+                          .map((order) => (
+                            <tr key={order.id} className="border-b border-border">
+                              <td className="py-4 pr-4"><Checkbox /></td>
+                              <td className="py-4 pr-4"><Link href={`/admin/orders/${order.id}`} className="font-medium hover:underline">{order.id}</Link></td>
+                              <td className="py-4 pr-4"><div><p className="font-medium">{order.customer}</p><p className="text-sm text-muted-foreground">{order.email}</p></div></td>
+                              <td className="py-4 pr-4">{order.items}</td>
+                              <td className="py-4 pr-4 font-medium">{formatPrice(order.total)}</td>
+                              <td className="py-4 pr-4"><Badge variant="secondary" className={getStatusColor(order.status)}>{order.status}</Badge></td>
+                              <td className="py-4 pr-4"><Badge variant="secondary" className={getPaymentColor(order.payment)}>{order.payment}</Badge></td>
+                              <td className="py-4 pr-4 text-sm text-muted-foreground">{order.date}</td>
+                              <td className="py-4"><DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => handleViewClick(order)}><Eye className="mr-2 h-4 w-4" />View Details</DropdownMenuItem><DropdownMenuItem onClick={() => openStatusUpdateDialog(order)}><span className="mr-2">📊</span>Update Status</DropdownMenuItem><DropdownMenuItem onClick={() => handlePrintInvoice(order)}><Printer className="mr-2 h-4 w-4" />Print Invoice</DropdownMenuItem><DropdownMenuItem onClick={() => handleSendInvoiceEmail(order)}><Mail className="mr-2 h-4 w-4" />Send Invoice</DropdownMenuItem></DropdownMenuContent></DropdownMenu></td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="delivered">
+                {orders.filter((o) => o.status === "Delivered").length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <p className="text-muted-foreground">No delivered orders</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-border text-left text-sm text-muted-foreground">
+                          <th className="pb-3 pr-4"><Checkbox /></th>
+                          <th className="pb-3 pr-4">Order</th>
+                          <th className="pb-3 pr-4">Customer</th>
+                          <th className="pb-3 pr-4">Items</th>
+                          <th className="pb-3 pr-4">Total</th>
+                          <th className="pb-3 pr-4">Status</th>
+                          <th className="pb-3 pr-4">Payment</th>
+                          <th className="pb-3 pr-4">Date</th>
+                          <th className="pb-3">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {orders
+                          .filter((o) => o.status === "Delivered")
+                          .map((order) => (
+                            <tr key={order.id} className="border-b border-border">
+                              <td className="py-4 pr-4"><Checkbox /></td>
+                              <td className="py-4 pr-4"><Link href={`/admin/orders/${order.id}`} className="font-medium hover:underline">{order.id}</Link></td>
+                              <td className="py-4 pr-4"><div><p className="font-medium">{order.customer}</p><p className="text-sm text-muted-foreground">{order.email}</p></div></td>
+                              <td className="py-4 pr-4">{order.items}</td>
+                              <td className="py-4 pr-4 font-medium">{formatPrice(order.total)}</td>
+                              <td className="py-4 pr-4"><Badge variant="secondary" className={getStatusColor(order.status)}>{order.status}</Badge></td>
+                              <td className="py-4 pr-4"><Badge variant="secondary" className={getPaymentColor(order.payment)}>{order.payment}</Badge></td>
+                              <td className="py-4 pr-4 text-sm text-muted-foreground">{order.date}</td>
+                              <td className="py-4"><DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => handleViewClick(order)}><Eye className="mr-2 h-4 w-4" />View Details</DropdownMenuItem><DropdownMenuItem onClick={() => openStatusUpdateDialog(order)}><span className="mr-2">📊</span>Update Status</DropdownMenuItem><DropdownMenuItem onClick={() => handlePrintInvoice(order)}><Printer className="mr-2 h-4 w-4" />Print Invoice</DropdownMenuItem><DropdownMenuItem onClick={() => handleSendInvoiceEmail(order)}><Mail className="mr-2 h-4 w-4" />Send Invoice</DropdownMenuItem></DropdownMenuContent></DropdownMenu></td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          )}
+
+          {!loading && !error && (
+            <div className="mt-6 flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">Showing {orders.length} of {orders.length} orders</p>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" disabled>
+                  Previous
+                </Button>
+                <Button variant="outline" size="sm" disabled>
+                  Next
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 
@@ -892,6 +1146,9 @@ function AdminOrdersPage() {
           </div>
 
           <SheetFooter className="border-t pt-4 gap-2">
+            {formErrors.submit && (
+              <p className="text-sm text-red-500 w-full text-center py-2">{formErrors.submit}</p>
+            )}
             <Button
               variant="outline"
               onClick={() => setAddDrawerOpen(false)}
@@ -908,6 +1165,68 @@ function AdminOrdersPage() {
           </SheetFooter>
         </SheetContent>
       </Sheet>
+
+      {/* Status Update Dialog */}
+      <Dialog open={statusUpdateOpen} onOpenChange={setStatusUpdateOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Update Order Status</DialogTitle>
+            <DialogDescription>
+              Change the status for order {statusUpdateData.orderId}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {formErrors.status && (
+              <div className="rounded-lg bg-red-50 border border-red-200 p-3">
+                <p className="text-sm text-red-600">{formErrors.status}</p>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="status-select" className="text-sm font-medium">
+                New Status
+              </Label>
+              <Select
+                value={statusUpdateData.newStatus}
+                onValueChange={(value) => {
+                  setStatusUpdateData({ ...statusUpdateData, newStatus: value })
+                  if (formErrors.status) {
+                    setFormErrors({ ...formErrors, status: "" })
+                  }
+                }}
+              >
+                <SelectTrigger id="status-select">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ORDER_STATUSES.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setStatusUpdateOpen(false)}
+              disabled={statusUpdating}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleStatusUpdate}
+              disabled={statusUpdating}
+            >
+              {statusUpdating ? "Updating..." : "Update Status"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
     </div>
   )

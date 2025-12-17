@@ -82,8 +82,8 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
   const [selectedColorImage, setSelectedColorImage] = useState<string | null>(initialColorImage)
 
   return (
-    <div className="grid gap-8 lg:gap-12 lg:grid-cols-2 mb-12">
-      <div className="flex justify-center">
+    <div className="grid gap-8 lg:gap-12 lg:grid-cols-2 mb-12 w-full overflow-hidden">
+      <div className="flex justify-center w-full min-w-0 overflow-hidden">
         <ProductGallery
           images={Array.isArray(product.images)
             ? (typeof product.images[0] === "string"
@@ -96,7 +96,7 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
           selectedColorImage={selectedColorImage}
         />
       </div>
-      <div className="flex items-start">
+      <div className="flex items-start w-full min-w-0 overflow-hidden">
         <ProductInfoRegion product={product} onColorChange={setSelectedColorImage} />
       </div>
     </div>

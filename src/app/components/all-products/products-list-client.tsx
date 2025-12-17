@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect } from "react"
 import { useSWRCache } from "@/app/hooks/use-swr-cache"
 import { productsService } from "@/app/lib/api/services/products"
 import { CategoryProducts } from "@/app/components/category/category-products"
@@ -19,7 +19,57 @@ interface ProductsListClientProps {
   brands?: any[]
 }
 
+interface BrandLookup {
+  [slug: string]: string // slug -> id mapping
+}
+
 const PAGE_SIZE = 20
+
+function getLocalFilteredProducts(
+  products: Product[],
+  categoryIds: string[],
+  brandIds: string[],
+  page: number
+): ProductListResponse {
+  const start = (page - 1) * PAGE_SIZE
+  const end = start + PAGE_SIZE
+
+  // Filter by categories
+  const filteredByCategory = products.filter((product: any) => {
+    if (categoryIds.length === 0) return true
+    const productCategoryId = product.categoryId
+    const productCategoryIds = product.categoryIds as string[] | undefined
+    return categoryIds.some(id =>
+      productCategoryId === id || productCategoryIds?.includes(id)
+    )
+  })
+
+  // Filter by brands
+  const filteredByBrand = filteredByCategory.filter((product: any) => {
+    if (brandIds.length === 0) return true
+    const productBrandId = product.brandId
+    const productBrandIds = product.brandIds as string[] | undefined
+    return brandIds.some(id =>
+      productBrandId === id || productBrandIds?.includes(id)
+    )
+  })
+
+  // Ensure each product has basePrice for compatibility
+  const mappedProducts = filteredByBrand.slice(start, end).map((product: any) => ({
+    ...product,
+    basePrice: product.basePrice ?? product.price ?? 0,
+  }))
+
+  return {
+    data: mappedProducts,
+    pagination: {
+      total: filteredByBrand.length,
+      page,
+      limit: PAGE_SIZE,
+      pages: Math.ceil(filteredByBrand.length / PAGE_SIZE),
+    },
+  } as ProductListResponse
+}
 
 export function ProductsListClient({
   initialProducts = [],
@@ -30,78 +80,83 @@ export function ProductsListClient({
   categories = [],
   brands = [],
 }: ProductsListClientProps) {
-  // Convert category and brand slugs to IDs
+  // Create lookups for faster searching
+  const categoryLookup = categories.reduce((acc: any, c: any) => {
+    if (c.slug && c.id) acc[c.slug] = c.id
+    return acc
+  }, {} as Record<string, string>)
+
+  const brandLookup = brands.reduce((acc: BrandLookup, b: any) => {
+    if (b.slug && b.id) acc[b.slug] = b.id
+    return acc
+  }, {} as BrandLookup)
+
+  // Convert slugs to IDs
   const selectedCategoryIds = selectedCategories
-    .map(slug => categories.find((c: any) => c.slug === slug)?.id)
+    .map(slug => categoryLookup[slug])
     .filter(Boolean) as string[]
 
   const selectedBrandIds = selectedBrands
-    .map(slug => brands.find((b: any) => b.slug === slug)?.id)
+    .map(slug => brandLookup[slug])
     .filter(Boolean) as string[]
+
+  // Debug: log if brand/category lookups found matches
+  const debugInfo = {
+    selectedBrands,
+    foundBrandIds: selectedBrandIds,
+    selectedCategories,
+    foundCategoryIds: selectedCategoryIds,
+    totalBrandsAvailable: brands.length,
+    totalCategoriesAvailable: categories.length,
+  }
+  if (selectedBrandIds.length === 0 && selectedBrands.length > 0) {
+    console.warn('Brand filter warning: No brand IDs found for slugs:', debugInfo)
+  }
 
   const [currentPage, setCurrentPage] = useState(1)
 
   // Generate cache key based on current page and filters
-  const filterKey = `${selectedCategoryIds.sort().join('_')}_${selectedBrandIds.sort().join('_')}`
+  const filterKey = useMemo(
+    () => `${selectedCategoryIds.sort().join('_')}_${selectedBrandIds.sort().join('_')}`,
+    [selectedCategoryIds, selectedBrandIds]
+  )
   const cacheKey = `products_list_${filterKey}_page_${currentPage}`
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [filterKey])
 
   // Fetch products for current page with filters
   const { data: paginatedData, isLoading, error } = useSWRCache<ProductListResponse>(
     cacheKey,
     async () => {
+      // When filters are applied, use local filtering instead of API
+      // because the API may not support multiple brand/category filtering
+      if (selectedBrandIds.length > 0 || selectedCategoryIds.length > 0) {
+        return getLocalFilteredProducts(
+          allProducts,
+          selectedCategoryIds,
+          selectedBrandIds,
+          currentPage
+        )
+      }
+
+      // For unfiltered results, try API first
       const filters: any = {}
-
-      // Send category and brand IDs - the API expects comma-separated values
-      if (selectedCategoryIds.length > 0) {
-        filters.categoryIds = selectedCategoryIds.join(',')
-      }
-
-      if (selectedBrandIds.length > 0) {
-        filters.brandIds = selectedBrandIds.join(',')
-      }
 
       try {
         const response = await productsService.getAll(filters, currentPage, PAGE_SIZE)
         return response
       } catch (err) {
-        // If API call fails, fall back to local filtering of allProducts
-        console.warn('API filtering failed, using local filtering:', err)
-        const start = (currentPage - 1) * PAGE_SIZE
-        const end = start + PAGE_SIZE
-
-        const filteredByCategory = allProducts.filter((product: any) => {
-          if (selectedCategoryIds.length === 0) return true
-          const productCategoryId = product.categoryId
-          const productCategoryIds = product.categoryIds as string[] | undefined
-          return selectedCategoryIds.some(id =>
-            productCategoryId === id || productCategoryIds?.includes(id)
-          )
-        })
-
-        const filteredByBrand = filteredByCategory.filter((product: any) => {
-          if (selectedBrandIds.length === 0) return true
-          const productBrandId = product.brandId
-          const productBrandIds = product.brandIds as string[] | undefined
-          return selectedBrandIds.some(id =>
-            productBrandId === id || productBrandIds?.includes(id)
-          )
-        })
-
-        // Ensure each product has basePrice for compatibility with ProductListResponse
-        const mappedProducts = filteredByBrand.slice(start, end).map((product: any) => ({
-          ...product,
-          basePrice: product.basePrice ?? product.price ?? 0, // fallback if basePrice is missing
-        }))
-
-        return {
-          data: mappedProducts,
-          pagination: {
-            total: filteredByBrand.length,
-            page: currentPage,
-            limit: PAGE_SIZE,
-            pages: Math.ceil(filteredByBrand.length / PAGE_SIZE)
-          }
-        } as ProductListResponse
+        // Fallback to local filtering if API fails
+        console.warn('API call failed, using local filtering:', err)
+        return getLocalFilteredProducts(
+          allProducts,
+          selectedCategoryIds,
+          selectedBrandIds,
+          currentPage
+        )
       }
     },
     {
@@ -160,9 +215,26 @@ export function ProductsListClient({
 
   if (error) {
     return (
-      <div className="py-12 text-center">
-        <p className="text-red-500 mb-4">Failed to load products</p>
-        <Button onClick={() => window.location.reload()}>Retry</Button>
+      <div className="space-y-8">
+        <div className="rounded-lg border border-red-200 bg-red-50 p-8 text-center">
+          <h3 className="text-lg font-semibold text-red-900 mb-2">Unable to Load Products</h3>
+          <p className="text-red-700 mb-6">We encountered an issue while loading products. Please try again.</p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <Button
+              onClick={() => window.location.reload()}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Retry
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => window.history.back()}
+              className="border-red-300"
+            >
+              Go Back
+            </Button>
+          </div>
+        </div>
       </div>
     )
   }

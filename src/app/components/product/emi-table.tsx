@@ -31,7 +31,7 @@ export function EmiTable({ price, plans, months = [3, 6, 9, 12, 18, 24], interes
       }))
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto scrollbar-hide">
       <Table>
         <TableHeader>
           <TableRow>

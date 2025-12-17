@@ -28,17 +28,12 @@ import {Input} from '../../components/ui/input';
 import {Label} from '../../components/ui/label';
 import {RadioGroup, RadioGroupItem} from '../../components/ui/radio-group';
 import {Separator} from '../../components/ui/separator';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../../components/ui/select';
 import {formatPrice} from '../../lib/utils/format';
 import {useCartStore} from '../../store/cart-store';
 import {useAuthStore} from '../../store/auth-store';
-import {getProductDisplayPrice, getProductPriceWithType} from '../../lib/utils/product';
+import {
+  getProductPriceWithType,
+} from '../../lib/utils/product';
 import {toast} from 'sonner';
 
 export default function CheckoutPage() {
@@ -96,7 +91,7 @@ export default function CheckoutPage() {
 
   const subtotal = getTotal();
   // Find selected delivery method
-  const selectedDelivery = deliveryMethods.find((m) => m.id === deliveryMethod);
+  const selectedDelivery = deliveryMethods.find(m => m.id === deliveryMethod);
   // Use extraFee from selected delivery method, fallback to 0
   const shipping = selectedDelivery ? selectedDelivery.extraFee : 0;
   const discount = couponDiscount;
@@ -142,8 +137,6 @@ export default function CheckoutPage() {
 
     setIsLoadingOrder(true);
 
-
-
     try {
       // Prepare order payload to match backend entity, always send IDs for variants
       const orderPayload = {
@@ -170,13 +163,17 @@ export default function CheckoutPage() {
         paymentMethod,
         deliveryMethod,
         orderItems: items.map(item => {
-          let dynamicInputs = item.dynamicInputs || item.selectedVariants?.dynamicInputs || {};
+          let dynamicInputs =
+            item.dynamicInputs || item.selectedVariants?.dynamicInputs || {};
           if (typeof dynamicInputs !== 'object' || dynamicInputs === null) {
             dynamicInputs = {};
           }
 
           // Calculate the correct price based on selected variants
-          const itemPrice = getProductPriceWithType(item.product, item.selectedVariants);
+          const itemPrice = getProductPriceWithType(
+            item.product,
+            item.selectedVariants,
+          );
 
           return {
             productId: item.product.id,
@@ -190,14 +187,23 @@ export default function CheckoutPage() {
             networkName: item.selectedVariants?.networkName || undefined,
             color: item.color || item.selectedVariants?.color || undefined,
             colorName: item.selectedVariants?.colorName || undefined,
-            storage: item.storage || item.selectedVariants?.storage || undefined,
+            storage:
+              item.storage || item.selectedVariants?.storage || undefined,
             storageName: item.selectedVariants?.storageName || undefined,
-            RAM: item.RAM || item.selectedVariants?.RAM || item.selectedVariants?.ram || undefined,
+            RAM:
+              item.RAM ||
+              item.selectedVariants?.RAM ||
+              item.selectedVariants?.ram ||
+              undefined,
             sim: item.sim || item.selectedVariants?.sim || undefined,
             priceType: item.selectedVariants?.priceType || 'offer',
-            image: Array.isArray(item.product.images) && item.product.images.length > 0
-              ? (typeof item.product.images[0] === 'string' ? item.product.images[0] : item.product.images[0].imageUrl)
-              : '',
+            image:
+              Array.isArray(item.product.images) &&
+              item.product.images.length > 0
+                ? typeof item.product.images[0] === 'string'
+                  ? item.product.images[0]
+                  : item.product.images[0].imageUrl
+                : '',
             dynamicInputs,
             // Full selectedVariants for backend flexibility
             selectedVariants: item.selectedVariants,
@@ -290,52 +296,36 @@ export default function CheckoutPage() {
                 </div>
                 <div>
                   <Label htmlFor="division">Division *</Label>
-                  <Select value={division} onValueChange={setDivision}>
-                    <SelectTrigger id="division">
-                      <SelectValue placeholder="Select your division" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="dhaka">Dhaka</SelectItem>
-                      <SelectItem value="chittagong">Chittagong</SelectItem>
-                      <SelectItem value="khulna">Khulna</SelectItem>
-                      <SelectItem value="rajshahi">Rajshahi</SelectItem>
-                      <SelectItem value="barisal">Barisal</SelectItem>
-                      <SelectItem value="sylhet">Sylhet</SelectItem>
-                      <SelectItem value="rangpur">Rangpur</SelectItem>
-                      <SelectItem value="mymensingh">Mymensingh</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    id="division"
+                    placeholder="Enter your division"
+                    value={division}
+                    onChange={e => setDivision(e.target.value)}
+                    required
+                  />
                 </div>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <Label htmlFor="district">District *</Label>
-                  <Select value={district} onValueChange={setDistrict}>
-                    <SelectTrigger id="district">
-                      <SelectValue placeholder="Select your district" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="dhaka">Dhaka</SelectItem>
-                      <SelectItem value="gazipur">Gazipur</SelectItem>
-                      <SelectItem value="narayanganj">Narayanganj</SelectItem>
-                      <SelectItem value="manikganj">Manikganj</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    id="district"
+                    placeholder="Enter your district"
+                    value={district}
+                    onChange={e => setDistrict(e.target.value)}
+                    required
+                  />
                 </div>
                 <div>
                   <Label htmlFor="upzila">Upzila *</Label>
-                  <Select value={upzila} onValueChange={setUpzila}>
-                    <SelectTrigger id="upzila">
-                      <SelectValue placeholder="Select area" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="dhanmondi">Dhanmondi</SelectItem>
-                      <SelectItem value="gulshan">Gulshan</SelectItem>
-                      <SelectItem value="banani">Banani</SelectItem>
-                      <SelectItem value="mirpur">Mirpur</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    id="upzila"
+                    placeholder="Enter your upzila"
+                    value={upzila}
+                    onChange={e => setUpzila(e.target.value)}
+                    required
+                  />
                 </div>
               </div>
 
@@ -463,7 +453,7 @@ export default function CheckoutPage() {
                             ? ` (Delivery in ${method.minDays}-${method.maxDays} days)`
                             : ''}
                           {method.extraFee && method.extraFee > 0
-                            ? ` (+$${method.extraFee})`
+                            ? ` (+${method.extraFee})`
                             : ''}
                         </p>
                       </Label>
@@ -513,7 +503,10 @@ export default function CheckoutPage() {
                       const rawProduct = (item.product as any).rawProduct;
 
                       // Try to get image from product.images array first
-                      if (Array.isArray(item.product.images) && item.product.images.length > 0) {
+                      if (
+                        Array.isArray(item.product.images) &&
+                        item.product.images.length > 0
+                      ) {
                         const firstImg = item.product.images[0];
                         if (typeof firstImg === 'string') {
                           imgSrc = firstImg;
@@ -523,7 +516,11 @@ export default function CheckoutPage() {
                       }
 
                       // Fallback: try to get from rawProduct.directColors for basic products
-                      if (!imgSrc && rawProduct?.directColors && Array.isArray(rawProduct.directColors)) {
+                      if (
+                        !imgSrc &&
+                        rawProduct?.directColors &&
+                        Array.isArray(rawProduct.directColors)
+                      ) {
                         const firstColor = rawProduct.directColors[0];
                         if (firstColor?.colorImage) {
                           imgSrc = firstColor.colorImage;
@@ -531,9 +528,16 @@ export default function CheckoutPage() {
                       }
 
                       // Fallback: try to get from rawProduct.networks for network products
-                      if (!imgSrc && rawProduct?.networks && Array.isArray(rawProduct.networks)) {
+                      if (
+                        !imgSrc &&
+                        rawProduct?.networks &&
+                        Array.isArray(rawProduct.networks)
+                      ) {
                         const firstNetwork = rawProduct.networks[0];
-                        if (firstNetwork?.colors && Array.isArray(firstNetwork.colors)) {
+                        if (
+                          firstNetwork?.colors &&
+                          Array.isArray(firstNetwork.colors)
+                        ) {
                           const firstColor = firstNetwork.colors[0];
                           if (firstColor?.colorImage) {
                             imgSrc = firstColor.colorImage;
@@ -544,7 +548,9 @@ export default function CheckoutPage() {
                       if (!imgSrc) {
                         return (
                           <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                            <span className="text-xs text-gray-400">No Image</span>
+                            <span className="text-xs text-gray-400">
+                              No Image
+                            </span>
                           </div>
                         );
                       }
@@ -568,7 +574,10 @@ export default function CheckoutPage() {
                     <p className="font-semibold mt-2">
                       {item.product
                         ? formatPrice(
-                            getProductDisplayPrice(item.product) * item.quantity,
+                            getProductPriceWithType(
+                              item.product,
+                              item.selectedVariants,
+                            ) * item.quantity,
                           )
                         : null}
                     </p>

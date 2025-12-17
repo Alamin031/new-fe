@@ -26,6 +26,7 @@ const sidebarLinks = [
   {href: '/admin/banners', label: 'Banners', icon: ImageIcon},
   {href: '/admin/brand', label: 'Brand', icon: TrendingUp},
   {href: '/admin/categories', label: 'Categories', icon: FolderTree},
+  {href: '/admin/corporate', label: 'Corporate Deals', icon: Users},
   {href: '/admin/delivery', label: 'Delivery Methods', icon: Package},
   {href: '/admin/emi', label: 'EMI Plans', icon: CreditCard},
   {href: '/admin/products', label: 'Products', icon: Package},
@@ -85,12 +86,12 @@ export default function AdminLayout({children}: {children: React.ReactNode}) {
         </aside>
       </Suspense>
 
-      <div className="flex-1 lg:ml-64">
+      <div className="flex-1 lg:ml-64 flex flex-col">
         <Suspense fallback={<div className="h-16 bg-background" />}>
           <AdminHeader />
         </Suspense>
 
-        <main className="p-6">{children}</main>
+        <main className="flex-1 p-6 overflow-y-auto">{children}</main>
       </div>
     </div>
   );

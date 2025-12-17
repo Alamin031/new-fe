@@ -1,11 +1,12 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 import { useEffect, useState, useCallback } from "react"
 import { CacheManager } from "@/app/lib/api/cache"
 
 interface UseSWRCacheOptions {
-  ttl?: number // Cache time-to-live in milliseconds (default: 5 minutes)
+  ttl?: number
   revalidateOnFocus?: boolean
   revalidateOnMount?: boolean
-  dedupingInterval?: number // Deduplicate requests within this interval (ms)
+  dedupingInterval?: number
 }
 
 interface UseSWRCacheState<T, E> {
@@ -16,7 +17,6 @@ interface UseSWRCacheState<T, E> {
   mutate: (data?: T) => Promise<T | undefined>
 }
 
-// Track in-flight requests to avoid duplicate API calls
 const inflightRequests = new Map<string, Promise<unknown>>()
 const lastRequestTime = new Map<string, number>()
 

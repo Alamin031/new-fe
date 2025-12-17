@@ -249,9 +249,9 @@ export default async function ProductPage({params}: ProductPageProps) {
 
   return (
     <div className="min-h-screen bg-linear-to-b from-background to-muted/20">
-      <div className="mx-auto max-w-7xl px-4 py-8 md:py-12">
+      <div className="mx-auto w-full max-w-7xl px-2 sm:px-4 py-4 sm:py-8 md:py-12">
         {/* Breadcrumb */}
-        <nav className="mb-8 flex items-center gap-2 text-sm text-muted-foreground">
+        <nav className="mb-4 sm:mb-8 flex flex-wrap items-center gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
           <a href="/" className="transition-colors hover:text-foreground">
             Home
           </a>
@@ -266,25 +266,25 @@ export default async function ProductPage({params}: ProductPageProps) {
               <span className="text-muted-foreground/60">/</span>
             </>
           )}
-          <span className="text-foreground font-medium line-clamp-1">{product.name}</span>
+          <span className="text-foreground font-medium line-clamp-1 max-w-[60vw] truncate">{product.name}</span>
         </nav>
 
         {/* Product Details Grid */}
-        <ProductDetailClient product={product} />
-
-
+        <div className="w-full">
+          <ProductDetailClient product={product} />
+        </div>
 
         {/* Divider */}
-        <div className="border-t border-border/40 my-12" />
+        <div className="border-t border-border/40 my-8 sm:my-12" />
 
         {/* Product Tabs */}
-        <div className="py-8">
+        <div className="py-4 sm:py-8">
           <ProductTabs product={product} faqs={productFaqs} />
         </div>
 
         {/* Related Products */}
         {/* {relatedProducts.length > 0 && (
-          <div className="mt-16">
+          <div className="mt-8 sm:mt-16">
             <ProductSection
               title="Related Products"
               subtitle="You might also like"
