@@ -8,7 +8,7 @@ export interface Flashsell {
   productIds: string[];
   startTime: string;
   endTime: string;
-  discountPrice: number;
+  discountpercentage: number;
   stock: number;
   createdAt?: string;
   updatedAt?: string;
@@ -20,7 +20,7 @@ export interface CreateFlashsellRequest {
   productIds: string[];
   startTime: string;
   endTime: string;
-  discountPrice: number;
+  discountpercentage: number;
   stock: number;
 }
 
@@ -30,7 +30,7 @@ export interface UpdateFlashsellRequest {
   productIds?: string[];
   startTime?: string;
   endTime?: string;
-  discountPrice?: number;
+  discountpercentage?: number;
   stock?: number;
 }
 
