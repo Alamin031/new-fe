@@ -118,6 +118,21 @@ export function AllProductsFilters({
                 </Button>
               );
             })}
+            {activeBrands.map((brandSlug) => {
+              const brand = brands.find((b) => b.slug === brandSlug);
+              return (
+                <Button
+                  key={brandSlug}
+                  variant="secondary"
+                  size="sm"
+                  className="h-7 gap-1 text-xs"
+                  onClick={() => toggleBrand(brandSlug)}
+                >
+                  {brand?.name}
+                  <X className="h-3 w-3" />
+                </Button>
+              );
+            })}
           </div>
         </div>
       )}
