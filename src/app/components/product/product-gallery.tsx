@@ -172,32 +172,34 @@ export function ProductGallery({ images, name, isEmi, isCare, selectedColorImage
 
         {/* Thumbnails */}
         {displayImages.length > 1 && (
-          <div className="flex gap-3 overflow-x-auto pb-2 scroll-smooth w-full mb-[11px] flex-row">
-            {displayImages.map((image, index) => (
-              <button
-                key={index}
-                onClick={() => handleThumbnailClick(index)}
-                className={cn(
-                  "group relative h-24 w-24 shrink-0 overflow-visible rounded-2xl border transition-all duration-300 bg-white shadow-sm dark:bg-background",
-                  selectedIndex === index
-                    ? "border-[2.5px] border-foreground shadow-lg"
-                    : "border-border/70 hover:border-foreground/40 hover:shadow-md"
-                )}
-                aria-label={`View image ${index + 1}`}
-                aria-current={selectedIndex === index}
-              >
-                <div className="absolute inset-0 p-2">
-                  <div className="relative h-full w-full rounded-xl overflow-hidden">
-                    <Image
-                      src={image || "/placeholder.svg"}
-                      alt={`${name} - Thumbnail ${index + 1}`}
-                      fill
-                      className="object-contain transition-transform duration-300 group-hover:scale-105"
-                    />
+          <div className="w-full max-w-full overflow-hidden">
+            <div className="flex gap-3 overflow-x-auto pb-2 scroll-smooth scroll-smooth max-w-full flex-row scrollbar-hide">
+              {displayImages.map((image, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleThumbnailClick(index)}
+                  className={cn(
+                    "group relative h-24 w-24 shrink-0 overflow-visible rounded-2xl border transition-all duration-300 bg-white shadow-sm dark:bg-background",
+                    selectedIndex === index
+                      ? "border-[2.5px] border-foreground shadow-lg"
+                      : "border-border/70 hover:border-foreground/40 hover:shadow-md"
+                  )}
+                  aria-label={`View image ${index + 1}`}
+                  aria-current={selectedIndex === index}
+                >
+                  <div className="absolute inset-0 p-2">
+                    <div className="relative h-full w-full rounded-xl overflow-hidden">
+                      <Image
+                        src={image || "/placeholder.svg"}
+                        alt={`${name} - Thumbnail ${index + 1}`}
+                        fill
+                        className="object-contain transition-transform duration-300 group-hover:scale-105"
+                      />
+                    </div>
                   </div>
-                </div>
-              </button>
-            ))}
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>
