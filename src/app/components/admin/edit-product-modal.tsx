@@ -1609,6 +1609,10 @@ export function EditProductModal({
         response = await productsService.updateRegion(product.id, formData);
       }
 
+      // Invalidate product caches so UI updates immediately
+      ProductCacheUtils.invalidateProductLists();
+      ProductCacheUtils.invalidateProductDetail(product.id);
+
       toast.success('Product updated successfully!');
       onSuccess?.(response);
       onOpenChange(false);
