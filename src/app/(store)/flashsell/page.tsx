@@ -138,56 +138,46 @@ function FlashSellDetailContent() {
 
   if (loading) {
     return (
-      <div className="flex flex-col min-h-screen">
-        <Navbar initialCategories={[]} initialBrands={[]} />
-        <main className="flex-1 flex flex-col">
-          <div className="mx-auto w-full max-w-7xl px-4 py-8">
-            <div className="space-y-4">
-              <div className="h-96 bg-muted rounded-2xl animate-pulse" />
-              <div className="space-y-2">
-                <div className="h-8 w-40 bg-muted rounded animate-pulse" />
-                <div className="h-4 w-60 bg-muted rounded animate-pulse" />
-              </div>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="h-64 bg-muted rounded-2xl animate-pulse" />
-                ))}
-              </div>
+      <main className="flex-1 flex flex-col">
+        <div className="mx-auto w-full max-w-7xl px-4 py-8">
+          <div className="space-y-4">
+            <div className="h-96 bg-muted rounded-2xl animate-pulse" />
+            <div className="space-y-2">
+              <div className="h-8 w-40 bg-muted rounded animate-pulse" />
+              <div className="h-4 w-60 bg-muted rounded animate-pulse" />
+            </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-64 bg-muted rounded-2xl animate-pulse" />
+              ))}
             </div>
           </div>
-        </main>
-        <Footer />
-        <MobileBottomNav />
-      </div>
+        </div>
+      </main>
     )
   }
 
   if (error || !flashsell) {
     return (
-      <div className="flex flex-col min-h-screen">
-        <Navbar initialCategories={[]} initialBrands={[]} />
-        <main className="flex-1 flex flex-col">
-          <div className="mx-auto w-full max-w-7xl px-4 py-8">
+      <main className="flex-1 flex flex-col">
+        <div className="mx-auto w-full max-w-7xl px-4 py-8">
+          <Link href="/">
+            <Button variant="outline" className="gap-2 mb-6">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Home
+            </Button>
+          </Link>
+          <div className="text-center py-12">
+            <h2 className="text-2xl font-bold mb-2">Flash Sale Not Found</h2>
+            <p className="text-muted-foreground mb-6">
+              {error || "The flash sale you're looking for doesn't exist."}
+            </p>
             <Link href="/">
-              <Button variant="outline" className="gap-2 mb-6">
-                <ArrowLeft className="h-4 w-4" />
-                Back to Home
-              </Button>
+              <Button>Go to Home</Button>
             </Link>
-            <div className="text-center py-12">
-              <h2 className="text-2xl font-bold mb-2">Flash Sale Not Found</h2>
-              <p className="text-muted-foreground mb-6">
-                {error || "The flash sale you're looking for doesn't exist."}
-              </p>
-              <Link href="/">
-                <Button>Go to Home</Button>
-              </Link>
-            </div>
           </div>
-        </main>
-        <Footer />
-        <MobileBottomNav />
-      </div>
+        </div>
+      </main>
     )
   }
 
