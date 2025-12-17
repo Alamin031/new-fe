@@ -58,8 +58,8 @@ export default async function Page({ searchParams }: AllProductsPageProps) {
     const results = await Promise.allSettled([
       categoriesService.getAll(),
       brandsService.findAll(),
-      // Fetch products with relations to ensure brand and category data is included
-      productsService.getAll({includeRelations: 'true'}, 1, 500),
+      // Fetch products (ensure the ProductFilters type matches the API)
+      productsService.getAll({}, 1, 500),
     ]);
 
     // Extract successful results or use empty arrays as fallback
@@ -159,7 +159,7 @@ export default async function Page({ searchParams }: AllProductsPageProps) {
   }, {} as Record<string, Brand>);
 
   // Filter products based on selected categories and brands
-  let filteredProducts = products.filter((product) => {
+  const filteredProducts = products.filter((product) => {
     // If no filters selected, include all products
     if (selectedCategories.length === 0 && selectedBrands.length === 0) {
       return true;
