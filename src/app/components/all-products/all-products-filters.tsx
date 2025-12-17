@@ -235,7 +235,7 @@ export function AllProductsFilters({
               Filters
               {hasActiveFilters && (
                 <span className="rounded-full bg-foreground px-2 py-0.5 text-xs text-background">
-                  {activeCategories.length}
+                  {activeCategories.length + activeBrands.length}
                 </span>
               )}
             </Button>
