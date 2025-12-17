@@ -15,6 +15,7 @@ export { reviewsService } from "./reviews"
 export { loyaltyService } from "./loyalty"
 export { seoService } from "./seo"
 export { marketingService } from "./marketing"
+export { flashsellService } from "./flashsell"
 export { adminService } from "./admin"
 
 // Export types
