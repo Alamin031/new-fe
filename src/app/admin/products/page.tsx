@@ -80,6 +80,7 @@ function AdminProductsPage() {
   const [pageSize] = useState<number>(20);
   const [viewLoading, setViewLoading] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [refreshKey, setRefreshKey] = useState<number>(0);
   const cacheRef = useRef<Map<string, any>>(new Map());
 
   // Fetch categories on mount
@@ -230,7 +231,7 @@ function AdminProductsPage() {
     };
 
     fetchProducts();
-  }, [selectedCategory, currentPage, activeTab, pageSize, categories]);
+  }, [selectedCategory, currentPage, activeTab, pageSize, categories, refreshKey]);
 
   const handleViewClick = async (product: UIProduct) => {
     try {
@@ -586,10 +587,9 @@ function AdminProductsPage() {
         onOpenChange={setEditOpen}
         product={selectedProduct}
         onSuccess={updatedProduct => {
-          // Clear cache to ensure fresh data is fetched from API
+          // Clear cache and trigger re-fetch of current tab without full page reload
           cacheRef.current.clear();
-          // Reset to page 1 to trigger re-fetch with fresh data
-          setCurrentPage(1);
+          setRefreshKey(prev => prev + 1);
         }}
       />
 
