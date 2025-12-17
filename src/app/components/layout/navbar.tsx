@@ -25,6 +25,7 @@ import { cn } from "@/app/lib/utils"
 import Image from "next/image"
 import { categoriesService } from "@/app/lib/api/services/categories"
 import { brandsService } from "@/app/lib/api/services/brands"
+import AuthService from "@/app/lib/api/services/auth.service"
 import type { Category, Brand } from "@/app/types"
 
 interface NavbarProps {
@@ -106,9 +107,17 @@ export function Navbar({ initialCategories, initialBrands }: NavbarProps = {}) {
     fetchBrands()
   }, [initialBrands])
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    const authService = new AuthService()
+    try {
+      await authService.logout()
+    } catch (error) {
+      console.error("Logout error:", error)
+      // Even if API fails, we'll redirect via the AuthService
+    }
+    // AuthService.logout() now handles the redirect, so this won't be reached
+    // But kept for safety
     logout()
-    router.push("/")
   }
 
   return (

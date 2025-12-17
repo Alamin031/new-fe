@@ -19,7 +19,8 @@ export class TokenManager {
   }
 
   /**
-   * Set tokens in localStorage
+   * Set tokens in localStorage and cookies
+   * Properly sets cookies with SameSite=Lax and Secure flags for production HTTPS
    */
   static setTokens(token: string, refreshToken?: string): void {
     if (typeof window === "undefined") return
@@ -27,15 +28,21 @@ export class TokenManager {
     if (refreshToken) {
       localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken)
     }
-      // Set cookies
-      document.cookie = `access_token=${token}; path=/;`;
-      if (refreshToken) {
-        document.cookie = `refresh_token=${refreshToken}; path=/;`;
-      }
+
+    // Set cookies with proper flags for production
+    const isSecure = window.location.protocol === "https:"
+    const cookieOptions = `path=/; SameSite=Lax${isSecure ? "; Secure" : ""}; Max-Age=86400`
+
+    document.cookie = `access_token=${token}; ${cookieOptions}`
+    document.cookie = `auth_token=${token}; ${cookieOptions}`
+    if (refreshToken) {
+      document.cookie = `refresh_token=${refreshToken}; ${cookieOptions}`
+    }
   }
 
   /**
-   * Clear all tokens
+   * Clear all tokens from localStorage and cookies
+   * Properly removes cookies with matching SameSite and Secure flags
    */
   static clearTokens(): void {
     if (typeof window === "undefined") return
@@ -46,10 +53,14 @@ export class TokenManager {
     localStorage.removeItem(STORAGE_KEYS.USER)
     localStorage.removeItem("auth-storage") // Clear Zustand persist data
 
-    // Remove cookies by setting expiry in past
-    document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    document.cookie = "refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    document.cookie = "auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    // Determine if we need Secure flag (production HTTPS)
+    const isSecure = window.location.protocol === "https:"
+    const cookieOptions = `path=/; SameSite=Lax${isSecure ? "; Secure" : ""}; Max-Age=0`
+
+    // Remove cookies by setting Max-Age=0 with matching flags
+    document.cookie = `access_token=; ${cookieOptions}`
+    document.cookie = `refresh_token=; ${cookieOptions}`
+    document.cookie = `auth_token=; ${cookieOptions}`
   }
 
   /**

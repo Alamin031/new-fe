@@ -38,12 +38,12 @@ export default function AccountLayout({
 
   const handleLogout = async () => {
     try {
-      await authService.logout(); // clear backend session if needed
-    } catch {
-      // Optionally handle error
+      await authService.logout(); // clears tokens and redirects to login
+    } catch (error) {
+      console.error("Logout error:", error)
+      // Even if API fails, authService.logout() handles the redirect
     }
-    logout(); // clear local store
-    router.push("/");
+    // authService.logout() will handle the redirect, so this won't be reached
   }
 
   if (!isAuthenticated) {
