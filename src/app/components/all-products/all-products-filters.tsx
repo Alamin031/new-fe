@@ -84,7 +84,7 @@ export function AllProductsFilters({
     router.push(newUrl, { scroll: false });
   }, [activeCategories, activeBrands, router]);
 
-  const hasActiveFilters = activeCategories.length > 0;
+  const hasActiveFilters = activeCategories.length > 0 || activeBrands.length > 0;
 
   const FilterContent = () => (
     <div className="space-y-6">
