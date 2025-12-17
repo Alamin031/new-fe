@@ -54,7 +54,7 @@ function AdminFlashsellPage() {
     productIds: [],
     startTime: "",
     endTime: "",
-    discountPrice: 0,
+    discountpercentage: 0,
     stock: 0,
   })
 
@@ -106,7 +106,7 @@ function AdminFlashsellPage() {
       productIds: [],
       startTime: "",
       endTime: "",
-      discountPrice: 0,
+      discountpercentage: 0,
       stock: 0,
     })
     setBannerPreview(null)
@@ -123,7 +123,7 @@ function AdminFlashsellPage() {
       productIds: flashsell.productIds,
       startTime: flashsell.startTime,
       endTime: flashsell.endTime,
-      discountPrice: flashsell.discountPrice,
+      discountpercentage: flashsell.discountpercentage,
       stock: flashsell.stock,
     })
     setBannerPreview(flashsell.bannerImg)
@@ -140,7 +140,7 @@ function AdminFlashsellPage() {
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
-    if (name === "discountPrice" || name === "stock") {
+    if (name === "discountpercentage" || name === "stock") {
       setForm((prev) => ({ ...prev, [name]: parseFloat(value) || 0 }))
     } else {
       setForm((prev) => ({ ...prev, [name]: value }))
@@ -175,8 +175,8 @@ function AdminFlashsellPage() {
       return
     }
 
-    if (form.discountPrice <= 0 || form.stock <= 0) {
-      toast.error("Discount price and stock must be greater than 0")
+    if (form.discountpercentage <= 0 || form.stock <= 0) {
+      toast.error("Discount percentage and stock must be greater than 0")
       return
     }
 
@@ -303,8 +303,8 @@ function AdminFlashsellPage() {
 
                         <div className="mt-3 space-y-1 text-sm">
                           <div className="flex items-center justify-between">
-                            <span className="text-muted-foreground">Discount Price:</span>
-                            <span className="font-medium">৳ {flashsell.discountPrice}</span>
+                            <span className="text-muted-foreground">Discount %:</span>
+                            <span className="font-medium">{flashsell.discountpercentage}%</span>
                           </div>
                           <div className="flex items-center justify-between">
                             <span className="text-muted-foreground">Stock:</span>
@@ -414,19 +414,20 @@ function AdminFlashsellPage() {
               </div>
             </div>
 
-            {/* Price and Stock */}
+            {/* Discount and Stock */}
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="discountPrice">Discount Price (৳) *</Label>
+                <Label htmlFor="discountpercentage">Discount Percentage (%) *</Label>
                 <Input
-                  id="discountPrice"
-                  name="discountPrice"
+                  id="discountpercentage"
+                  name="discountpercentage"
                   type="number"
                   placeholder="0"
-                  value={form.discountPrice || ""}
+                  value={form.discountpercentage || ""}
                   onChange={handleFormChange}
                   disabled={loading}
                   min="0"
+                  max="100"
                 />
               </div>
 
