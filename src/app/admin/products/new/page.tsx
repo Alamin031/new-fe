@@ -1222,11 +1222,6 @@ function NewProductPage() {
 
       toast.success('Product created successfully!');
       resetForm();
-
-      // Reload page to ensure new product appears with fresh images
-      setTimeout(() => {
-        window.location.href = '/admin/products';
-      }, 1000);
     } catch (err: any) {
       toast.error(
         `Error: ${
@@ -1415,11 +1410,6 @@ function NewProductPage() {
 
       toast.success('Network product created successfully!');
       resetForm();
-
-      // Reload page to ensure new product appears with fresh images
-      setTimeout(() => {
-        window.location.href = '/admin/products';
-      }, 1000);
     } catch (err: any) {
       toast.error(
         `Error: ${
@@ -1601,11 +1591,6 @@ function NewProductPage() {
 
       toast.success('Region product created successfully!');
       resetForm();
-
-      // Reload page to ensure new product appears with fresh images
-      setTimeout(() => {
-        window.location.href = '/admin/products';
-      }, 1000);
     } catch (err: any) {
       toast.error(
         `Error: ${
