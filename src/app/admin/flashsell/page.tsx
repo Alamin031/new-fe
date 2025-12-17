@@ -28,7 +28,7 @@ interface FormData {
   productIds: string[]
   startTime: string
   endTime: string
-  discountPrice: number
+  discountpercentage: number
   stock: number
 }
 
