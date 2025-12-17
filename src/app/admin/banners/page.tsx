@@ -89,8 +89,10 @@ function Page() {
     setLoading(true);
     try {
       const data = await herobannerService.findAll();
-      setHeroImages(data);
-    } catch (e) {} finally { setLoading(false); }
+      setHeroImages(Array.isArray(data) ? data : []);
+    } catch (e) {
+      setHeroImages([]);
+    } finally { setLoading(false); }
   };
   const handleEditClick = (img: Herobanner) => {
     setSelectedImage(img);
@@ -141,8 +143,10 @@ function Page() {
     setLoading(true);
     try {
       const data = await herobannerService.findAllBottom();
-      setBottomImages(data);
-    } catch (e) {} finally { setLoading(false); }
+      setBottomImages(Array.isArray(data) ? data : []);
+    } catch (e) {
+      setBottomImages([]);
+    } finally { setLoading(false); }
   };
   const handleBottomEditClick = (img: Herobanner) => {
     setSelectedBottomImage(img);
@@ -193,8 +197,10 @@ function Page() {
     setLoading(true);
     try {
       const data = await herobannerService.findAllMiddle();
-      setMiddleImages(data);
-    } catch (e) {} finally { setLoading(false); }
+      setMiddleImages(Array.isArray(data) ? data : []);
+    } catch (e) {
+      setMiddleImages([]);
+    } finally { setLoading(false); }
   };
   const handleMiddleEditClick = (img: Herobanner) => {
     setSelectedMiddleImage(img);
@@ -245,8 +251,10 @@ function Page() {
     setLoading(true);
     try {
       const data = await herobannerService.findAllGiveaway();
-      setGiveawayImages(data);
-    } catch (e) {} finally { setLoading(false); }
+      setGiveawayImages(Array.isArray(data) ? data : []);
+    } catch (e) {
+      setGiveawayImages([]);
+    } finally { setLoading(false); }
   };
   const handleGiveawayEditClick = (img: Herobanner) => {
     setSelectedGiveawayImage(img);
