@@ -55,10 +55,10 @@ export function ProductTabs({ product, faqs = [] }: ProductTabsProps) {
       </div>
 
       {/* Tab Content */}
-      <div className="py-12 animate-in fade-in-0 duration-300">
+      <div className="py-12 animate-in fade-in-0 duration-300 overflow-hidden">
         {activeTab === "specifications" && (
-          <div className="overflow-hidden rounded-2xl border border-border">
-            <table className="w-full">
+          <div className="overflow-x-auto rounded-2xl border border-border scrollbar-hide">
+            <table className="w-full min-w-full">
               <tbody>
                 {Object.entries(product.specifications ?? {}).map(([key, value], index) => (
                   <tr
@@ -68,8 +68,8 @@ export function ProductTabs({ product, faqs = [] }: ProductTabsProps) {
                       index % 2 === 0 ? "bg-muted/30" : "bg-card",
                     )}
                   >
-                    <td className="px-6 py-4 text-sm font-semibold text-muted-foreground w-1/3 uppercase tracking-wide">{key}</td>
-                    <td className="px-6 py-4 text-sm font-medium text-foreground">{String(value)}</td>
+                    <td className="px-4 sm:px-6 py-4 text-sm font-semibold text-muted-foreground w-1/3 uppercase tracking-wide whitespace-normal">{key}</td>
+                    <td className="px-4 sm:px-6 py-4 text-sm font-medium text-foreground">{String(value)}</td>
                   </tr>
                 ))}
               </tbody>
