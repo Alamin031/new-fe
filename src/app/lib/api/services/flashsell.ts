@@ -3,29 +3,35 @@ import { API_ENDPOINTS } from "../config";
 
 export interface Flashsell {
   id: string;
-  name: string;
-  description?: string;
+  title: string;
+  bannerImg: string;
+  productIds: string[];
   startTime: string;
   endTime: string;
-  products: string[];
-  createdAt: string;
-  updatedAt: string;
+  discountPrice: number;
+  stock: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface CreateFlashsellRequest {
-  name: string;
-  description?: string;
+  title: string;
+  bannerImg?: File | string;
+  productIds: string[];
   startTime: string;
   endTime: string;
-  products: string[];
+  discountPrice: number;
+  stock: number;
 }
 
 export interface UpdateFlashsellRequest {
-  name?: string;
-  description?: string;
+  title?: string;
+  bannerImg?: File | string;
+  productIds?: string[];
   startTime?: string;
   endTime?: string;
-  products?: string[];
+  discountPrice?: number;
+  stock?: number;
 }
 
 export const flashsellService = {
