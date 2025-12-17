@@ -116,7 +116,7 @@ export class AuthService {
   }
 
   /**
-   * Logout user
+   * Logout user - clears tokens and performs hard reload
    */
    async logout(): Promise<void> {
     try {
@@ -125,9 +125,16 @@ export class AuthService {
       // Still clear tokens even if logout API fails
       TokenManager.clearTokens()
       console.error("Logout API error (but tokens cleared):", error)
-      throw error
     } finally {
       TokenManager.clearTokens()
+
+      // Force hard reload to clear middleware cache and all session state
+      if (typeof window !== "undefined") {
+        // Give cookies time to be cleared by browser before reload
+        setTimeout(() => {
+          window.location.href = "/login"
+        }, 100)
+      }
     }
   }
 
