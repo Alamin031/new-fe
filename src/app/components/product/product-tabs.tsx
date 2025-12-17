@@ -32,15 +32,15 @@ export function ProductTabs({ product, faqs = [] }: ProductTabsProps) {
   ];
 
   return (
-    <div className="w-full">
+    <div className="w-full max-w-full overflow-hidden">
       {/* Tab Headers */}
-      <div className="flex gap-1 border-b border-border overflow-x-auto">
+      <div className="flex gap-1 border-b border-border overflow-x-auto scrollbar-hide -mx-2 px-2 sm:-mx-4 sm:px-4">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "shrink-0 pb-4 px-2 md:px-6 text-sm md:text-base font-medium transition-all duration-200 relative",
+              "shrink-0 pb-4 px-2 md:px-6 text-sm md:text-base font-medium transition-all duration-200 relative whitespace-nowrap",
               activeTab === tab.id
                 ? "text-foreground"
                 : "text-muted-foreground hover:text-foreground",
