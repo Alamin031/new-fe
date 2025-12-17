@@ -201,6 +201,7 @@ export default function GiveawayPage() {
               {error && <div className="text-red-600 text-center font-medium">{error}</div>}
             </form>
           </div>
+        
           <style jsx>{`
             .animate-fade-in {
               animation: fadeIn 0.2s ease;
