@@ -48,6 +48,7 @@ import {
 import productsService from '../../lib/api/services/products';
 import categoriesService from '../../lib/api/services/categories';
 import {EditProductModal} from '@/app/components/admin/edit-product-modal';
+import {ProductCacheUtils} from '@/app/lib/api/cache-utils';
 
 type UIProduct = {
   id: string;
@@ -272,6 +273,8 @@ function AdminProductsPage() {
       try {
         await productsService.delete(selectedProduct.id);
         setProducts(products.filter(p => p.id !== selectedProduct.id));
+        // Invalidate caches after deletion
+        ProductCacheUtils.invalidateProductLists();
         setDeleteOpen(false);
         setSelectedProduct(null);
       } catch {
