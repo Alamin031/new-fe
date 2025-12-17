@@ -35,6 +35,7 @@ export function AllProductsFilters({
   const [activeBrands, setActiveBrands] = useState<string[]>(selectedBrands);
   const [expandedSections, setExpandedSections] = useState({
     categories: true,
+    brands: true,
   });
 
   const toggleSection = (section: keyof typeof expandedSections) => {
