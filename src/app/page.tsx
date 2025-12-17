@@ -13,6 +13,7 @@ import {BottomBanner} from './components/home/bottom-banner';
 import {MiddleBanner} from './components/home/middel-banner';
 import {BlogSection} from './components/home/blog-section';
 import {MobileBottomNav} from './components/layout/mobile-bottom-nav';
+import {FlashSaleSection} from './components/home/flash-sale-section';
 
 export const dynamic = 'force-dynamic';
 
@@ -86,6 +87,9 @@ export default async function Page() {
             />
           </section>
         )}
+
+        {/* Flash Sale Section */}
+        <FlashSaleSection />
 
         {/* Dynamic Homecategory Sections (first 2) using ProductSectionLazy - Eager render (above fold) */}
         {sortedHomecategories.slice(0, 2).map(hc => (
