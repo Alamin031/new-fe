@@ -173,7 +173,7 @@ export function ProductGallery({ images, name, isEmi, isCare, selectedColorImage
         {/* Thumbnails */}
         {displayImages.length > 1 && (
           <div className="w-full max-w-full overflow-hidden">
-            <div className="flex gap-3 overflow-x-auto pb-2 scroll-smooth scroll-smooth max-w-full flex-row scrollbar-hide">
+            <div className="flex gap-3 overflow-x-auto pb-2 scroll-smooth max-w-full flex-row scrollbar-hide">
               {displayImages.map((image, index) => (
                 <button
                   key={index}
