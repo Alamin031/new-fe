@@ -30,6 +30,7 @@ export function AllProductsFilters({
 }: AllProductsFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [isHydrated, setIsHydrated] = useState(false);
   const [activeCategories, setActiveCategories] =
     useState<string[]>(selectedCategories);
   const [activeBrands, setActiveBrands] = useState<string[]>(selectedBrands);
@@ -37,6 +38,11 @@ export function AllProductsFilters({
     categories: true,
     brands: true,
   });
+
+  // Ensure hydration happens on client side only
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
