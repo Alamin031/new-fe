@@ -77,10 +77,10 @@ export function ProductGallery({ images, name, isEmi, isCare, selectedColorImage
 
   return (
     <>
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 w-full max-w-full">
         {/* Main Image Container */}
         <div
-          className="group relative aspect-square overflow-hidden rounded-3xl border border-border/70 bg-white shadow-sm dark:bg-background cursor-zoom-in transition-transform duration-200"
+          className="group relative aspect-square overflow-hidden rounded-3xl border border-border/70 bg-white shadow-sm dark:bg-background cursor-zoom-in transition-transform duration-200 w-full"
           onMouseEnter={() => setIsZoomed(true)}
           onMouseLeave={() => {
             setIsZoomed(false)
