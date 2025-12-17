@@ -557,10 +557,10 @@ export function ProductInfoRegion({
   }, [selectedRegion, selectedColor, selectedStorage, colors, storages]);
 
   return (
-    <div className="flex flex-col space-y-5">
+    <div className="flex flex-col space-y-5 w-full max-w-full overflow-hidden">
       {/* Header Actions */}
-      <div className="flex items-center justify-between">
-        <div className="flex-1">
+      <div className="flex items-center justify-between w-full min-w-0">
+        <div className="flex-1 min-w-0">
           {product.brand && (
             <a
               href={`/brand/${product.brand.slug}`}
@@ -568,7 +568,7 @@ export function ProductInfoRegion({
               {product.brand.name}
             </a>
           )}
-          <h1 className="text-4xl font-bold tracking-tight mt-2 leading-tight">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mt-2 leading-tight break-words">
             {product.name}
           </h1>
           {rawProduct?.shortDescription && (
