@@ -465,7 +465,7 @@ function SectionImages({
       <Card>
         <CardContent className="p-6">
           <div className="space-y-4">
-            {images.map((img: any) => (
+            {Array.isArray(images) && images.map((img: any) => (
               <div key={img.id} className="flex items-center gap-4 rounded-lg border border-border p-4">
                 <div className="cursor-grab text-muted-foreground">
                   <GripVertical className="h-5 w-5" />
