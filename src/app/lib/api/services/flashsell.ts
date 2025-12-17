@@ -46,7 +46,7 @@ export const flashsellService = {
     formData.append("productIds", JSON.stringify(data.productIds));
     formData.append("startTime", data.startTime);
     formData.append("endTime", data.endTime);
-    formData.append("discountPrice", data.discountPrice.toString());
+    formData.append("discountpercentage", data.discountpercentage.toString());
     formData.append("stock", data.stock.toString());
 
     const response = await apiClient.post<Flashsell>(API_ENDPOINTS.FLASHSELL_CREATE, formData, {
@@ -74,7 +74,7 @@ export const flashsellService = {
     if (data.productIds) formData.append("productIds", JSON.stringify(data.productIds));
     if (data.startTime) formData.append("startTime", data.startTime);
     if (data.endTime) formData.append("endTime", data.endTime);
-    if (data.discountPrice !== undefined) formData.append("discountPrice", data.discountPrice.toString());
+    if (data.discountpercentage !== undefined) formData.append("discountpercentage", data.discountpercentage.toString());
     if (data.stock !== undefined) formData.append("stock", data.stock.toString());
 
     const endpoint = API_ENDPOINTS.FLASHSELL_UPDATE.replace("{id}", id);
