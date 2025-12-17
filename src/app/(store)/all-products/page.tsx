@@ -228,7 +228,7 @@ export default async function Page({ searchParams }: AllProductsPageProps) {
       {/* Content */}
       <div className="flex flex-col gap-8 lg:flex-row">
         {/* Desktop Sidebar Filters */}
-        <aside className="hidden lg:block w-64 flex-shrink-0">
+        <aside className="hidden lg:block w-64 flex-shrink-0" suppressHydrationWarning>
           <AllProductsFilters
             categories={categories}
             brands={brands}
