@@ -250,11 +250,13 @@ function Page() {
   const fetchGiveImages = async () => {
     setLoading(true);
     try {
-      const data = await herobannerService.findAllGiveaway();
-      setGiveawayImages(Array.isArray(data) ? data : []);
+      const data = await herobannerService.findAllGive();
+      setGiveImages(Array.isArray(data) ? data : []);
     } catch (e) {
-      setGiveawayImages([]);
-    } finally { setLoading(false); }
+      setGiveImages([]);
+    } finally {
+      setLoading(false);
+    }
   };
   const handleGiveEditClick = (img: Herobanner) => {
     setSelectedGiveImage(img);

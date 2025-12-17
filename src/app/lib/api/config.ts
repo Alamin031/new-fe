@@ -129,12 +129,12 @@ export const API_ENDPOINTS = {
   WARRANTY_LOGS: '/warranty/{id}/logs',
 
   // Giveaways
-  GIVEAWAYS_CREATE: '/giveaways',
-  GIVEAWAYS_GET: '/giveaways',
-  GIVEAWAYS_GET_ONE: '/giveaways/{id}',
-  GIVEAWAYS_GET_BY_PRODUCT: '/giveaways/product',
-  GIVEAWAYS_EXPORT: '/giveaways/export',
-  GIVEAWAYS_DELETE: '/giveaways/{id}',
+  GIVEAWAYS_CREATE: '/give',
+  GIVEAWAYS_GET: '/give',
+  GIVEAWAYS_GET_ONE: '/give/{id}',
+  GIVEAWAYS_GET_BY_PRODUCT: '/give/product',
+  GIVEAWAYS_EXPORT: '/give/export',
+  GIVEAWAYS_DELETE: '/give/{id}',
 
   // Policies
   POLICIES_CREATE: '/policies',
