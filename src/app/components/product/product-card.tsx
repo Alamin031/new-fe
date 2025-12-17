@@ -6,7 +6,7 @@ import type React from 'react';
 import {useState, useEffect} from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import {Heart, ArrowLeftRight, Eye} from 'lucide-react';
+import {Heart, ArrowLeftRight} from 'lucide-react';
 import {Button} from '../ui/button';
 import {Badge} from '../ui/badge';
 import {useWishlistStore} from '@/app/store/wishlist-store';
@@ -51,8 +51,6 @@ export function ProductCard({
           setEmiError(
             err?.message || 'Failed to load EMI plans. Please try again later.'
           );
-          // Log the error for debugging
-          // eslint-disable-next-line no-console
           console.error('Error fetching EMI plans:', err);
         } finally {
           setEmiLoading(false);
@@ -211,26 +209,26 @@ export function ProductCard({
         </div>
 
         {/* Quick Actions - Bottom Right */}
-        <div className="absolute bottom-3 right-3 flex flex-col gap-2 rounded-lg bg-stone-500 p-2 shadow-md">
+        <div className="absolute bottom-3 right-3 flex flex-col gap-1 rounded-lg bg-stone-500 p-1.5 shadow-md">
           <Button
             variant="secondary"
             size="icon"
             className={cn(
-              'h-9 w-9 rounded-full shadow-md',
+              'h-5 w-5 rounded-full shadow-md',
               inWishlist && 'bg-blue-600 text-white hover:bg-blue-700',
             )}
             onClick={handleWishlistToggle}>
-            <Heart className={cn('h-4 w-4', inWishlist && 'fill-current')} />
+            <Heart className={cn('h-3 w-3', inWishlist && 'fill-current')} />
           </Button>
           <Button
             variant="secondary"
             size="icon"
             className={cn(
-              'h-9 w-9 rounded-full shadow-md',
+              'h-5 w-5 rounded-full shadow-md',
               inCompare && 'bg-yellow-500 text-white hover:bg-yellow-600',
             )}
             onClick={handleCompareToggle}>
-            <ArrowLeftRight className={cn('h-4 w-4', inCompare && 'fill-current')} />
+            <ArrowLeftRight className={cn('h-3 w-3', inCompare && 'fill-current')} />
           </Button>
         </div>
       </div>
