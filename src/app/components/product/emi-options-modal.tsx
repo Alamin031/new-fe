@@ -164,7 +164,7 @@ export function EmiOptionsModal({
             </div>
 
             {/* Plans Table */}
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto scrollbar-hide">
               <Table>
                 <TableHeader>
                   <TableRow className="border-b-2 border-border">
