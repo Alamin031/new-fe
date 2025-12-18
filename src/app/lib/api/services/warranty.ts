@@ -3,17 +3,13 @@ import { Warranty, ActivateWarrantyRequest, WarrantyLookupResponse, WarrantyLog 
 import { API_ENDPOINTS } from "../config"
 
 export const warrantyService = {
-  /**
-   * Activate warranty (Admin/Management only)
-   */
+
   activate: async (data: ActivateWarrantyRequest): Promise<Warranty> => {
     const response = await apiClient.post<Warranty>(API_ENDPOINTS.WARRANTY_ACTIVATE, data)
     return response.data
   },
 
-  /**
-   * Lookup warranty by IMEI or Serial number with optional phone
-   */
+
   lookup: async (data: { imei?: string; serial?: string; phone?: string }): Promise<WarrantyLookupResponse> => {
     const response = await apiClient.post<WarrantyLookupResponse>(API_ENDPOINTS.WARRANTY_LOOKUP, data)
     return response.data
