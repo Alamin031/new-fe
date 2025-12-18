@@ -917,6 +917,19 @@ export function ProductInfoRegion({
           Buy Now
         </Button>
 
+        {/* Order Via WhatsApp Button */}
+        <Button
+          variant="greentransparent"
+          size="lg"
+          className="w-full h-12 text-base font-semibold rounded-lg border-2 border-[#25D366] hover:border-[#20BA5A]"
+          onClick={() => {
+            const message = `I want to know more about *${product.name}* URL: ${window.location.origin}/product/${product.slug}`;
+            const whatsappUrl = `https://wa.me/8801343159931?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+          }}>
+          Order Via WhatsApp
+        </Button>
+
         {/* Company Deal Button */}
         <Button
           variant="orange"
