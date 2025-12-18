@@ -161,8 +161,7 @@ function OrderCard({ order }: { order: OrderWithStatus }) {
           <DialogHeader>
             <DialogTitle>Order Tracking</DialogTitle>
           </DialogHeader>
-          {trackingLoading && <div className="py-8 text-center text-muted-foreground">Loading tracking info...</div>}
-          {!trackingLoading && trackingData && (
+          {trackingData && (
             <OrderTrackingModal
               tracking={trackingData}
               productName={firstItem?.name}
