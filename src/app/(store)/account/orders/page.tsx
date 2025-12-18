@@ -147,10 +147,9 @@ function OrderCard({ order }: { order: OrderWithStatus }) {
               size="sm"
               className="gap-1 bg-transparent"
               onClick={handleTrackOrder}
-              disabled={trackingLoading}
             >
               <Map className="h-4 w-4" />
-              {trackingLoading ? "Loading..." : "Track Order"}
+              Track Order
             </Button>
           </div>
         </CardContent>
