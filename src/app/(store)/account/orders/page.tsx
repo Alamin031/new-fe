@@ -14,7 +14,7 @@ import { formatPrice } from "../../../lib/utils/format"
 // import { useOrderTrackingStore } from "../../../store/order-tracking-store"
 import { ordersService } from "../../../lib/api/services"
 import type { Order } from "../../../lib/api/types"
-import { OrderTrackingTimeline } from "../../../components/order/order-tracking-timeline"
+import { OrderTrackingModal } from "../../../components/order/order-tracking-modal"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../../components/ui/dialog"
 import { withProtectedRoute } from "../../../lib/auth/protected-route"
 
@@ -131,25 +131,23 @@ function OrderCard({ order }: { order: OrderWithStatus }) {
             ))}
           </div>
 
-          <div className="mt-4 flex flex-wrap gap-2">
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
             <Link href={`/account/orders/${order.id}`}>
               <Button variant="outline" size="sm" className="gap-1 bg-transparent">
                 View Details
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </Link>
-            {(order.status === "Shipped" || order.status === "Processing") && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1 bg-transparent"
-                onClick={handleTrackOrder}
-                disabled={trackingLoading}
-              >
-                <Map className="h-4 w-4" />
-                {trackingLoading ? "Loading..." : "Track Order"}
-              </Button>
-            )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1 bg-transparent"
+              onClick={handleTrackOrder}
+              disabled={trackingLoading}
+            >
+              <Map className="h-4 w-4" />
+              {trackingLoading ? "Loading..." : "Track Order"}
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -162,7 +160,11 @@ function OrderCard({ order }: { order: OrderWithStatus }) {
           </DialogHeader>
           {trackingError && <div className="text-red-500 mb-2">{trackingError}</div>}
           {trackingData ? (
-            <OrderTrackingTimeline tracking={trackingData} />
+            <OrderTrackingModal
+              tracking={trackingData}
+              productName={firstItem?.name}
+              productImage={firstItem?.image}
+            />
           ) : trackingLoading ? (
             <div>Loading...</div>
           ) : null}
