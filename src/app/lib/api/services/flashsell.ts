@@ -89,10 +89,10 @@ export const flashsellService = {
     if (data.stock !== undefined) formData.append("stock", data.stock.toString());
 
     const endpoint = API_ENDPOINTS.FLASHSELL_UPDATE.replace("{id}", id);
-    const response = await apiClient.patch<Flashsell>(endpoint, formData, {
+    const response = await apiClient.patch<any>(endpoint, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-    return response.data;
+    return normalizeFlashsell(response.data);
   },
   remove: async (id: string): Promise<void> => {
     const endpoint = API_ENDPOINTS.FLASHSELL_DELETE.replace("{id}", id);
