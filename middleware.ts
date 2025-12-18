@@ -78,7 +78,7 @@ function decodeTokenLocally(token: string): Record<string, unknown> | null {
 
 async function validateTokenWithBackend(token: string): Promise<Record<string, unknown> | null> {
   try {
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api"
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "https://friends-be-production.up.railway.app/api"
     const response = await fetch(`${apiBaseUrl}/auth/decode/${token}`, {
       method: "POST",
       headers: {
