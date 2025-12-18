@@ -34,6 +34,17 @@ export interface UpdateFlashsellRequest {
   stock?: number;
 }
 
+const normalizeFlashsell = (data: any): Flashsell => {
+  return {
+    ...data,
+    productIds: typeof data.productIds === "string" ? JSON.parse(data.productIds) : (Array.isArray(data.productIds) ? data.productIds : []),
+  };
+};
+
+const normalizeFlashsellArray = (data: any[]): Flashsell[] => {
+  return data.map(normalizeFlashsell);
+};
+
 export const flashsellService = {
   create: async (data: CreateFlashsellRequest): Promise<Flashsell> => {
     const formData = new FormData();
@@ -52,16 +63,16 @@ export const flashsellService = {
     const response = await apiClient.post<Flashsell>(API_ENDPOINTS.FLASHSELL_CREATE, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-    return response.data;
+    return normalizeFlashsell(response.data);
   },
   findAll: async (): Promise<Flashsell[]> => {
-    const response = await apiClient.get<Flashsell[]>(API_ENDPOINTS.FLASHSELL_GET_ALL);
-    return response.data;
+    const response = await apiClient.get<any[]>(API_ENDPOINTS.FLASHSELL_GET_ALL);
+    return normalizeFlashsellArray(response.data);
   },
   findOne: async (id: string): Promise<Flashsell> => {
     const endpoint = API_ENDPOINTS.FLASHSELL_GET_ONE.replace("{id}", id);
-    const response = await apiClient.get<Flashsell>(endpoint);
-    return response.data;
+    const response = await apiClient.get<any>(endpoint);
+    return normalizeFlashsell(response.data);
   },
   update: async (id: string, data: UpdateFlashsellRequest): Promise<Flashsell> => {
     const formData = new FormData();
