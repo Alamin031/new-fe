@@ -14,24 +14,30 @@ import { formatPrice } from "../../../lib/utils/format"
 // import { useOrderTrackingStore } from "../../../store/order-tracking-store"
 import { ordersService } from "../../../lib/api/services"
 import type { Order } from "../../../lib/api/types"
-import { OrderTrackingModal } from "../../../components/order/order-tracking-modal"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../../components/ui/dialog"
 import { withProtectedRoute } from "../../../lib/auth/protected-route"
+import { OrderTrackingModal } from "@/app/components/order/order-tracking-modal"
 
 
 
 function getStatusColor(status: string) {
-  switch (status) {
-    case "Delivered":
-      return "bg-green-500/10 text-green-600 border-green-200"
-    case "Shipped":
-      return "bg-blue-500/10 text-blue-600 border-blue-200"
-    case "Processing":
-      return "bg-yellow-500/10 text-yellow-600 border-yellow-200"
-    case "Cancelled":
-      return "bg-red-500/10 text-red-600 border-red-200"
+  switch (status.toLowerCase()) {
+    case "order placed":
+      return "bg-gray-500/10 text-gray-600 border-gray-200";
+    case "processing":
+      return "bg-yellow-500/10 text-yellow-600 border-yellow-200";
+    case "preparing to ship":
+      return "bg-orange-500/10 text-orange-600 border-orange-200";
+    case "shipped":
+      return "bg-blue-500/10 text-blue-600 border-blue-200";
+    case "delivered":
+      return "bg-green-500/10 text-green-600 border-green-200";
+    case "cancelled":
+      return "bg-red-500/10 text-red-600 border-red-200";
+    case "returned":
+      return "bg-purple-500/10 text-purple-600 border-purple-200";
     default:
-      return ""
+      return "bg-muted text-muted-foreground border-border";
   }
 }
 
@@ -71,6 +77,10 @@ function OrderCard({ order }: { order: OrderWithStatus }) {
           location: "",
         },
       ],
+      from: {
+        name: "Friend's Telecom",
+        address: "Bashundhara City Shopping Complex Basement 2, Shop 25, Dhaka, Bangladesh"
+      }
     };
     setTrackingData(trackingData);
     setTrackingModalOpen(true);
@@ -162,11 +172,21 @@ function OrderCard({ order }: { order: OrderWithStatus }) {
             <DialogTitle>Order Tracking</DialogTitle>
           </DialogHeader>
           {trackingData && (
-            <OrderTrackingModal
-              tracking={trackingData}
-              productName={firstItem?.name}
-              productImage={firstItem?.image}
-            />
+            <>
+              {/* Show From section above tracking modal */}
+              <div className="mb-4 p-4 rounded bg-muted/50 border">
+                <div className="font-semibold mb-1">From:</div>
+                <div className="font-mono text-sm">
+                  Friend&apos;s Telecom<br />
+                  Bashundhara City Shopping Complex Basement 2, Shop 25, Dhaka, Bangladesh
+                </div>
+              </div>
+              <OrderTrackingModal
+                tracking={trackingData}
+                productName={firstItem?.name}
+                productImage={firstItem?.image}
+              />
+            </>
           )}
         </DialogContent>
       </Dialog>

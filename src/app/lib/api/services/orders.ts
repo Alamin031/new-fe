@@ -85,17 +85,17 @@ export const ordersService = {
   /**
    * Track order (new backend endpoint)
    */
-  track: async (orderNumber: string): Promise<any> => {
-    const endpoint = API_ENDPOINTS.ORDERS_TRACKING.replace("{orderNumber}", orderNumber);
+  track: async (id: string): Promise<any> => {
+    const endpoint = API_ENDPOINTS.ORDERS_GET_ONE.replace("{id}", id);
     const response = await apiClient.get(endpoint);
 
     // Transform backend response to match OrderTracking interface
     const data = response.data;
     return {
-      orderId: data.id || orderNumber,
+      orderId: data.id,
       currentStatus: data.status?.toLowerCase() || "pending",
       estimatedDelivery: data.estimatedDelivery || new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-      trackingNumber: data.trackingNumber || orderNumber,
+      trackingNumber: data.trackingNumber || data.orderNumber || "",
       carrier: data.carrier || "Standard Delivery",
       statusHistory: (data.timeline || data.statusHistory || []).map((item: any, index: number) => ({
         status: typeof item.status === "string" ? item.status.toLowerCase() : "pending",

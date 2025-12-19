@@ -1,192 +1,262 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-'use client'
+'use client';
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import { Search, Filter, Eye, MoreVertical, Download, Printer, Plus, Mail, X } from "lucide-react"
-import { withProtectedRoute } from "../../lib/auth/protected-route"
-import { Card, CardContent } from "../../components/ui/card"
-import { Button } from "../../components/ui/button"
-import { Input } from "../../components/ui/input"
-import { Badge } from "../../components/ui/badge"
-import { Checkbox } from "../../components/ui/checkbox"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../../components/ui/dropdown-menu"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../../components/ui/dialog"
-import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "../../components/ui/sheet"
-import { Label } from "../../components/ui/label"
-import { Textarea } from "../../components/ui/textarea"
-import { formatPrice } from "../../lib/utils/format"
-import { ordersService } from "../../lib/api/services"
+import {useState, useEffect} from 'react';
+import Link from 'next/link';
+import {
+  Search,
+  Filter,
+  Eye,
+  MoreVertical,
+  Download,
+  Printer,
+  Plus,
+  Mail,
+  X,
+} from 'lucide-react';
+import {withProtectedRoute} from '../../lib/auth/protected-route';
+import {Card, CardContent} from '../../components/ui/card';
+import {Button} from '../../components/ui/button';
+import {Input} from '../../components/ui/input';
+import {Badge} from '../../components/ui/badge';
+import {Checkbox} from '../../components/ui/checkbox';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '../../components/ui/tabs';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../../components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../../components/ui/dialog';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '../../components/ui/sheet';
+import {Label} from '../../components/ui/label';
+import {Textarea} from '../../components/ui/textarea';
+import {formatPrice} from '../../lib/utils/format';
+import {ordersService} from '../../lib/api/services';
 
 interface OrderItem {
-  id: string
-  name: string
-  quantity: number
-  price: number
+  id: string;
+  name: string;
+  quantity: number;
+  price: number;
 }
 
 interface Order {
-  id: string
-  customer: string
-  email: string
-  items: number
-  total: number
-  status: string
-  payment: string
-  date: string
-  address?: string
-  phone?: string
-  orderItems?: OrderItem[]
+  id: string;
+  customer: string;
+  email: string;
+  items: number;
+  total: number;
+  status: string;
+  payment: string;
+  date: string;
+  address?: string;
+  phone?: string;
+  orderItems?: OrderItem[];
+  orderNumber?: string;
 }
 
 function getStatusColor(status: string) {
-  switch (status) {
-    case "Delivered":
-      return "bg-green-500/10 text-green-600"
-    case "Shipped":
-      return "bg-blue-500/10 text-blue-600"
-    case "Processing":
-      return "bg-yellow-500/10 text-yellow-600"
-    case "Pending":
-      return "bg-orange-500/10 text-orange-600"
-    case "Cancelled":
-      return "bg-red-500/10 text-red-600"
+  switch (status.toLowerCase()) {
+    case 'order placed':
+      return 'bg-orange-500/10 text-orange-600';
+    case 'processing':
+      return 'bg-yellow-500/10 text-yellow-600';
+    case 'preparing to ship':
+      return 'bg-purple-500/10 text-purple-600';
+    case 'shipped':
+      return 'bg-blue-500/10 text-blue-600';
+    case 'delivered':
+      return 'bg-green-500/10 text-green-600';
+    case 'cancelled':
+      return 'bg-red-500/10 text-red-600';
+    case 'returned':
+      return 'bg-gray-500/10 text-gray-600';
     default:
-      return ""
+      return '';
   }
 }
 
 function getPaymentColor(payment: string) {
   switch (payment) {
-    case "Paid":
-      return "bg-green-500/10 text-green-600"
-    case "Pending":
-      return "bg-yellow-500/10 text-yellow-600"
-    case "Refunded":
-      return "bg-gray-500/10 text-gray-600"
+    case 'Paid':
+      return 'bg-green-500/10 text-green-600';
+    case 'Pending':
+      return 'bg-yellow-500/10 text-yellow-600';
+    case 'Refunded':
+      return 'bg-gray-500/10 text-gray-600';
     default:
-      return ""
+      return '';
   }
 }
 
 function AdminOrdersPage() {
-  const [orders, setOrders] = useState<Order[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [viewOpen, setViewOpen] = useState(false)
-  const [addDrawerOpen, setAddDrawerOpen] = useState(false)
-  const [statusUpdateOpen, setStatusUpdateOpen] = useState(false)
-  const [statusUpdating, setStatusUpdating] = useState(false)
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [viewOpen, setViewOpen] = useState(false);
+  const [addDrawerOpen, setAddDrawerOpen] = useState(false);
+  const [statusUpdateOpen, setStatusUpdateOpen] = useState(false);
+  const [statusUpdating, setStatusUpdating] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [statusUpdateData, setStatusUpdateData] = useState({
-    orderId: "",
-    newStatus: "",
-  })
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+    orderId: '',
+    newStatus: '',
+  });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [newOrderForm, setNewOrderForm] = useState({
-    customer: "",
-    email: "",
-    phone: "",
-    address: "",
-    items: [{ name: "", quantity: 1, price: 0 }],
-    status: "Pending",
-    payment: "Pending",
-  })
+    customer: '',
+    email: '',
+    phone: '',
+    address: '',
+    items: [{name: '', quantity: 1, price: 0}],
+    status: 'order placed',
+    payment: 'Pending',
+  });
 
-  const ORDER_STATUSES = ["Pending", "Confirmed", "Processing", "Shipped", "Delivered", "Cancelled", "Returned"]
+  const ORDER_STATUSES = [
+    'order placed',
+    'processing',
+    'preparing to ship',
+    'shipped',
+    'delivered',
+    'cancelled',
+    'returned',
+  ];
 
   useEffect(() => {
     const fetchOrders = async () => {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
       try {
-        const res = await ordersService.getAll(1, 100)
-        let fetchedOrders: any[] = []
+        const res = await ordersService.getAll(1, 100);
+        let fetchedOrders: any[] = [];
 
         if (Array.isArray(res)) {
-          fetchedOrders = res
+          fetchedOrders = res;
         } else if (res && res.data && Array.isArray(res.data)) {
-          fetchedOrders = res.data
+          fetchedOrders = res.data;
         }
 
         const mappedOrders = fetchedOrders.map((order: any) => ({
           id: order.id,
-          customer: order.fullName || order.customer?.fullName || "Unknown",
-          email: order.email || order.customer?.email || "",
+          orderNumber:
+            order.orderNumber ||
+            order.order_number ||
+            order.orderNo ||
+            order.order_no ||
+            order.id,
+          customer: order.fullName || order.customer?.fullName || 'Unknown',
+          email: order.email || order.customer?.email || '',
           items: (order.orderItems || []).length,
           total: order.total,
-          status: order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : "Pending",
-          payment: order.paymentStatus ? order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1) : "Pending",
+          status: order.status ? order.status : 'order placed',
+          payment: order.paymentStatus
+            ? order.paymentStatus.charAt(0).toUpperCase() +
+              order.paymentStatus.slice(1)
+            : 'Pending',
           date: order.createdAt
-            ? new Date(order.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
-            : "",
-          address: order.address || order.customer?.address || "",
-          phone: order.phone || order.customer?.phone || "",
-          orderItems: (order.orderItems || []).map((item: any, idx: number) => ({
-            id: item.id || String(idx),
-            name: item.productName || "Product",
-            quantity: item.quantity,
-            price: item.price,
-          })),
-        }))
+            ? new Date(order.createdAt).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+              })
+            : '',
+          address: order.address || order.customer?.address || '',
+          phone: order.phone || order.customer?.phone || '',
+          orderItems: (order.orderItems || []).map(
+            (item: any, idx: number) => ({
+              id: item.id || String(idx),
+              name: item.productName || 'Product',
+              quantity: item.quantity,
+              price: item.price,
+            }),
+          ),
+        }));
 
-        setOrders(mappedOrders)
+        setOrders(mappedOrders);
       } catch (err) {
-        setError("Failed to load orders. Please try again.")
-        console.error("Error fetching orders:", err)
+        setError('Failed to load orders. Please try again.');
+        console.error('Error fetching orders:', err);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchOrders()
-  }, [])
+    fetchOrders();
+  }, []);
 
   const validateForm = () => {
-    const errors: Record<string, string> = {}
+    const errors: Record<string, string> = {};
 
     if (!newOrderForm.customer.trim()) {
-      errors.customer = "Customer name is required"
+      errors.customer = 'Customer name is required';
     }
     if (!newOrderForm.email.trim()) {
-      errors.email = "Email is required"
+      errors.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newOrderForm.email)) {
-      errors.email = "Please enter a valid email"
+      errors.email = 'Please enter a valid email';
     }
     if (!newOrderForm.phone.trim()) {
-      errors.phone = "Phone is required"
+      errors.phone = 'Phone is required';
     }
     if (!newOrderForm.address.trim()) {
-      errors.address = "Address is required"
+      errors.address = 'Address is required';
     }
 
-    const validItems = newOrderForm.items.filter(item => item.name.trim() !== "")
+    const validItems = newOrderForm.items.filter(
+      item => item.name.trim() !== '',
+    );
     if (validItems.length === 0) {
-      errors.items = "At least one item is required"
+      errors.items = 'At least one item is required';
     }
 
     validItems.forEach((item, index) => {
       if (item.quantity < 1) {
-        errors[`item-qty-${index}`] = "Quantity must be at least 1"
+        errors[`item-qty-${index}`] = 'Quantity must be at least 1';
       }
       if (item.price < 0) {
-        errors[`item-price-${index}`] = "Price cannot be negative"
+        errors[`item-price-${index}`] = 'Price cannot be negative';
       }
-    })
+    });
 
-    setFormErrors(errors)
-    return Object.keys(errors).length === 0
-  }
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const handleViewClick = (order: Order) => {
-    setSelectedOrder(order)
-    setViewOpen(true)
-  }
+    setSelectedOrder(order);
+    setViewOpen(true);
+  };
 
   const handlePrintInvoice = (order: Order) => {
-    const printWindow = window.open("", "", "height=600,width=800")
+    const printWindow = window.open('', '', 'height=600,width=800');
     if (printWindow) {
       const invoiceHTML = `
         <!DOCTYPE html>
@@ -227,7 +297,7 @@ function AdminOrdersPage() {
               <div class="invoice-details">
                 <div class="invoice-section">
                   <h3>From:</h3>
-                  <p><span class="label">Your Store Name</span><br>123 Business Street<br>Dhaka, Bangladesh</p>
+                  <p><span class="label">Friend's Telecom</span><br>Bashundhara City Shopping Complex Basement 2, Shop 25, Dhaka, Bangladesh</p>
                 </div>
                 <div class="invoice-section">
                   <h3>Bill To:</h3>
@@ -250,14 +320,22 @@ function AdminOrdersPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  ${order.orderItems?.map((item) => `
+                  ${order.orderItems
+                    ?.map(
+                      item => `
                     <tr>
                       <td>${item.name}</td>
                       <td style="text-align: right;">${item.quantity}</td>
-                      <td style="text-align: right;">৳ ${item.price.toLocaleString("en-BD")}</td>
-                      <td style="text-align: right;">৳ ${(item.price * item.quantity).toLocaleString("en-BD")}</td>
+                      <td style="text-align: right;">৳ ${item.price.toLocaleString(
+                        'en-BD',
+                      )}</td>
+                      <td style="text-align: right;">৳ ${(
+                        item.price * item.quantity
+                      ).toLocaleString('en-BD')}</td>
                     </tr>
-                  `).join("")}
+                  `,
+                    )
+                    .join('')}
                 </tbody>
               </table>
 
@@ -265,11 +343,11 @@ function AdminOrdersPage() {
                 <div class="total-box">
                   <div class="total-row">
                     <span>Subtotal:</span>
-                    <span>৳ ${order.total.toLocaleString("en-BD")}</span>
+                    <span>৳ ${order.total.toLocaleString('en-BD')}</span>
                   </div>
                   <div class="total-row final">
                     <span>Total:</span>
-                    <span>৳ ${order.total.toLocaleString("en-BD")}</span>
+                    <span>৳ ${order.total.toLocaleString('en-BD')}</span>
                   </div>
                 </div>
               </div>
@@ -281,73 +359,88 @@ function AdminOrdersPage() {
 
               <div class="footer">
                 <p>Thank you for your business!</p>
-                <p>Invoice generated on ${new Date().toLocaleDateString("en-BD", { year: "numeric", month: "long", day: "numeric" })}</p>
+                <p>Invoice generated on ${new Date().toLocaleDateString(
+                  'en-BD',
+                  {year: 'numeric', month: 'long', day: 'numeric'},
+                )}</p>
               </div>
             </div>
           </body>
         </html>
-      `
-      printWindow.document.write(invoiceHTML)
-      printWindow.document.close()
-      printWindow.print()
+      `;
+      printWindow.document.write(invoiceHTML);
+      printWindow.document.close();
+      printWindow.print();
     }
-  }
+  };
 
   const handleSendInvoiceEmail = (order: Order) => {
-    alert(`Invoice email sent to ${order.email}`)
-  }
+    alert(`Invoice email sent to ${order.email}`);
+  };
 
   const handleStatusUpdate = async () => {
     if (!statusUpdateData.newStatus) {
-      setFormErrors({ status: "Please select a status" })
-      return
+      setFormErrors({status: 'Please select a status'});
+      return;
     }
 
-    setStatusUpdating(true)
+    setStatusUpdating(true);
     try {
-      const statusLowerCase = statusUpdateData.newStatus.toLowerCase()
+      // Always send lowercase status to backend
       await ordersService.updateStatus(statusUpdateData.orderId, {
-        status: statusLowerCase as any,
-      })
+        status:
+          statusUpdateData.newStatus as import('../../lib/api/types').OrderStatus,
+      });
 
-      setOrders((prevOrders) =>
-        prevOrders.map((order) =>
+      // Fetch updated order from backend to get new status and payment
+      const updatedOrder = await ordersService.getById(statusUpdateData.orderId);
+
+      setOrders(prevOrders =>
+        prevOrders.map(order =>
           order.id === statusUpdateData.orderId
             ? {
                 ...order,
-                status: statusUpdateData.newStatus,
+                status: updatedOrder.status,
+                payment: updatedOrder.paymentStatus
+                  ? updatedOrder.paymentStatus.charAt(0).toUpperCase() + updatedOrder.paymentStatus.slice(1)
+                  : order.payment,
               }
-            : order
-        )
-      )
+            : order,
+        ),
+      );
 
-      setStatusUpdateOpen(false)
-      setStatusUpdateData({ orderId: "", newStatus: "" })
-      setFormErrors({})
+      setStatusUpdateOpen(false);
+      setStatusUpdateData({orderId: '', newStatus: ''});
+      setFormErrors({});
     } catch (err) {
-      setFormErrors({ status: "Failed to update status. Please try again." })
-      console.error("Error updating status:", err)
+      setFormErrors({status: 'Failed to update status. Please try again.'});
+      console.error('Error updating status:', err);
     } finally {
-      setStatusUpdating(false)
+      setStatusUpdating(false);
     }
-  }
+  };
 
   const openStatusUpdateDialog = (order: Order) => {
     setStatusUpdateData({
       orderId: order.id,
-      newStatus: order.status,
-    })
-    setStatusUpdateOpen(true)
-    setFormErrors({})
-  }
+      newStatus: order.status.toLowerCase(),
+    });
+    setStatusUpdateOpen(true);
+    setFormErrors({});
+  };
 
   const handleAddOrder = async () => {
     if (!validateForm()) {
-      return
+      return;
     }
 
-    const validItems = newOrderForm.items.filter(item => item.name.trim() !== "")
-    const totalAmount = validItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
+    const validItems = newOrderForm.items.filter(
+      item => item.name.trim() !== '',
+    );
+    const totalAmount = validItems.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0,
+    );
 
     try {
       const orderData = {
@@ -355,15 +448,15 @@ function AdminOrdersPage() {
         email: newOrderForm.email,
         phone: newOrderForm.phone,
         address: newOrderForm.address,
-        orderItems: validItems.map((item) => ({
+        orderItems: validItems.map(item => ({
           productName: item.name,
           quantity: item.quantity,
           price: item.price,
         })),
         total: totalAmount,
-      }
+      };
 
-      await ordersService.create(orderData as any)
+      await ordersService.create(orderData as any);
 
       const newOrder: Order = {
         id: `ORD-${Date.now()}`,
@@ -373,7 +466,11 @@ function AdminOrdersPage() {
         total: totalAmount,
         status: newOrderForm.status,
         payment: newOrderForm.payment,
-        date: new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }),
+        date: new Date().toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+        }),
         address: newOrderForm.address,
         phone: newOrderForm.phone,
         orderItems: validItems.map((item, idx) => ({
@@ -382,54 +479,63 @@ function AdminOrdersPage() {
           quantity: item.quantity,
           price: item.price,
         })),
-      }
-      setOrders([newOrder, ...orders])
-      setAddDrawerOpen(false)
-      setFormErrors({})
+      };
+      setOrders([newOrder, ...orders]);
+      setAddDrawerOpen(false);
+      setFormErrors({});
       setNewOrderForm({
-        customer: "",
-        email: "",
-        phone: "",
-        address: "",
-        items: [{ name: "", quantity: 1, price: 0 }],
-        status: "Pending",
-        payment: "Pending",
-      })
+        customer: '',
+        email: '',
+        phone: '',
+        address: '',
+        items: [{name: '', quantity: 1, price: 0}],
+        status: 'order placed',
+        payment: 'Pending',
+      });
     } catch (err) {
-      setFormErrors({ submit: "Failed to create order. Please try again." })
-      console.error("Error creating order:", err)
+      setFormErrors({submit: 'Failed to create order. Please try again.'});
+      console.error('Error creating order:', err);
     }
-  }
+  };
 
   const addOrderItem = () => {
     setNewOrderForm({
       ...newOrderForm,
-      items: [...newOrderForm.items, { name: "", quantity: 1, price: 0 }],
-    })
-  }
+      items: [...newOrderForm.items, {name: '', quantity: 1, price: 0}],
+    });
+  };
 
   const removeOrderItem = (index: number) => {
     setNewOrderForm({
       ...newOrderForm,
       items: newOrderForm.items.filter((_, i) => i !== index),
-    })
-  }
+    });
+  };
 
-  const updateOrderItem = (index: number, field: string, value: string | number) => {
-    const updatedItems = [...newOrderForm.items]
-    updatedItems[index] = { ...updatedItems[index], [field]: value }
-    setNewOrderForm({ ...newOrderForm, items: updatedItems })
-  }
+  const updateOrderItem = (
+    index: number,
+    field: string,
+    value: string | number,
+  ) => {
+    const updatedItems = [...newOrderForm.items];
+    updatedItems[index] = {...updatedItems[index], [field]: value};
+    setNewOrderForm({...newOrderForm, items: updatedItems});
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Orders</h1>
-          <p className="text-muted-foreground">Manage and process customer orders.</p>
+          <p className="text-muted-foreground">
+            Manage and process customer orders.
+          </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="gap-2 bg-transparent" onClick={() => setAddDrawerOpen(true)}>
+          <Button
+            variant="outline"
+            className="gap-2 bg-transparent"
+            onClick={() => setAddDrawerOpen(true)}>
             <Plus className="h-4 w-4" />
             Add Order
           </Button>
@@ -453,8 +559,7 @@ function AdminOrdersPage() {
                 variant="outline"
                 size="sm"
                 className="mt-4"
-                onClick={() => window.location.reload()}
-              >
+                onClick={() => window.location.reload()}>
                 Try Again
               </Button>
             </div>
@@ -463,17 +568,37 @@ function AdminOrdersPage() {
               <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <TabsList>
                   <TabsTrigger value="all">All ({orders.length})</TabsTrigger>
-                  <TabsTrigger value="pending">
-                    Pending ({orders.filter((o) => o.status === "Pending").length})
+                  <TabsTrigger value="order placed">
+                    Order Placed (
+                    {orders.filter(o => o.status === 'order placed').length})
                   </TabsTrigger>
                   <TabsTrigger value="processing">
-                    Processing ({orders.filter((o) => o.status === "Processing").length})
+                    Processing (
+                    {orders.filter(o => o.status === 'processing').length})
+                  </TabsTrigger>
+                  <TabsTrigger value="preparing to ship">
+                    Preparing to Ship (
+                    {
+                      orders.filter(o => o.status === 'preparing to ship')
+                        .length
+                    }
+                    )
                   </TabsTrigger>
                   <TabsTrigger value="shipped">
-                    Shipped ({orders.filter((o) => o.status === "Shipped").length})
+                    Shipped ({orders.filter(o => o.status === 'shipped').length}
+                    )
                   </TabsTrigger>
                   <TabsTrigger value="delivered">
-                    Delivered ({orders.filter((o) => o.status === "Delivered").length})
+                    Delivered (
+                    {orders.filter(o => o.status === 'delivered').length})
+                  </TabsTrigger>
+                  <TabsTrigger value="cancelled">
+                    Cancelled (
+                    {orders.filter(o => o.status === 'cancelled').length})
+                  </TabsTrigger>
+                  <TabsTrigger value="returned">
+                    Returned (
+                    {orders.filter(o => o.status === 'returned').length})
                   </TabsTrigger>
                 </TabsList>
               </div>
@@ -494,7 +619,10 @@ function AdminOrdersPage() {
                     <SelectItem value="refunded">Refunded</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button variant="outline" size="sm" className="gap-2 bg-transparent">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 bg-transparent">
                   <Filter className="h-4 w-4" />
                   More Filters
                 </Button>
@@ -524,35 +652,47 @@ function AdminOrdersPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {orders.map((order) => (
+                        {orders.map(order => (
                           <tr key={order.id} className="border-b border-border">
                             <td className="py-4 pr-4">
                               <Checkbox />
                             </td>
                             <td className="py-4 pr-4">
-                              <Link href={`/admin/orders/${order.id}`} className="font-medium hover:underline">
+                              <Link
+                                href={`/admin/orders/${order.id}`}
+                                className="font-medium hover:underline">
                                 {order.id}
                               </Link>
                             </td>
                             <td className="py-4 pr-4">
                               <div>
                                 <p className="font-medium">{order.customer}</p>
-                                <p className="text-sm text-muted-foreground">{order.email}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {order.email}
+                                </p>
                               </div>
                             </td>
                             <td className="py-4 pr-4">{order.items}</td>
-                            <td className="py-4 pr-4 font-medium">{formatPrice(order.total)}</td>
+                            <td className="py-4 pr-4 font-medium">
+                              {formatPrice(order.total)}
+                            </td>
                             <td className="py-4 pr-4">
-                              <Badge variant="secondary" className={getStatusColor(order.status)}>
+                              <Badge
+                                variant="secondary"
+                                className={getStatusColor(order.status)}>
                                 {order.status}
                               </Badge>
                             </td>
                             <td className="py-4 pr-4">
-                              <Badge variant="secondary" className={getPaymentColor(order.payment)}>
+                              <Badge
+                                variant="secondary"
+                                className={getPaymentColor(order.payment)}>
                                 {order.payment}
                               </Badge>
                             </td>
-                            <td className="py-4 pr-4 text-sm text-muted-foreground">{order.date}</td>
+                            <td className="py-4 pr-4 text-sm text-muted-foreground">
+                              {order.date}
+                            </td>
                             <td className="py-4">
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -561,19 +701,27 @@ function AdminOrdersPage() {
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => handleViewClick(order)}>
+                                  <DropdownMenuItem
+                                    onClick={() => handleViewClick(order)}>
                                     <Eye className="mr-2 h-4 w-4" />
                                     View Details
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => openStatusUpdateDialog(order)}>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      openStatusUpdateDialog(order)
+                                    }>
                                     <span className="mr-2">📊</span>
                                     Update Status
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handlePrintInvoice(order)}>
+                                  <DropdownMenuItem
+                                    onClick={() => handlePrintInvoice(order)}>
                                     <Printer className="mr-2 h-4 w-4" />
                                     Print Invoice
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleSendInvoiceEmail(order)}>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleSendInvoiceEmail(order)
+                                    }>
                                     <Mail className="mr-2 h-4 w-4" />
                                     Send Invoice
                                   </DropdownMenuItem>
@@ -589,7 +737,7 @@ function AdminOrdersPage() {
               </TabsContent>
 
               <TabsContent value="pending">
-                {orders.filter((o) => o.status === "Pending").length === 0 ? (
+                {orders.filter(o => o.status === 'Pending').length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <p className="text-muted-foreground">No pending orders</p>
                   </div>
@@ -598,7 +746,9 @@ function AdminOrdersPage() {
                     <table className="w-full">
                       <thead>
                         <tr className="border-b border-border text-left text-sm text-muted-foreground">
-                          <th className="pb-3 pr-4"><Checkbox /></th>
+                          <th className="pb-3 pr-4">
+                            <Checkbox />
+                          </th>
                           <th className="pb-3 pr-4">Order</th>
                           <th className="pb-3 pr-4">Customer</th>
                           <th className="pb-3 pr-4">Items</th>
@@ -611,18 +761,87 @@ function AdminOrdersPage() {
                       </thead>
                       <tbody>
                         {orders
-                          .filter((o) => o.status === "Pending")
-                          .map((order) => (
-                            <tr key={order.id} className="border-b border-border">
-                              <td className="py-4 pr-4"><Checkbox /></td>
-                              <td className="py-4 pr-4"><Link href={`/admin/orders/${order.id}`} className="font-medium hover:underline">{order.id}</Link></td>
-                              <td className="py-4 pr-4"><div><p className="font-medium">{order.customer}</p><p className="text-sm text-muted-foreground">{order.email}</p></div></td>
+                          .filter(o => o.status === 'Pending')
+                          .map(order => (
+                            <tr
+                              key={order.id}
+                              className="border-b border-border">
+                              <td className="py-4 pr-4">
+                                <Checkbox />
+                              </td>
+                              <td className="py-4 pr-4">
+                                <Link
+                                  href={`/admin/orders/${order.id}`}
+                                  className="font-medium hover:underline">
+                                  {order.id}
+                                </Link>
+                              </td>
+                              <td className="py-4 pr-4">
+                                <div>
+                                  <p className="font-medium">
+                                    {order.customer}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {order.email}
+                                  </p>
+                                </div>
+                              </td>
                               <td className="py-4 pr-4">{order.items}</td>
-                              <td className="py-4 pr-4 font-medium">{formatPrice(order.total)}</td>
-                              <td className="py-4 pr-4"><Badge variant="secondary" className={getStatusColor(order.status)}>{order.status}</Badge></td>
-                              <td className="py-4 pr-4"><Badge variant="secondary" className={getPaymentColor(order.payment)}>{order.payment}</Badge></td>
-                              <td className="py-4 pr-4 text-sm text-muted-foreground">{order.date}</td>
-                              <td className="py-4"><DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => handleViewClick(order)}><Eye className="mr-2 h-4 w-4" />View Details</DropdownMenuItem><DropdownMenuItem onClick={() => openStatusUpdateDialog(order)}><span className="mr-2">📊</span>Update Status</DropdownMenuItem><DropdownMenuItem onClick={() => handlePrintInvoice(order)}><Printer className="mr-2 h-4 w-4" />Print Invoice</DropdownMenuItem><DropdownMenuItem onClick={() => handleSendInvoiceEmail(order)}><Mail className="mr-2 h-4 w-4" />Send Invoice</DropdownMenuItem></DropdownMenuContent></DropdownMenu></td>
+                              <td className="py-4 pr-4 font-medium">
+                                {formatPrice(order.total)}
+                              </td>
+                              <td className="py-4 pr-4">
+                                <Badge
+                                  variant="secondary"
+                                  className={getStatusColor(order.status)}>
+                                  {order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : ''}
+                                </Badge>
+                              </td>
+                              <td className="py-4 pr-4">
+                                <Badge
+                                  variant="secondary"
+                                  className={getPaymentColor(order.payment)}>
+                                  {order.payment}
+                                </Badge>
+                              </td>
+                              <td className="py-4 pr-4 text-sm text-muted-foreground">
+                                {order.date}
+                              </td>
+                              <td className="py-4">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon">
+                                      <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem
+                                      onClick={() => handleViewClick(order)}>
+                                      <Eye className="mr-2 h-4 w-4" />
+                                      View Details
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        openStatusUpdateDialog(order)
+                                      }>
+                                      <span className="mr-2">📊</span>Update
+                                      Status
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => handlePrintInvoice(order)}>
+                                      <Printer className="mr-2 h-4 w-4" />
+                                      Print Invoice
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        handleSendInvoiceEmail(order)
+                                      }>
+                                      <Mail className="mr-2 h-4 w-4" />
+                                      Send Invoice
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </td>
                             </tr>
                           ))}
                       </tbody>
@@ -632,16 +851,20 @@ function AdminOrdersPage() {
               </TabsContent>
 
               <TabsContent value="processing">
-                {orders.filter((o) => o.status === "Processing").length === 0 ? (
+                {orders.filter(o => o.status === 'Processing').length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <p className="text-muted-foreground">No processing orders</p>
+                    <p className="text-muted-foreground">
+                      No processing orders
+                    </p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
                         <tr className="border-b border-border text-left text-sm text-muted-foreground">
-                          <th className="pb-3 pr-4"><Checkbox /></th>
+                          <th className="pb-3 pr-4">
+                            <Checkbox />
+                          </th>
                           <th className="pb-3 pr-4">Order</th>
                           <th className="pb-3 pr-4">Customer</th>
                           <th className="pb-3 pr-4">Items</th>
@@ -654,18 +877,87 @@ function AdminOrdersPage() {
                       </thead>
                       <tbody>
                         {orders
-                          .filter((o) => o.status === "Processing")
-                          .map((order) => (
-                            <tr key={order.id} className="border-b border-border">
-                              <td className="py-4 pr-4"><Checkbox /></td>
-                              <td className="py-4 pr-4"><Link href={`/admin/orders/${order.id}`} className="font-medium hover:underline">{order.id}</Link></td>
-                              <td className="py-4 pr-4"><div><p className="font-medium">{order.customer}</p><p className="text-sm text-muted-foreground">{order.email}</p></div></td>
+                          .filter(o => o.status === 'Processing')
+                          .map(order => (
+                            <tr
+                              key={order.id}
+                              className="border-b border-border">
+                              <td className="py-4 pr-4">
+                                <Checkbox />
+                              </td>
+                              <td className="py-4 pr-4">
+                                <Link
+                                  href={`/admin/orders/${order.id}`}
+                                  className="font-medium hover:underline">
+                                  {order.id}
+                                </Link>
+                              </td>
+                              <td className="py-4 pr-4">
+                                <div>
+                                  <p className="font-medium">
+                                    {order.customer}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {order.email}
+                                  </p>
+                                </div>
+                              </td>
                               <td className="py-4 pr-4">{order.items}</td>
-                              <td className="py-4 pr-4 font-medium">{formatPrice(order.total)}</td>
-                              <td className="py-4 pr-4"><Badge variant="secondary" className={getStatusColor(order.status)}>{order.status}</Badge></td>
-                              <td className="py-4 pr-4"><Badge variant="secondary" className={getPaymentColor(order.payment)}>{order.payment}</Badge></td>
-                              <td className="py-4 pr-4 text-sm text-muted-foreground">{order.date}</td>
-                              <td className="py-4"><DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => handleViewClick(order)}><Eye className="mr-2 h-4 w-4" />View Details</DropdownMenuItem><DropdownMenuItem onClick={() => openStatusUpdateDialog(order)}><span className="mr-2">📊</span>Update Status</DropdownMenuItem><DropdownMenuItem onClick={() => handlePrintInvoice(order)}><Printer className="mr-2 h-4 w-4" />Print Invoice</DropdownMenuItem><DropdownMenuItem onClick={() => handleSendInvoiceEmail(order)}><Mail className="mr-2 h-4 w-4" />Send Invoice</DropdownMenuItem></DropdownMenuContent></DropdownMenu></td>
+                              <td className="py-4 pr-4 font-medium">
+                                {formatPrice(order.total)}
+                              </td>
+                              <td className="py-4 pr-4">
+                                <Badge
+                                  variant="secondary"
+                                  className={getStatusColor(order.status)}>
+                                  {order.status}
+                                </Badge>
+                              </td>
+                              <td className="py-4 pr-4">
+                                <Badge
+                                  variant="secondary"
+                                  className={getPaymentColor(order.payment)}>
+                                  {order.payment}
+                                </Badge>
+                              </td>
+                              <td className="py-4 pr-4 text-sm text-muted-foreground">
+                                {order.date}
+                              </td>
+                              <td className="py-4">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon">
+                                      <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem
+                                      onClick={() => handleViewClick(order)}>
+                                      <Eye className="mr-2 h-4 w-4" />
+                                      View Details
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        openStatusUpdateDialog(order)
+                                      }>
+                                      <span className="mr-2">📊</span>Update
+                                      Status
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => handlePrintInvoice(order)}>
+                                      <Printer className="mr-2 h-4 w-4" />
+                                      Print Invoice
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        handleSendInvoiceEmail(order)
+                                      }>
+                                      <Mail className="mr-2 h-4 w-4" />
+                                      Send Invoice
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </td>
                             </tr>
                           ))}
                       </tbody>
@@ -675,7 +967,7 @@ function AdminOrdersPage() {
               </TabsContent>
 
               <TabsContent value="shipped">
-                {orders.filter((o) => o.status === "Shipped").length === 0 ? (
+                {orders.filter(o => o.status === 'Shipped').length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <p className="text-muted-foreground">No shipped orders</p>
                   </div>
@@ -684,7 +976,9 @@ function AdminOrdersPage() {
                     <table className="w-full">
                       <thead>
                         <tr className="border-b border-border text-left text-sm text-muted-foreground">
-                          <th className="pb-3 pr-4"><Checkbox /></th>
+                          <th className="pb-3 pr-4">
+                            <Checkbox />
+                          </th>
                           <th className="pb-3 pr-4">Order</th>
                           <th className="pb-3 pr-4">Customer</th>
                           <th className="pb-3 pr-4">Items</th>
@@ -697,18 +991,87 @@ function AdminOrdersPage() {
                       </thead>
                       <tbody>
                         {orders
-                          .filter((o) => o.status === "Shipped")
-                          .map((order) => (
-                            <tr key={order.id} className="border-b border-border">
-                              <td className="py-4 pr-4"><Checkbox /></td>
-                              <td className="py-4 pr-4"><Link href={`/admin/orders/${order.id}`} className="font-medium hover:underline">{order.id}</Link></td>
-                              <td className="py-4 pr-4"><div><p className="font-medium">{order.customer}</p><p className="text-sm text-muted-foreground">{order.email}</p></div></td>
+                          .filter(o => o.status === 'Shipped')
+                          .map(order => (
+                            <tr
+                              key={order.id}
+                              className="border-b border-border">
+                              <td className="py-4 pr-4">
+                                <Checkbox />
+                              </td>
+                              <td className="py-4 pr-4">
+                                <Link
+                                  href={`/admin/orders/${order.id}`}
+                                  className="font-medium hover:underline">
+                                  {order.id}
+                                </Link>
+                              </td>
+                              <td className="py-4 pr-4">
+                                <div>
+                                  <p className="font-medium">
+                                    {order.customer}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {order.email}
+                                  </p>
+                                </div>
+                              </td>
                               <td className="py-4 pr-4">{order.items}</td>
-                              <td className="py-4 pr-4 font-medium">{formatPrice(order.total)}</td>
-                              <td className="py-4 pr-4"><Badge variant="secondary" className={getStatusColor(order.status)}>{order.status}</Badge></td>
-                              <td className="py-4 pr-4"><Badge variant="secondary" className={getPaymentColor(order.payment)}>{order.payment}</Badge></td>
-                              <td className="py-4 pr-4 text-sm text-muted-foreground">{order.date}</td>
-                              <td className="py-4"><DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => handleViewClick(order)}><Eye className="mr-2 h-4 w-4" />View Details</DropdownMenuItem><DropdownMenuItem onClick={() => openStatusUpdateDialog(order)}><span className="mr-2">📊</span>Update Status</DropdownMenuItem><DropdownMenuItem onClick={() => handlePrintInvoice(order)}><Printer className="mr-2 h-4 w-4" />Print Invoice</DropdownMenuItem><DropdownMenuItem onClick={() => handleSendInvoiceEmail(order)}><Mail className="mr-2 h-4 w-4" />Send Invoice</DropdownMenuItem></DropdownMenuContent></DropdownMenu></td>
+                              <td className="py-4 pr-4 font-medium">
+                                {formatPrice(order.total)}
+                              </td>
+                              <td className="py-4 pr-4">
+                                <Badge
+                                  variant="secondary"
+                                  className={getStatusColor(order.status)}>
+                                  {order.status}
+                                </Badge>
+                              </td>
+                              <td className="py-4 pr-4">
+                                <Badge
+                                  variant="secondary"
+                                  className={getPaymentColor(order.payment)}>
+                                  {order.payment}
+                                </Badge>
+                              </td>
+                              <td className="py-4 pr-4 text-sm text-muted-foreground">
+                                {order.date}
+                              </td>
+                              <td className="py-4">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon">
+                                      <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem
+                                      onClick={() => handleViewClick(order)}>
+                                      <Eye className="mr-2 h-4 w-4" />
+                                      View Details
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        openStatusUpdateDialog(order)
+                                      }>
+                                      <span className="mr-2">📊</span>Update
+                                      Status
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => handlePrintInvoice(order)}>
+                                      <Printer className="mr-2 h-4 w-4" />
+                                      Print Invoice
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        handleSendInvoiceEmail(order)
+                                      }>
+                                      <Mail className="mr-2 h-4 w-4" />
+                                      Send Invoice
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </td>
                             </tr>
                           ))}
                       </tbody>
@@ -718,7 +1081,7 @@ function AdminOrdersPage() {
               </TabsContent>
 
               <TabsContent value="delivered">
-                {orders.filter((o) => o.status === "Delivered").length === 0 ? (
+                {orders.filter(o => o.status === 'Delivered').length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <p className="text-muted-foreground">No delivered orders</p>
                   </div>
@@ -727,7 +1090,9 @@ function AdminOrdersPage() {
                     <table className="w-full">
                       <thead>
                         <tr className="border-b border-border text-left text-sm text-muted-foreground">
-                          <th className="pb-3 pr-4"><Checkbox /></th>
+                          <th className="pb-3 pr-4">
+                            <Checkbox />
+                          </th>
                           <th className="pb-3 pr-4">Order</th>
                           <th className="pb-3 pr-4">Customer</th>
                           <th className="pb-3 pr-4">Items</th>
@@ -740,18 +1105,87 @@ function AdminOrdersPage() {
                       </thead>
                       <tbody>
                         {orders
-                          .filter((o) => o.status === "Delivered")
-                          .map((order) => (
-                            <tr key={order.id} className="border-b border-border">
-                              <td className="py-4 pr-4"><Checkbox /></td>
-                              <td className="py-4 pr-4"><Link href={`/admin/orders/${order.id}`} className="font-medium hover:underline">{order.id}</Link></td>
-                              <td className="py-4 pr-4"><div><p className="font-medium">{order.customer}</p><p className="text-sm text-muted-foreground">{order.email}</p></div></td>
+                          .filter(o => o.status === 'Delivered')
+                          .map(order => (
+                            <tr
+                              key={order.id}
+                              className="border-b border-border">
+                              <td className="py-4 pr-4">
+                                <Checkbox />
+                              </td>
+                              <td className="py-4 pr-4">
+                                <Link
+                                  href={`/admin/orders/${order.id}`}
+                                  className="font-medium hover:underline">
+                                  {order.id}
+                                </Link>
+                              </td>
+                              <td className="py-4 pr-4">
+                                <div>
+                                  <p className="font-medium">
+                                    {order.customer}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {order.email}
+                                  </p>
+                                </div>
+                              </td>
                               <td className="py-4 pr-4">{order.items}</td>
-                              <td className="py-4 pr-4 font-medium">{formatPrice(order.total)}</td>
-                              <td className="py-4 pr-4"><Badge variant="secondary" className={getStatusColor(order.status)}>{order.status}</Badge></td>
-                              <td className="py-4 pr-4"><Badge variant="secondary" className={getPaymentColor(order.payment)}>{order.payment}</Badge></td>
-                              <td className="py-4 pr-4 text-sm text-muted-foreground">{order.date}</td>
-                              <td className="py-4"><DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => handleViewClick(order)}><Eye className="mr-2 h-4 w-4" />View Details</DropdownMenuItem><DropdownMenuItem onClick={() => openStatusUpdateDialog(order)}><span className="mr-2">📊</span>Update Status</DropdownMenuItem><DropdownMenuItem onClick={() => handlePrintInvoice(order)}><Printer className="mr-2 h-4 w-4" />Print Invoice</DropdownMenuItem><DropdownMenuItem onClick={() => handleSendInvoiceEmail(order)}><Mail className="mr-2 h-4 w-4" />Send Invoice</DropdownMenuItem></DropdownMenuContent></DropdownMenu></td>
+                              <td className="py-4 pr-4 font-medium">
+                                {formatPrice(order.total)}
+                              </td>
+                              <td className="py-4 pr-4">
+                                <Badge
+                                  variant="secondary"
+                                  className={getStatusColor(order.status)}>
+                                  {order.status}
+                                </Badge>
+                              </td>
+                              <td className="py-4 pr-4">
+                                <Badge
+                                  variant="secondary"
+                                  className={getPaymentColor(order.payment)}>
+                                  {order.payment}
+                                </Badge>
+                              </td>
+                              <td className="py-4 pr-4 text-sm text-muted-foreground">
+                                {order.date}
+                              </td>
+                              <td className="py-4">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon">
+                                      <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem
+                                      onClick={() => handleViewClick(order)}>
+                                      <Eye className="mr-2 h-4 w-4" />
+                                      View Details
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        openStatusUpdateDialog(order)
+                                      }>
+                                      <span className="mr-2">📊</span>Update
+                                      Status
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => handlePrintInvoice(order)}>
+                                      <Printer className="mr-2 h-4 w-4" />
+                                      Print Invoice
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        handleSendInvoiceEmail(order)
+                                      }>
+                                      <Mail className="mr-2 h-4 w-4" />
+                                      Send Invoice
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </td>
                             </tr>
                           ))}
                       </tbody>
@@ -764,7 +1198,9 @@ function AdminOrdersPage() {
 
           {!loading && !error && (
             <div className="mt-6 flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">Showing {orders.length} of {orders.length} orders</p>
+              <p className="text-sm text-muted-foreground">
+                Showing {orders.length} of {orders.length} orders
+              </p>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" disabled>
                   Previous
@@ -783,17 +1219,34 @@ function AdminOrdersPage() {
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Order Details</DialogTitle>
-            <DialogDescription>Complete order information and items</DialogDescription>
+            <p className="py-2 font-mono text-lg font-semibold">
+              {selectedOrder?.orderNumber}
+            </p>
+            <DialogDescription>
+              Complete order information and items
+            </DialogDescription>
           </DialogHeader>
           {selectedOrder && (
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-muted-foreground text-xs uppercase">Order ID</Label>
+                  <Label className="text-muted-foreground text-xs uppercase">
+                    Order Number
+                  </Label>
+                  <p className="mt-1 font-mono font-medium">
+                    {selectedOrder.orderNumber}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs uppercase">
+                    Order ID
+                  </Label>
                   <p className="mt-1 font-medium">{selectedOrder.id}</p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground text-xs uppercase">Order Date</Label>
+                  <Label className="text-muted-foreground text-xs uppercase">
+                    Order Date
+                  </Label>
                   <p className="mt-1 font-medium">{selectedOrder.date}</p>
                 </div>
               </div>
@@ -802,20 +1255,32 @@ function AdminOrdersPage() {
                 <h3 className="font-semibold">Customer Information</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-muted-foreground text-xs uppercase">Name</Label>
+                    <Label className="text-muted-foreground text-xs uppercase">
+                      Name
+                    </Label>
                     <p className="mt-1 font-medium">{selectedOrder.customer}</p>
                   </div>
                   <div>
-                    <Label className="text-muted-foreground text-xs uppercase">Email</Label>
-                    <p className="mt-1 font-medium text-sm">{selectedOrder.email}</p>
+                    <Label className="text-muted-foreground text-xs uppercase">
+                      Email
+                    </Label>
+                    <p className="mt-1 font-medium text-sm">
+                      {selectedOrder.email}
+                    </p>
                   </div>
                   <div>
-                    <Label className="text-muted-foreground text-xs uppercase">Phone</Label>
+                    <Label className="text-muted-foreground text-xs uppercase">
+                      Phone
+                    </Label>
                     <p className="mt-1 font-medium">{selectedOrder.phone}</p>
                   </div>
                   <div>
-                    <Label className="text-muted-foreground text-xs uppercase">Address</Label>
-                    <p className="mt-1 font-medium text-sm">{selectedOrder.address}</p>
+                    <Label className="text-muted-foreground text-xs uppercase">
+                      Address
+                    </Label>
+                    <p className="mt-1 font-medium text-sm">
+                      {selectedOrder.address}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -823,13 +1288,19 @@ function AdminOrdersPage() {
               <div className="space-y-4 rounded-lg border border-border p-4">
                 <h3 className="font-semibold">Order Items</h3>
                 <div className="space-y-3">
-                  {selectedOrder.orderItems?.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between border-b pb-3 last:border-b-0">
+                  {selectedOrder.orderItems?.map(item => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between border-b pb-3 last:border-b-0">
                       <div>
                         <p className="font-medium">{item.name}</p>
-                        <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Qty: {item.quantity}
+                        </p>
                       </div>
-                      <p className="font-medium">{formatPrice(item.price * item.quantity)}</p>
+                      <p className="font-medium">
+                        {formatPrice(item.price * item.quantity)}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -839,17 +1310,25 @@ function AdminOrdersPage() {
                 <h3 className="font-semibold">Order Status</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-muted-foreground text-xs uppercase">Status</Label>
+                    <Label className="text-muted-foreground text-xs uppercase">
+                      Status
+                    </Label>
                     <div className="mt-1">
-                      <Badge variant="secondary" className={getStatusColor(selectedOrder.status)}>
-                        {selectedOrder.status}
+                      <Badge
+                        variant="secondary"
+                        className={getStatusColor(selectedOrder.status)}>
+                        {selectedOrder.status ? selectedOrder.status.charAt(0).toUpperCase() + selectedOrder.status.slice(1) : ''}
                       </Badge>
                     </div>
                   </div>
                   <div>
-                    <Label className="text-muted-foreground text-xs uppercase">Payment</Label>
+                    <Label className="text-muted-foreground text-xs uppercase">
+                      Payment
+                    </Label>
                     <div className="mt-1">
-                      <Badge variant="secondary" className={getPaymentColor(selectedOrder.payment)}>
+                      <Badge
+                        variant="secondary"
+                        className={getPaymentColor(selectedOrder.payment)}>
                         {selectedOrder.payment}
                       </Badge>
                     </div>
@@ -860,7 +1339,9 @@ function AdminOrdersPage() {
               <div className="rounded-lg bg-muted p-4">
                 <div className="flex items-center justify-between">
                   <span className="text-lg font-semibold">Total Amount:</span>
-                  <span className="text-lg font-bold">{formatPrice(selectedOrder.total)}</span>
+                  <span className="text-lg font-bold">
+                    {formatPrice(selectedOrder.total)}
+                  </span>
                 </div>
               </div>
             </div>
@@ -874,16 +1355,23 @@ function AdminOrdersPage() {
       </Dialog>
 
       {/* Add Manual Order Drawer */}
-      <Sheet open={addDrawerOpen} onOpenChange={(open) => {
-        setAddDrawerOpen(open)
-        if (!open) {
-          setFormErrors({})
-        }
-      }}>
-        <SheetContent side="right" className="w-full sm:w-[650px] overflow-y-auto flex flex-col">
+      <Sheet
+        open={addDrawerOpen}
+        onOpenChange={open => {
+          setAddDrawerOpen(open);
+          if (!open) {
+            setFormErrors({});
+          }
+        }}>
+        <SheetContent
+          side="right"
+          className="w-full sm:w-[650px] overflow-y-auto flex flex-col">
           <SheetHeader className="pb-4">
             <SheetTitle className="text-2xl">Add Manual Order</SheetTitle>
-            <SheetDescription>Create a new order by filling in the customer and order details below</SheetDescription>
+            <SheetDescription>
+              Create a new order by filling in the customer and order details
+              below
+            </SheetDescription>
           </SheetHeader>
 
           <div className="flex-1 overflow-y-auto">
@@ -891,7 +1379,9 @@ function AdminOrdersPage() {
               {/* Customer Information Section */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 pb-2">
-                  <h3 className="text-lg font-semibold">Customer Information</h3>
+                  <h3 className="text-lg font-semibold">
+                    Customer Information
+                  </h3>
                   <span className="text-sm text-red-500">*</span>
                 </div>
                 <div className="rounded-lg border border-border bg-card/50 p-4 space-y-4">
@@ -903,12 +1393,20 @@ function AdminOrdersPage() {
                     <Input
                       id="order-customer"
                       value={newOrderForm.customer}
-                      onChange={(e) => {
-                        setNewOrderForm({ ...newOrderForm, customer: e.target.value })
-                        if (formErrors.customer) setFormErrors({ ...formErrors, customer: "" })
+                      onChange={e => {
+                        setNewOrderForm({
+                          ...newOrderForm,
+                          customer: e.target.value,
+                        });
+                        if (formErrors.customer)
+                          setFormErrors({...formErrors, customer: ''});
                       }}
                       placeholder="John Doe"
-                      className={formErrors.customer ? "border-red-500 focus-visible:ring-red-500" : ""}
+                      className={
+                        formErrors.customer
+                          ? 'border-red-500 focus-visible:ring-red-500'
+                          : ''
+                      }
                     />
                     {formErrors.customer && (
                       <p className="text-sm text-red-500 flex items-center gap-1">
@@ -927,12 +1425,20 @@ function AdminOrdersPage() {
                         id="order-email"
                         type="email"
                         value={newOrderForm.email}
-                        onChange={(e) => {
-                          setNewOrderForm({ ...newOrderForm, email: e.target.value })
-                          if (formErrors.email) setFormErrors({ ...formErrors, email: "" })
+                        onChange={e => {
+                          setNewOrderForm({
+                            ...newOrderForm,
+                            email: e.target.value,
+                          });
+                          if (formErrors.email)
+                            setFormErrors({...formErrors, email: ''});
                         }}
                         placeholder="john@example.com"
-                        className={formErrors.email ? "border-red-500 focus-visible:ring-red-500" : ""}
+                        className={
+                          formErrors.email
+                            ? 'border-red-500 focus-visible:ring-red-500'
+                            : ''
+                        }
                       />
                       {formErrors.email && (
                         <p className="text-sm text-red-500 flex items-center gap-1">
@@ -949,12 +1455,20 @@ function AdminOrdersPage() {
                       <Input
                         id="order-phone"
                         value={newOrderForm.phone}
-                        onChange={(e) => {
-                          setNewOrderForm({ ...newOrderForm, phone: e.target.value })
-                          if (formErrors.phone) setFormErrors({ ...formErrors, phone: "" })
+                        onChange={e => {
+                          setNewOrderForm({
+                            ...newOrderForm,
+                            phone: e.target.value,
+                          });
+                          if (formErrors.phone)
+                            setFormErrors({...formErrors, phone: ''});
                         }}
                         placeholder="+880 1234567890"
-                        className={formErrors.phone ? "border-red-500 focus-visible:ring-red-500" : ""}
+                        className={
+                          formErrors.phone
+                            ? 'border-red-500 focus-visible:ring-red-500'
+                            : ''
+                        }
                       />
                       {formErrors.phone && (
                         <p className="text-sm text-red-500 flex items-center gap-1">
@@ -972,13 +1486,21 @@ function AdminOrdersPage() {
                     <Textarea
                       id="order-address"
                       value={newOrderForm.address}
-                      onChange={(e) => {
-                        setNewOrderForm({ ...newOrderForm, address: e.target.value })
-                        if (formErrors.address) setFormErrors({ ...formErrors, address: "" })
+                      onChange={e => {
+                        setNewOrderForm({
+                          ...newOrderForm,
+                          address: e.target.value,
+                        });
+                        if (formErrors.address)
+                          setFormErrors({...formErrors, address: ''});
                       }}
                       placeholder="Enter full delivery address"
                       rows={3}
-                      className={formErrors.address ? "border-red-500 focus-visible:ring-red-500" : ""}
+                      className={
+                        formErrors.address
+                          ? 'border-red-500 focus-visible:ring-red-500'
+                          : ''
+                      }
                     />
                     {formErrors.address && (
                       <p className="text-sm text-red-500 flex items-center gap-1">
@@ -1000,8 +1522,7 @@ function AdminOrdersPage() {
                     size="sm"
                     variant="outline"
                     onClick={addOrderItem}
-                    className="gap-1"
-                  >
+                    className="gap-1">
                     <Plus className="h-4 w-4" />
                     Add Item
                   </Button>
@@ -1015,28 +1536,35 @@ function AdminOrdersPage() {
 
                 <div className="space-y-3">
                   {newOrderForm.items.map((item, index) => (
-                    <div key={index} className="space-y-3 rounded-lg border border-border bg-card/30 p-4">
+                    <div
+                      key={index}
+                      className="space-y-3 rounded-lg border border-border bg-card/30 p-4">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-muted-foreground">Item {index + 1}</span>
+                        <span className="text-sm font-medium text-muted-foreground">
+                          Item {index + 1}
+                        </span>
                         {newOrderForm.items.length > 1 && (
                           <button
                             onClick={() => removeOrderItem(index)}
                             className="text-muted-foreground hover:text-destructive transition-colors"
-                            title="Remove item"
-                          >
+                            title="Remove item">
                             <X className="h-4 w-4" />
                           </button>
                         )}
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor={`item-name-${index}`} className="text-xs font-medium">
+                        <Label
+                          htmlFor={`item-name-${index}`}
+                          className="text-xs font-medium">
                           Product Name
                         </Label>
                         <Input
                           id={`item-name-${index}`}
                           value={item.name}
-                          onChange={(e) => updateOrderItem(index, "name", e.target.value)}
+                          onChange={e =>
+                            updateOrderItem(index, 'name', e.target.value)
+                          }
                           placeholder="e.g., iPhone 15 Pro Max"
                           className="text-sm"
                         />
@@ -1044,16 +1572,28 @@ function AdminOrdersPage() {
 
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-2">
-                          <Label htmlFor={`item-qty-${index}`} className="text-xs font-medium">
+                          <Label
+                            htmlFor={`item-qty-${index}`}
+                            className="text-xs font-medium">
                             Quantity
                           </Label>
                           <Input
                             id={`item-qty-${index}`}
                             type="number"
                             value={item.quantity}
-                            onChange={(e) => updateOrderItem(index, "quantity", Number(e.target.value))}
+                            onChange={e =>
+                              updateOrderItem(
+                                index,
+                                'quantity',
+                                Number(e.target.value),
+                              )
+                            }
                             min="1"
-                            className={`text-sm ${formErrors[`item-qty-${index}`] ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                            className={`text-sm ${
+                              formErrors[`item-qty-${index}`]
+                                ? 'border-red-500 focus-visible:ring-red-500'
+                                : ''
+                            }`}
                           />
                           {formErrors[`item-qty-${index}`] && (
                             <p className="text-xs text-red-500 flex items-center gap-1">
@@ -1063,17 +1603,29 @@ function AdminOrdersPage() {
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor={`item-price-${index}`} className="text-xs font-medium">
+                          <Label
+                            htmlFor={`item-price-${index}`}
+                            className="text-xs font-medium">
                             Price
                           </Label>
                           <Input
                             id={`item-price-${index}`}
                             type="number"
                             value={item.price}
-                            onChange={(e) => updateOrderItem(index, "price", Number(e.target.value))}
+                            onChange={e =>
+                              updateOrderItem(
+                                index,
+                                'price',
+                                Number(e.target.value),
+                              )
+                            }
                             min="0"
                             placeholder="0"
-                            className={`text-sm ${formErrors[`item-price-${index}`] ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                            className={`text-sm ${
+                              formErrors[`item-price-${index}`]
+                                ? 'border-red-500 focus-visible:ring-red-500'
+                                : ''
+                            }`}
                           />
                           {formErrors[`item-price-${index}`] && (
                             <p className="text-xs text-red-500 flex items-center gap-1">
@@ -1085,8 +1637,12 @@ function AdminOrdersPage() {
 
                       {item.name && item.price > 0 && (
                         <div className="rounded bg-muted px-3 py-2 flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">Subtotal</span>
-                          <span className="text-sm font-semibold">{formatPrice(item.price * item.quantity)}</span>
+                          <span className="text-xs text-muted-foreground">
+                            Subtotal
+                          </span>
+                          <span className="text-sm font-semibold">
+                            {formatPrice(item.price * item.quantity)}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -1099,27 +1655,46 @@ function AdminOrdersPage() {
                 <h3 className="text-lg font-semibold pb-2">Order Status</h3>
                 <div className="rounded-lg border border-border bg-card/50 p-4 grid grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <Label htmlFor="order-status" className="text-sm font-medium">
+                    <Label
+                      htmlFor="order-status"
+                      className="text-sm font-medium">
                       Order Status
                     </Label>
-                    <Select value={newOrderForm.status} onValueChange={(value) => setNewOrderForm({ ...newOrderForm, status: value })}>
+                    <Select
+                      value={newOrderForm.status}
+                      onValueChange={value =>
+                        setNewOrderForm({...newOrderForm, status: value})
+                      }>
                       <SelectTrigger id="order-status">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Pending">Pending</SelectItem>
-                        <SelectItem value="Processing">Processing</SelectItem>
-                        <SelectItem value="Shipped">Shipped</SelectItem>
-                        <SelectItem value="Delivered">Delivered</SelectItem>
+                        <SelectItem value="order placed">
+                          Order Placed
+                        </SelectItem>
+                        <SelectItem value="processing">Processing</SelectItem>
+                        <SelectItem value="preparing to ship">
+                          Preparing to Ship
+                        </SelectItem>
+                        <SelectItem value="shipped">Shipped</SelectItem>
+                        <SelectItem value="delivered">Delivered</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                        <SelectItem value="returned">Returned</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="order-payment" className="text-sm font-medium">
+                    <Label
+                      htmlFor="order-payment"
+                      className="text-sm font-medium">
                       Payment Status
                     </Label>
-                    <Select value={newOrderForm.payment} onValueChange={(value) => setNewOrderForm({ ...newOrderForm, payment: value })}>
+                    <Select
+                      value={newOrderForm.payment}
+                      onValueChange={value =>
+                        setNewOrderForm({...newOrderForm, payment: value})
+                      }>
                       <SelectTrigger id="order-payment">
                         <SelectValue />
                       </SelectTrigger>
@@ -1136,9 +1711,16 @@ function AdminOrdersPage() {
               {/* Total Amount Section */}
               <div className="rounded-lg bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border border-slate-200 dark:border-slate-700 p-5">
                 <div className="flex items-baseline justify-between">
-                  <span className="text-sm font-medium text-slate-600 dark:text-slate-300">Total Amount</span>
+                  <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
+                    Total Amount
+                  </span>
                   <span className="text-3xl font-bold text-slate-900 dark:text-slate-50">
-                    {formatPrice(newOrderForm.items.reduce((sum, item) => sum + item.price * item.quantity, 0))}
+                    {formatPrice(
+                      newOrderForm.items.reduce(
+                        (sum, item) => sum + item.price * item.quantity,
+                        0,
+                      ),
+                    )}
                   </span>
                 </div>
               </div>
@@ -1147,19 +1729,17 @@ function AdminOrdersPage() {
 
           <SheetFooter className="border-t pt-4 gap-2">
             {formErrors.submit && (
-              <p className="text-sm text-red-500 w-full text-center py-2">{formErrors.submit}</p>
+              <p className="text-sm text-red-500 w-full text-center py-2">
+                {formErrors.submit}
+              </p>
             )}
             <Button
               variant="outline"
               onClick={() => setAddDrawerOpen(false)}
-              className="flex-1"
-            >
+              className="flex-1">
               Cancel
             </Button>
-            <Button
-              onClick={handleAddOrder}
-              className="flex-1"
-            >
+            <Button onClick={handleAddOrder} className="flex-1">
               Create Order
             </Button>
           </SheetFooter>
@@ -1189,20 +1769,19 @@ function AdminOrdersPage() {
               </Label>
               <Select
                 value={statusUpdateData.newStatus}
-                onValueChange={(value) => {
-                  setStatusUpdateData({ ...statusUpdateData, newStatus: value })
+                onValueChange={value => {
+                  setStatusUpdateData({...statusUpdateData, newStatus: value});
                   if (formErrors.status) {
-                    setFormErrors({ ...formErrors, status: "" })
+                    setFormErrors({...formErrors, status: ''});
                   }
-                }}
-              >
+                }}>
                 <SelectTrigger id="status-select">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
-                  {ORDER_STATUSES.map((status) => (
+                  {ORDER_STATUSES.map(status => (
                     <SelectItem key={status} value={status}>
-                      {status}
+                      {status.charAt(0).toUpperCase() + status.slice(1)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -1214,26 +1793,21 @@ function AdminOrdersPage() {
             <Button
               variant="outline"
               onClick={() => setStatusUpdateOpen(false)}
-              disabled={statusUpdating}
-            >
+              disabled={statusUpdating}>
               Cancel
             </Button>
-            <Button
-              onClick={handleStatusUpdate}
-              disabled={statusUpdating}
-            >
-              {statusUpdating ? "Updating..." : "Update Status"}
+            <Button onClick={handleStatusUpdate} disabled={statusUpdating}>
+              {statusUpdating ? 'Updating...' : 'Update Status'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
     </div>
-  )
+  );
 }
 
 export default withProtectedRoute(AdminOrdersPage, {
-  requiredRoles: ["admin"],
-  fallbackTo: "/login",
+  requiredRoles: ['admin'],
+  fallbackTo: '/login',
   showLoader: true,
-})
+});

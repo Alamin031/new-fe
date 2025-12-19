@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @next/next/no-img-element */
 "use client"
 
 import { OrderTracking } from "../../store/order-tracking-store"
-import { Badge } from "../ui/badge"
-import { CheckCircle2, MapPin, Clock, Package } from "lucide-react"
+import { CheckCircle2, MapPin, Clock } from "lucide-react"
 import { formatDate } from "../../lib/utils/format"
 import { cn } from "../../lib/utils"
 
@@ -12,20 +13,71 @@ interface OrderTrackingModalProps {
   productImage?: string
 }
 
-const statusLabels: Record<string, string> = {
-  pending: "Order Placed",
-  processing: "Processing",
-  shipped: "Preparing to Ship",
-  out_for_delivery: "Shipped",
-  delivered: "Delivered",
-  cancelled: "Cancelled",
-  returned: "Returned",
+
+// Fixed status steps for progress bar
+const STATUS_STEPS = [
+  { key: 'order placed', label: 'Order Placed' },
+  { key: 'processing', label: 'Processing' },
+  { key: 'preparing to ship', label: 'Preparing to Ship' },
+  { key: 'shipped', label: 'Shipped' },
+  { key: 'delivered', label: 'Delivered' },
+];
+
+// Map timeline/statusHistory to a lookup for completion and date
+function getStepCompletion(tracking: any) {
+  let timeline = [];
+  if (Array.isArray(tracking.timeline) && tracking.timeline.length > 0) {
+    timeline = tracking.timeline;
+  } else if (Array.isArray(tracking.statusHistory) && tracking.statusHistory.length > 0) {
+    timeline = tracking.statusHistory.map((s: any) => ({
+      label: s.status ? s.status.charAt(0).toUpperCase() + s.status.slice(1) : "",
+      date: s.timestamp,
+      completed: true,
+    }));
+  }
+  // Build a lookup: statusKey -> {completed, date}
+  const lookup: Record<string, {completed: boolean, date?: string}> = {};
+  for (const step of timeline) {
+    const key = (step.label || '').toLowerCase();
+    if (key) {
+      lookup[key] = { completed: !!step.completed, date: step.date };
+    }
+  }
+  return lookup;
 }
 
-const statusOrder = ["pending", "processing", "shipped", "out_for_delivery", "delivered"]
+
+// Color for each status step
+function getStatusColor(status: string) {
+  switch (status?.toLowerCase()) {
+    case 'order placed':
+      return 'bg-orange-500/10 text-orange-600 border-orange-200';
+    case 'processing':
+      return 'bg-yellow-500/10 text-yellow-600 border-yellow-200';
+    case 'preparing to ship':
+      return 'bg-purple-500/10 text-purple-600 border-purple-200';
+    case 'shipped':
+      return 'bg-blue-500/10 text-blue-600 border-blue-200';
+    case 'delivered':
+      return 'bg-green-500/10 text-green-600 border-green-200';
+    case 'cancelled':
+      return 'bg-red-500/10 text-red-600 border-red-200';
+    case 'returned':
+      return 'bg-gray-500/10 text-gray-600 border-gray-200';
+    default:
+      return 'bg-gray-200 text-gray-600 border-gray-200';
+  }
+}
+
 
 export function OrderTrackingModal({ tracking, productName, productImage }: OrderTrackingModalProps) {
-  const currentStatusIndex = statusOrder.indexOf(tracking.currentStatus)
+  const stepCompletion = getStepCompletion(tracking);
+  // Find the last completed index for progress bar
+  const lastCompletedIndex = STATUS_STEPS.map(s => stepCompletion[s.key]?.completed).lastIndexOf(true);
+
+  // For status message, get the last completed step info
+  const lastStep = lastCompletedIndex >= 0 ? STATUS_STEPS[lastCompletedIndex] : null;
+  const lastStepDate = lastStep ? stepCompletion[lastStep.key]?.date : null;
 
   return (
     <div className="w-full space-y-6">
@@ -64,109 +116,41 @@ export function OrderTrackingModal({ tracking, productName, productImage }: Orde
         </button>
       </div>
 
-      {/* Horizontal Progress Indicator */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          {statusOrder.map((status, index) => (
-            <div key={status} className="flex flex-1 items-center">
-              <div
-                className={cn(
-                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
-                  index <= currentStatusIndex
-                    ? "bg-green-500 text-white"
-                    : "bg-gray-200 text-gray-600"
-                )}
-              >
-                {index <= currentStatusIndex ? (
-                  <CheckCircle2 className="h-5 w-5" />
-                ) : (
-                  index + 1
-                )}
-              </div>
-              {index < statusOrder.length - 1 && (
-                <div
-                  className={cn(
-                    "h-0.5 flex-1",
-                    index < currentStatusIndex ? "bg-green-500" : "bg-gray-200"
-                  )}
-                />
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Status Labels */}
-        <div className="flex justify-between text-xs text-muted-foreground">
-          {statusOrder.map((status) => (
-            <span key={status} className="text-center flex-1 px-1">
-              {statusLabels[status]}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* Timeline Details */}
-      <div className="space-y-4 border-t border-border pt-6">
-        {tracking.statusHistory.map((status, index) => {
-          const isCompleted =
-            tracking.statusHistory.findIndex((s) => s.status === tracking.currentStatus) >= index
-
-          return (
-            <div key={index} className="flex gap-4">
-              <div className="flex flex-col items-center pt-1">
-                <div
-                  className={cn(
-                    "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2",
-                    isCompleted
-                      ? "border-green-500 bg-green-500 text-white"
-                      : "border-gray-300 bg-white text-gray-400"
-                  )}
-                >
-                  {isCompleted ? (
-                    <CheckCircle2 className="h-4 w-4" />
-                  ) : (
-                    <div className="h-2 w-2 rounded-full bg-gray-300" />
-                  )}
+      {/* Custom Progress Bar with Steps */}
+      <div className="mt-4">
+        <div className="flex items-center justify-between relative">
+          {/* Progress line */}
+          <div className="absolute left-0 right-0 top-1/2 h-1 bg-gray-200 z-0" style={{transform: 'translateY(-50%)'}} />
+          <div className="absolute left-0 top-1/2 h-1 bg-green-500 z-10" style={{width: `${STATUS_STEPS.length > 1 ? (lastCompletedIndex/(STATUS_STEPS.length-1))*100 : 0}%`, transform: 'translateY(-50%)', transition: 'width 0.3s'}} />
+          {/* Steps */}
+          {STATUS_STEPS.map((step, index) => {
+            const completed = !!stepCompletion[step.key]?.completed;
+            const date = stepCompletion[step.key]?.date;
+            return (
+              <div key={step.key} className="flex flex-col items-center z-20 flex-1">
+                <div className={cn(
+                  "flex items-center justify-center w-7 h-7 rounded-full border-2 mb-1",
+                  completed ? "border-green-500 bg-green-500 text-white" : getStatusColor(step.key)
+                )}>
+                  {completed ? <CheckCircle2 className="h-5 w-5" /> : index+1}
                 </div>
-                {index < tracking.statusHistory.length - 1 && (
-                  <div
-                    className={cn(
-                      "my-1 h-8 w-0.5",
-                      isCompleted ? "bg-green-500" : "bg-gray-200"
-                    )}
-                  />
+                <span className={cn("text-xs mt-1", completed ? "text-green-700 font-semibold" : "")}>{step.label}</span>
+                {completed && date && (
+                  <span className="text-[10px] text-green-700 mt-0.5">{formatDate(date)}</span>
                 )}
               </div>
-
-              <div className="flex-1 pb-2">
-                <p className="font-medium text-sm">
-                  {statusLabels[status.status] || status.status}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {status.message}
-                </p>
-                {status.location && (
-                  <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
-                    <MapPin className="h-3 w-3" />
-                    {status.location}
-                  </div>
-                )}
-                <p className="text-xs text-muted-foreground mt-1">
-                  {formatDate(status.timestamp)}
-                </p>
-              </div>
-            </div>
-          )
-        })}
+            );
+          })}
+        </div>
       </div>
 
-      {/* Status Message */}
-      {tracking.currentStatus === "out_for_delivery" && (
-        <div className="rounded-lg bg-orange-50 border border-orange-200 p-4">
-          <p className="font-medium text-sm text-orange-900">Delivery Attempted</p>
-          <p className="text-xs text-orange-800 mt-1">
-            The carrier was not able to complete your delivery and will make another attempt. Please use the "Track shipment" link for more information.
-          </p>
+      {/* Status Message (current step) */}
+      {lastStep && (
+        <div className="mt-6">
+          <p className="font-medium text-base mb-1">{lastStep.label}</p>
+          {lastStepDate && (
+            <p className="text-xs text-muted-foreground">{formatDate(lastStepDate)}</p>
+          )}
         </div>
       )}
 
@@ -178,5 +162,5 @@ export function OrderTrackingModal({ tracking, productName, productImage }: Orde
         </p>
       </div>
     </div>
-  )
+  );
 }
