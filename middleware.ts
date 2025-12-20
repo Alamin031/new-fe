@@ -136,7 +136,8 @@ export async function middleware(request: NextRequest) {
     response.cookies.set("auth_token", "", { ...cookieOptions, maxAge: 0 })
     response.cookies.set("refresh_token", "", { ...cookieOptions, maxAge: 0 })
 
-    // Header to clear browser storage
+    // Headers to clear browser cache and storage
+    response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate")
     response.headers.set("Clear-Site-Data", '"cache", "cookies", "storage"')
     return response
   }
