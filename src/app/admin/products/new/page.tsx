@@ -1821,6 +1821,27 @@ function NewProductPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
+                  <Label htmlFor="imei">IMEI</Label>
+                  <Input
+                    id="imei"
+                    value={imei}
+                    onChange={e => setImei(e.target.value)}
+                    placeholder="e.g., 352614040046446"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="serial">Serial Number</Label>
+                  <Input
+                    id="serial"
+                    value={serial}
+                    onChange={e => setSerial(e.target.value)}
+                    placeholder="e.g., XL5H8Z2K9Q"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
                   <Label>Delivery</Label>
                   <Input
                     value={delivery}
