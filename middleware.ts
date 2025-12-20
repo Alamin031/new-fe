@@ -76,32 +76,22 @@ function decodeTokenLocally(token: string): Record<string, unknown> | null {
   }
 }
 
-async function validateTokenWithBackend(token: string): Promise<Record<string, unknown> | null> {
+function isTokenExpired(token: string): boolean {
+  // Only do local JWT validation in middleware
+  // This prevents false logouts due to network issues or backend delays
+  // Backend will handle actual token validation via API interceptor (401/403 errors)
   try {
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "https://friends-be-production.up.railway.app/api"
-    const response = await fetch(`${apiBaseUrl}/auth/decode/${token}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    })
-    if (response.ok) {
-      return await response.json()
-    }
-    return decodeTokenLocally(token)
-  } catch {
-    return decodeTokenLocally(token)
-  }
-}
-
-async function isTokenExpired(token: string): Promise<boolean> {
-  try {
-    const payload = await validateTokenWithBackend(token)
+    const payload = decodeTokenLocally(token)
     if (!payload || !payload.exp) return true
+
+    // Check if token has expired
     const expirationTime = (payload.exp as number) * 1000
-    return Date.now() >= expirationTime
+    const now = Date.now()
+
+    // Return true only if token is actually expired (not just about to expire)
+    return now >= expirationTime
   } catch {
+    // If we can't decode locally, treat as expired
     return true
   }
 }
