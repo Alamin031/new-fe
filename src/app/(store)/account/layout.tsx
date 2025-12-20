@@ -50,6 +50,22 @@ export default function AccountLayout({
     // authService.logout() will handle the redirect, so this won't be reached
   }
 
+  // Show loading state while hydrating, not redirect message
+  // The useEffect will handle actual redirect when auth is ready
+  if (!isInitialized || isHydrating) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-8">
+        <div className="flex h-screen items-center justify-center">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // If still not authenticated after hydration, show message (will redirect via effect)
   if (!isAuthenticated) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-8">
