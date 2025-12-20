@@ -485,7 +485,14 @@ export function ProductInfoRegion({
         variants.storageName = selectedStorage.size;
       }
 
-      addToCart(product, quantity, variants);
+      // Ensure rewardPoints is present in the product object
+      let rewardPoints = product.rewardPoints;
+      if (typeof rewardPoints === 'undefined' && product.rawProduct && typeof product.rawProduct.rewardPoints !== 'undefined') {
+        rewardPoints = product.rawProduct.rewardPoints;
+      }
+      const productWithReward = { ...product, rewardPoints };
+
+      addToCart(productWithReward, quantity, variants);
     }
   };
 
@@ -515,7 +522,14 @@ export function ProductInfoRegion({
         variants.storageName = selectedStorage.size;
       }
 
-      addToCart(product, quantity, variants);
+      // Ensure rewardPoints is present in the product object
+      let rewardPoints = product.rewardPoints;
+      if (typeof rewardPoints === 'undefined' && product.rawProduct && typeof product.rawProduct.rewardPoints !== 'undefined') {
+        rewardPoints = product.rawProduct.rewardPoints;
+      }
+      const productWithReward = { ...product, rewardPoints };
+
+      addToCart(productWithReward, quantity, variants);
 
       // Redirect to checkout
       router.push('/checkout');
@@ -526,7 +540,13 @@ export function ProductInfoRegion({
     if (inWishlist) {
       removeFromWishlist(product.id);
     } else {
-      addToWishlist(product);
+      // Ensure rewardPoints is present in the product object
+      let rewardPoints = product.rewardPoints;
+      if (typeof rewardPoints === 'undefined' && product.rawProduct && typeof product.rawProduct.rewardPoints !== 'undefined') {
+        rewardPoints = product.rawProduct.rewardPoints;
+      }
+      const productWithReward = { ...product, rewardPoints };
+      addToWishlist(productWithReward);
     }
   };
 

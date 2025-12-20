@@ -1,51 +1,31 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Bell, Package, Tag, CreditCard, Megaphone, Check, Trash2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card"
 import { Button } from "../../../components/ui/button"
 import { Switch } from "../../../components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs"
 import { withProtectedRoute } from "../../../lib/auth/protected-route"
+import { notificationService } from "../../../lib/api/services/notify"
+import { useAuthStore } from "../../../store/auth-store"
 
-const notifications = [
-  {
-    id: "1",
-    type: "order",
-    title: "Order Delivered",
-    message: "Your order #ORD-2024-001 has been delivered successfully.",
-    time: "2 hours ago",
-    read: false,
-    icon: Package,
-  },
-  {
-    id: "2",
-    type: "promotion",
-    title: "Flash Sale Alert!",
-    message: "Up to 50% off on electronics. Sale starts in 2 hours!",
-    time: "5 hours ago",
-    read: false,
-    icon: Tag,
-  },
-  {
-    id: "3",
-    type: "payment",
-    title: "Payment Successful",
-    message: "Payment of ৳1,48,399 for order #ORD-2024-001 completed.",
-    time: "1 day ago",
-    read: true,
-    icon: CreditCard,
-  },
-  {
-    id: "4",
-    type: "promotion",
-    title: "New Arrivals",
-    message: "Check out the latest iPhone 15 Pro Max - Now available!",
-    time: "2 days ago",
-    read: true,
-    icon: Megaphone,
-  },
-]
+// Notification icon mapping (API types are likely uppercase, but fallback to string match)
+const notificationIconMap: Record<string, any> = {
+  ORDER_UPDATE: Package,
+  PROMOTION: Tag,
+  PAYMENT: CreditCard,
+  GIVEAWAY: Megaphone,
+  SYSTEM: Bell,
+  PRODUCT_STOCK_OUT: Bell,
+  'order_update': Package,
+  'promotion': Tag,
+  'payment': CreditCard,
+  'giveaway': Megaphone,
+  'system': Bell,
+  'product_stock_out': Bell,
+};
 
 const notificationSettings = [
   { id: "orders", label: "Order Updates", description: "Get notified about your order status", enabled: true },
@@ -59,23 +39,68 @@ const notificationSettings = [
   { id: "newsletter", label: "Newsletter", description: "Weekly updates on new products", enabled: false },
 ]
 
+
 function NotificationsPage() {
-  const [notifs, setNotifs] = useState(notifications)
-  const [settings, setSettings] = useState(notificationSettings)
+  const user = useAuthStore((state) => state.user);
+  type Notification = {
+    id: string;
+    type?: string;
+    icon: React.ElementType;
+    title: string;
+    message: string;
+    time: string;
+    read: boolean;
+    [key: string]: any;
+  };
+  const [notifs, setNotifs] = useState<Notification[]>([]);
+  const [settings, setSettings] = useState(notificationSettings);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      if (!user?.id) return;
+      setLoading(true);
+      try {
+        const data = await notificationService.getHeader({ userId: user.email });
+        // Attach icon to each notification based on type
+        const mapped = (data || []).map((n: any) => {
+          // Normalize type for icon mapping
+          const typeKey = (n.type || '').toUpperCase();
+          const icon = notificationIconMap[typeKey] || notificationIconMap[(n.type || '').toLowerCase()] || Bell;
+          return {
+            ...n,
+            icon,
+            title: n.title || n.type || 'Notification',
+            message: n.message || '',
+            time: n.createdAt ? new Date(n.createdAt).toLocaleString() : '',
+            read: !!n.read,
+          };
+        });
+        setNotifs(mapped);
+        setError(null);
+      } catch {
+        setError("Failed to load notifications.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchNotifications();
+  }, [user]);
 
   const markAllAsRead = () => {
-    setNotifs(notifs.map((n) => ({ ...n, read: true })))
-  }
+    setNotifs(notifs.map((n: any) => ({ ...n, read: true })));
+  };
 
   const deleteNotification = (id: string) => {
-    setNotifs(notifs.filter((n) => n.id !== id))
-  }
+    setNotifs(notifs.filter((n: any) => n.id !== id));
+  };
 
   const toggleSetting = (id: string) => {
-    setSettings(settings.map((s) => (s.id === id ? { ...s, enabled: !s.enabled } : s)))
-  }
+    setSettings(settings.map((s) => (s.id === id ? { ...s, enabled: !s.enabled } : s)));
+  };
 
-  const unreadCount = notifs.filter((n) => !n.read).length
+  const unreadCount = notifs.filter((n: any) => !n.read).length;
 
   return (
     <div className="space-y-6">
@@ -100,7 +125,21 @@ function NotificationsPage() {
         </div>
 
         <TabsContent value="all" className="mt-6 space-y-4">
-          {notifs.length === 0 ? (
+          {loading ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                <Bell className="mb-4 h-12 w-12 text-muted-foreground" />
+                <p className="text-muted-foreground">Loading notifications...</p>
+              </CardContent>
+            </Card>
+          ) : error ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                <Bell className="mb-4 h-12 w-12 text-red-400" />
+                <p className="text-red-500">{error}</p>
+              </CardContent>
+            </Card>
+          ) : notifs.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12 text-center">
                 <Bell className="mb-4 h-12 w-12 text-muted-foreground" />
@@ -108,7 +147,7 @@ function NotificationsPage() {
               </CardContent>
             </Card>
           ) : (
-            notifs.map((notification) => (
+            notifs.map((notification: any) => (
               <Card key={notification.id} className={notification.read ? "opacity-60" : ""}>
                 <CardContent className="flex items-start gap-4 p-4">
                   <div
@@ -145,7 +184,21 @@ function NotificationsPage() {
         </TabsContent>
 
         <TabsContent value="unread" className="mt-6 space-y-4">
-          {notifs.filter((n) => !n.read).length === 0 ? (
+          {loading ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                <Check className="mb-4 h-12 w-12 text-muted-foreground" />
+                <p className="text-muted-foreground">Loading notifications...</p>
+              </CardContent>
+            </Card>
+          ) : error ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                <Check className="mb-4 h-12 w-12 text-red-400" />
+                <p className="text-red-500">{error}</p>
+              </CardContent>
+            </Card>
+          ) : notifs.filter((n: any) => !n.read).length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12 text-center">
                 <Check className="mb-4 h-12 w-12 text-muted-foreground" />
@@ -154,8 +207,8 @@ function NotificationsPage() {
             </Card>
           ) : (
             notifs
-              .filter((n) => !n.read)
-              .map((notification) => (
+              .filter((n: any) => !n.read)
+              .map((notification: any) => (
                 <Card key={notification.id}>
                   <CardContent className="flex items-start gap-4 p-4">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
@@ -192,7 +245,7 @@ function NotificationsPage() {
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }
 
 export default withProtectedRoute(NotificationsPage, {

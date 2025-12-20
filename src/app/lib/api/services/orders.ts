@@ -4,13 +4,20 @@ import {
   Order,
   CreateOrderRequest,
   UpdateOrderStatusRequest,
-  OrderInvoiceResponse,
   CalculateEMIRequest,
   CalculateEMIResponse,
 } from "../types"
 import { API_ENDPOINTS } from "../config"
 
 export const ordersService = {
+    /**
+     * Get orders by customer email
+     */
+    getByCustomerEmail: async (email: string): Promise<Order[]> => {
+      const endpoint = API_ENDPOINTS.ORDERS_BY_CUSTOMER_EMAIL.replace("{email}", encodeURIComponent(email));
+      const response = await apiClient.get<Order[]>(endpoint);
+      return response.data;
+    },
   /**
    * Create a new order
    */

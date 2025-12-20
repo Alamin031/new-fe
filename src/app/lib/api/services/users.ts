@@ -1,54 +1,77 @@
-import { apiClient } from "../client"
-import { User, UpdateUserRequest, UserListResponse, Address, Product, Order } from "../types"
-import { API_ENDPOINTS } from "../config"
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import {apiClient} from '../client';
+import {
+  User,
+  UpdateUserRequest,
+  UserListResponse,
+  Address,
+  Product,
+  Order,
+} from '../types';
+import {API_ENDPOINTS} from '../config';
 
 export const usersService = {
   /**
    * Get all users (Admin/Management only)
    */
   getAll: async (page = 1, limit = 10): Promise<UserListResponse> => {
-    const response = await apiClient.get<UserListResponse>(API_ENDPOINTS.USERS_GET_ALL, {
-      params: { page, limit },
-    })
-    return response.data
+    const response = await apiClient.get<UserListResponse>(
+      API_ENDPOINTS.USERS_GET_ALL,
+      {
+        params: {page, limit},
+      },
+    );
+    return response.data;
   },
 
   /**
    * Get paginated users list
    */
   list: async (page = 1, limit = 10): Promise<UserListResponse> => {
-    const response = await apiClient.get<UserListResponse>(API_ENDPOINTS.USERS_GET_ALL, {
-      params: { page, limit },
-    })
-    return response.data
+    const response = await apiClient.get<UserListResponse>(
+      API_ENDPOINTS.USERS_GET_ALL,
+      {
+        params: {page, limit},
+      },
+    );
+    return response.data;
   },
 
   /**
    * Get current authenticated user
    */
   getCurrentUser: async (): Promise<User> => {
-    const response = await apiClient.get<User>(API_ENDPOINTS.USERS_ME)
-    return response.data
+    const response = await apiClient.get<User>(API_ENDPOINTS.USERS_ME);
+    return response.data;
   },
 
+  getAllRewardPoints: async (): Promise<any[]> => {
+    const response = await apiClient.get<any[]>(
+      API_ENDPOINTS.USERS_REWARD_POINTS,
+    );
+    return response.data;
+  },
   /**
    * Get user by ID
    */
   getById: async (id: string): Promise<User> => {
-    const endpoint = API_ENDPOINTS.USERS_GET.replace("{id}", id)
-    const response = await apiClient.get<User>(endpoint)
-    return response.data
+    const endpoint = API_ENDPOINTS.USERS_GET.replace('{id}', id);
+    const response = await apiClient.get<User>(endpoint);
+    return response.data;
   },
 
   /**
    * Update user profile
    */
-  update: async (id: string, data: UpdateUserRequest | FormData): Promise<User> => {
-    const endpoint = API_ENDPOINTS.USERS_UPDATE.replace("{id}", id);
+  update: async (
+    id: string,
+    data: UpdateUserRequest | FormData,
+  ): Promise<User> => {
+    const endpoint = API_ENDPOINTS.USERS_UPDATE.replace('{id}', id);
     let response;
     if (data instanceof FormData) {
       response = await apiClient.patch<User>(endpoint, data, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: {'Content-Type': 'multipart/form-data'},
       });
     } else {
       response = await apiClient.patch<User>(endpoint, data);
@@ -60,8 +83,8 @@ export const usersService = {
    * Delete user account
    */
   delete: async (id: string): Promise<void> => {
-    const endpoint = API_ENDPOINTS.USERS_DELETE.replace("{id}", id)
-    await apiClient.delete(endpoint)
+    const endpoint = API_ENDPOINTS.USERS_DELETE.replace('{id}', id);
+    await apiClient.delete(endpoint);
   },
 
   // ==================== Wishlist ====================
@@ -70,27 +93,36 @@ export const usersService = {
    * Get user wishlist
    */
   getWishlist: async (userId: string): Promise<Product[]> => {
-    const endpoint = API_ENDPOINTS.USERS_WISHLIST_GET.replace("{id}", userId)
-    const response = await apiClient.get<Product[]>(endpoint)
-    return response.data
+    const endpoint = API_ENDPOINTS.USERS_WISHLIST_GET.replace('{id}', userId);
+    const response = await apiClient.get<Product[]>(endpoint);
+    return response.data;
   },
 
   /**
    * Add product to wishlist
    */
-  addToWishlist: async (userId: string, productId: string): Promise<Product[]> => {
-    const endpoint = API_ENDPOINTS.USERS_WISHLIST_ADD.replace("{id}", userId)
-    const response = await apiClient.post<Product[]>(endpoint, { productId })
-    return response.data
+  addToWishlist: async (
+    userId: string,
+    productId: string,
+  ): Promise<Product[]> => {
+    const endpoint = API_ENDPOINTS.USERS_WISHLIST_ADD.replace('{id}', userId);
+    const response = await apiClient.post<Product[]>(endpoint, {productId});
+    return response.data;
   },
 
   /**
    * Remove product from wishlist
    */
-  removeFromWishlist: async (userId: string, productId: string): Promise<Product[]> => {
-    const endpoint = API_ENDPOINTS.USERS_WISHLIST_DELETE.replace("{id}", userId).replace("{productId}", productId)
-    const response = await apiClient.delete<Product[]>(endpoint)
-    return response.data
+  removeFromWishlist: async (
+    userId: string,
+    productId: string,
+  ): Promise<Product[]> => {
+    const endpoint = API_ENDPOINTS.USERS_WISHLIST_DELETE.replace(
+      '{id}',
+      userId,
+    ).replace('{productId}', productId);
+    const response = await apiClient.delete<Product[]>(endpoint);
+    return response.data;
   },
 
   // ==================== Compare ====================
@@ -99,27 +131,36 @@ export const usersService = {
    * Get user compare list
    */
   getCompareList: async (userId: string): Promise<Product[]> => {
-    const endpoint = API_ENDPOINTS.USERS_COMPARE_GET.replace("{id}", userId)
-    const response = await apiClient.get<Product[]>(endpoint)
-    return response.data
+    const endpoint = API_ENDPOINTS.USERS_COMPARE_GET.replace('{id}', userId);
+    const response = await apiClient.get<Product[]>(endpoint);
+    return response.data;
   },
 
   /**
    * Add product to compare list
    */
-  addToCompare: async (userId: string, productId: string): Promise<Product[]> => {
-    const endpoint = API_ENDPOINTS.USERS_COMPARE_ADD.replace("{id}", userId)
-    const response = await apiClient.post<Product[]>(endpoint, { productId })
-    return response.data
+  addToCompare: async (
+    userId: string,
+    productId: string,
+  ): Promise<Product[]> => {
+    const endpoint = API_ENDPOINTS.USERS_COMPARE_ADD.replace('{id}', userId);
+    const response = await apiClient.post<Product[]>(endpoint, {productId});
+    return response.data;
   },
 
   /**
    * Remove product from compare list
    */
-  removeFromCompare: async (userId: string, productId: string): Promise<Product[]> => {
-    const endpoint = API_ENDPOINTS.USERS_COMPARE_DELETE.replace("{id}", userId).replace("{productId}", productId)
-    const response = await apiClient.delete<Product[]>(endpoint)
-    return response.data
+  removeFromCompare: async (
+    userId: string,
+    productId: string,
+  ): Promise<Product[]> => {
+    const endpoint = API_ENDPOINTS.USERS_COMPARE_DELETE.replace(
+      '{id}',
+      userId,
+    ).replace('{productId}', productId);
+    const response = await apiClient.delete<Product[]>(endpoint);
+    return response.data;
   },
 
   // ==================== Orders ====================
@@ -127,12 +168,19 @@ export const usersService = {
   /**
    * Get user orders
    */
-  getOrders: async (userId: string, page = 1, limit = 10): Promise<{ data: Order[]; pagination: unknown }> => {
-    const endpoint = API_ENDPOINTS.USERS_ORDERS.replace("{id}", userId)
-    const response = await apiClient.get<{ data: Order[]; pagination: unknown }>(endpoint, {
-      params: { page, limit },
-    })
-    return response.data
+  getOrders: async (
+    userId: string,
+    page = 1,
+    limit = 10,
+  ): Promise<{data: Order[]; pagination: unknown}> => {
+    const endpoint = API_ENDPOINTS.USERS_ORDERS.replace('{id}', userId);
+    const response = await apiClient.get<{data: Order[]; pagination: unknown}>(
+      endpoint,
+      {
+        params: {page, limit},
+      },
+    );
+    return response.data;
   },
 
   // ==================== Addresses ====================
@@ -141,8 +189,10 @@ export const usersService = {
    * Get user addresses
    */
   getAddresses: async (userId: string): Promise<Address[]> => {
-    const response = await apiClient.get<Address[]>(`/api/users/${userId}/addresses`)
-    return response.data
+    const response = await apiClient.get<Address[]>(
+      `/api/users/${userId}/addresses`,
+    );
+    return response.data;
   },
 
   /**
@@ -150,10 +200,13 @@ export const usersService = {
    */
   addAddress: async (
     userId: string,
-    data: Omit<Address, "id" | "userId" | "createdAt">,
+    data: Omit<Address, 'id' | 'userId' | 'createdAt'>,
   ): Promise<Address> => {
-    const response = await apiClient.post<Address>(`/api/users/${userId}/addresses`, data)
-    return response.data
+    const response = await apiClient.post<Address>(
+      `/api/users/${userId}/addresses`,
+      data,
+    );
+    return response.data;
   },
 
   /**
@@ -162,18 +215,37 @@ export const usersService = {
   updateAddress: async (
     userId: string,
     addressId: string,
-    data: Partial<Omit<Address, "id" | "userId">>,
+    data: Partial<Omit<Address, 'id' | 'userId'>>,
   ): Promise<Address> => {
-    const response = await apiClient.patch<Address>(`/api/users/${userId}/addresses/${addressId}`, data)
-    return response.data
+    const response = await apiClient.patch<Address>(
+      `/api/users/${userId}/addresses/${addressId}`,
+      data,
+    );
+    return response.data;
   },
 
   /**
    * Delete address
    */
   deleteAddress: async (userId: string, addressId: string): Promise<void> => {
-    await apiClient.delete(`/api/users/${userId}/addresses/${addressId}`)
+    await apiClient.delete(`/api/users/${userId}/addresses/${addressId}`);
   },
-}
 
-export default usersService
+  /**
+   * Update user password
+   * @param userId - User ID
+   * @param data - { oldPassword: string, newPassword: string }
+   */
+  updatePassword: async (
+    userId: string,
+    data: {oldPassword: string; newPassword: string},
+  ): Promise<void> => {
+    const endpoint = API_ENDPOINTS.AUTH_UPDATE_PASSWORD.replace(
+      '{userId}',
+      userId,
+    );
+    await apiClient.post(endpoint, data);
+  },
+};
+
+export default usersService;

@@ -1,4 +1,3 @@
-// API Configuration
 export const API_CONFIG = {
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api',
   timeout: 30000,
@@ -6,37 +5,29 @@ export const API_CONFIG = {
     'Content-Type': 'application/json',
   },
 };
-
-// Storage keys
 export const STORAGE_KEYS = {
   TOKEN: 'auth_token',
   REFRESH_TOKEN: 'refresh_token',
   USER: 'user',
 };
-
-// API Endpoints
 export const API_ENDPOINTS = {
-  // Corporate Deals
-  CORPORATE_DEALS_GET: '/corporate-deals', // GET: Get all corporate deals
-  CORPORATE_DEALS_CREATE: '/corporate-deals', // POST: Create corporate deal
-  CORPORATE_DEALS_GET_ONE: '/corporate-deals/{id}', // GET: Get corporate deal by ID
-  CORPORATE_DEALS_DELETE: '/corporate-deals/{id}', // DELETE: Delete corporate deal
-  // Blog
+  CORPORATE_DEALS_GET: '/corporate-deals',
+  CORPORATE_DEALS_CREATE: '/corporate-deals',
+  CORPORATE_DEALS_GET_ONE: '/corporate-deals/{id}',
+  CORPORATE_DEALS_DELETE: '/corporate-deals/{id}',
   BLOGS_GET: '/blogs',
   BLOGS_CREATE: '/blogs',
   BLOGS_GET_ONE_SLUG: '/blogs/{slug}',
   BLOGS_UPDATE: '/blogs/{id}',
   BLOGS_DELETE: '/blogs/{id}',
   BLOGS_GET_BY_ID: '/blogs/id/{id}',
-  // Auth
   AUTH_REGISTER: '/auth/register',
   AUTH_LOGIN: '/auth/login',
   AUTH_SOCIAL_LOGIN: '/auth/social-login',
   AUTH_REFRESH: '/auth/refresh',
   AUTH_LOGOUT: '/auth/logout',
   AUTH_DECODE: '/auth/decode/{token}',
-
-  // Users
+  AUTH_UPDATE_PASSWORD: '/auth/update-password/{userId}',
   USERS_CREATE: '/users',
   USERS_GET_ALL: '/users',
   USERS_GET_LIST: '/users/all',
@@ -51,8 +42,7 @@ export const API_ENDPOINTS = {
   USERS_COMPARE_ADD: '/users/{id}/compare',
   USERS_COMPARE_DELETE: '/users/{id}/compare/{productId}',
   USERS_ORDERS: '/users/{id}/orders',
-
-  // Categories
+  USERS_REWARD_POINTS: '/users/reward-points',
   CATEGORIES_CREATE: '/categories',
   CATEGORIES_GET: '/categories',
   CATEGORIES_FEATURED: '/categories/featured',
@@ -61,13 +51,10 @@ export const API_ENDPOINTS = {
   CATEGORIES_UPDATE: '/categories/{id}',
   CATEGORIES_DELETE: '/categories/{id}',
   CATEGORIES_GET_ONE: '/categories/{id}',
-  // Subcategories
   SUBCATEGORIES_CREATE: '/categories/{categoryId}/subcategories',
   SUBCATEGORIES_GET_ALL: '/categories/{categoryId}/subcategories',
   SUBCATEGORIES_UPDATE: '/categories/subcategories/{id}',
   SUBCATEGORIES_GET_ONE: '/categories/subcategories/{id}',
-
-  // Brands
   BRANDS_CREATE: '/brands',
   BRANDS_GET: '/brands',
   BRANDS_FEATURED: '/brands/featured',
@@ -75,78 +62,64 @@ export const API_ENDPOINTS = {
   BRANDS_PRODUCTS: '/brands/{slug}/products',
   BRANDS_UPDATE: '/brands/{id}',
   BRANDS_DELETE: '/brands/{id}',
-
-  // Products
   PRODUCTS_CREATE: '/products-new',
   PRODUCTS_GET: '/products-new',
   PRODUCTS_GET_ONE: '/products-new/id/{id}',
   PRODUCTS_SEARCH: '/products-new/search',
   PRODUCTS_SLUG: '/products-new/{slug}',
   PRODUCTS_DELETE: '/products-new/delete/{id}',
-
-  // Products (New Architecture)
   PRODUCTS_CREATE_BASIC: '/products-new/basic',
   PRODUCTS_CREATE_NETWORK: '/products-new/network',
   PRODUCTS_CREATE_REGION: '/products-new/region',
-
   PRODUCTS_UPDATE_BASIC: '/products-new/basic/{id}',
   PRODUCTS_UPDATE_NETWORK: '/products-new/network/{id}',
   PRODUCTS_UPDATE_REGION: '/products-new/region/{id}',
-
-  // Product Care Plans
   PRODUCT_CARE_CREATE: '/products-new/care',
   PRODUCT_CARE_GET_ALL: '/products-new/care',
   PRODUCT_CARE_UPDATE: '/products-new/care/{id}',
   PRODUCT_CARE_GET: '/products-new/care/{id}',
   PRODUCT_CARE_DELETE: '/products-new/care/{id}',
   PRODUCT_CARE_BY_PRODUCT: '/products-new/care/product/{productId}',
+  NOTIFICATIONS_BY: '/notifications/by',
+  NOTIFICATIONS_UNREAD: '/notifications/unread',
+  NOTIFICATIONS_MARK_READ: '/notifications/{id}/read',
+  NOTIFICATIONS_ALL: '/notifications',
+  NOTIFICATIONS_CREATE: '/notifications',
+  NOTIFICATIONS_RESOLVE: '/notifications/{id}/resolve',
+  NOTIFICATIONS_BY_USER: '/notifications/{userId}',
+  NOTIFICATIONS_USER_UNREAD: '/notifications/{userId}/unread',
+  NOTIFICATIONS_STOCK_OUT: '/notifications/stock-out',
+  NOTIFICATIONS_DELETE: '/notifications/{id}',
+  NOTIFICATIONS_HEADER: '/notifications/header',
 
-  // Product Notification Requests
-  NOTIFICATIONS_BY: '/notifications/by', // GET: Get notifications by filter
-  NOTIFICATIONS_UNREAD: '/notifications/unread', // GET: Get all unread notifications
-  NOTIFICATIONS_MARK_READ: '/notifications/{id}/read', // PATCH: Mark notification as read
-  NOTIFICATIONS_ALL: '/notifications', // GET: Get all notifications
-  NOTIFICATIONS_CREATE: '/notifications', // POST: Create notification
-  NOTIFICATIONS_RESOLVE: '/notifications/{id}/resolve', // PATCH: Resolve notification
-  NOTIFICATIONS_BY_USER: '/notifications/{userId}', // GET: Get notifications for a user
-  NOTIFICATIONS_USER_UNREAD: '/notifications/{userId}/unread', // GET: Get unread notifications for a user
-  NOTIFICATIONS_STOCK_OUT: '/notifications/stock-out', // POST: Stock out notification
-  NOTIFICATIONS_DELETE: '/notifications/{id}', // DELETE: Delete notification
-  NOTIFICATIONS_HEADER: '/notifications/header', // GET: Get notifications for header
-
-  // Orders
-  ORDERS_CREATE: '/orders', // POST: Create order
-  ORDERS_GET: '/orders', // GET: Get all orders (Admin/Management)
-  ORDERS_GET_ONE: '/orders/{id}', // GET: Get order by ID
-  ORDERS_TRACKING: '/orders/tracking/{orderNumber}', // GET: Get order tracking info by order number (User)
-  ORDERS_UPDATE_STATUS: '/orders/{id}/status', // PATCH: Update order status (Admin/Management)
-  ORDERS_INVOICE: '/orders/{id}/invoice', // GET: Generate invoice for order
-  ORDERS_CALCULATE_EMI: '/orders/calculate-emi', // POST: Calculate EMI for amount
-
-  WARRANTY_ACTIVATE: '/warranty/activate', // POST: Activate warranty (Admin/Management)
-  WARRANTY_LOOKUP: '/warranty/lookup', // POST: Lookup warranty by IMEI/Serial and Phone
-  WARRANTY_LOGS: '/warranty/{id}/logs', // GET: Get warranty logs (Admin/Management)
-  WARRANTY_ADD: '/warranty/add', // POST: Add warranty (Admin/Management)
-  WARRANTY_UPDATE: '/warranty/update/{id}', // POST: Update warranty (Admin/Management)
-  WARRANTY_DELETE: '/warranty/delete/{id}', // POST: Delete warranty (Admin/Management)
-  // Giveaways
+  ORDERS_CREATE: '/orders',
+  ORDERS_GET: '/orders',
+  ORDERS_GET_ONE: '/orders/{id}',
+  ORDERS_TRACKING: '/orders/tracking/{orderNumber}',
+  ORDERS_UPDATE_STATUS: '/orders/{id}/status',
+  ORDERS_INVOICE: '/orders/{id}/invoice',
+  ORDERS_CALCULATE_EMI: '/orders/calculate-emi',
+  ORDERS_BY_CUSTOMER_EMAIL: '/orders/by-customer-email/{email}',
+  
+  WARRANTY_ACTIVATE: '/warranty/activate',
+  WARRANTY_LOOKUP: '/warranty/lookup',
+  WARRANTY_LOGS: '/warranty/{id}/logs',
+  WARRANTY_ADD: '/warranty/add',
+  WARRANTY_UPDATE: '/warranty/update/{id}',
+  WARRANTY_DELETE: '/warranty/delete/{id}',
   GIVEAWAYS_CREATE: '/giveaways',
   GIVEAWAYS_GET: '/giveaways',
   GIVEAWAYS_GET_ONE: '/giveaways/{id}',
   GIVEAWAYS_GET_BY_PRODUCT: '/giveaways/product',
   GIVEAWAYS_EXPORT: '/giveaways/export',
   GIVEAWAYS_DELETE: '/giveaways/{id}',
-
-  // Policies
   POLICIES_CREATE: '/policies',
   POLICIES_GET: '/policies',
   POLICIES_GET_ONE: '/policies/{id}',
   POLICIES_PUBLISHED: '/policies/published',
   POLICIES_UPDATE: '/policies/{id}',
   POLICIES_DELETE: '/policies/{id}',
-  POLICIES_GET_BY_SLUG: '/policies/slug/{slug}', // <-- Add this line
-
-  // FAQs
+  POLICIES_GET_BY_SLUG: '/policies/slug/{slug}',
   FAQS_CREATE: '/faqs',
   FAQS_GET: '/faqs',
   FAQS_GET_ONE: '/faqs/{id}',
@@ -156,8 +129,6 @@ export const API_ENDPOINTS = {
   FAQS_UPDATE: '/faqs/{id}',
   FAQS_DELETE: '/faqs/{id}',
   FAQS_SEARCH: '/faqs/search',
-
-  // Reviews
   REVIEWS_CREATE: '/reviews',
   REVIEWS_GET: '/reviews/{productId}',
   REVIEWS_GET_ONE: '/reviews/{id}',
@@ -167,8 +138,6 @@ export const API_ENDPOINTS = {
   REVIEWS_MARK_UNHELPFUL: '/reviews/{id}/unhelpful',
   REVIEWS_GET_BY_USER: '/reviews/user',
   REVIEWS_GET_VERIFIED: '/reviews/verified',
-
-  // Loyalty
   LOYALTY_POINTS: '/loyalty/{userId}/points',
   LOYALTY_REDEEM: '/loyalty/{userId}/redeem',
   LOYALTY_HISTORY: '/loyalty/{userId}/history',
@@ -176,14 +145,10 @@ export const API_ENDPOINTS = {
   LOYALTY_BALANCE: '/loyalty/{userId}/balance',
   LOYALTY_TIER: '/loyalty/{userId}/tier',
   LOYALTY_ADD_POINTS: '/loyalty/{userId}/add-points',
-
-  // SEO
   SEO_PRODUCT: '/seo/products/{id}',
   SEO_CATEGORY: '/seo/categories/{id}',
   SEO_BRAND: '/seo/brands/{id}',
   SEO_SITEMAP: '/seo/sitemap',
-
-  // Marketing
   MARKETING_EMAIL: '/marketing/email',
   MARKETING_CAMPAIGN_STATUS: '/marketing/campaigns/{campaignId}',
   MARKETING_CAMPAIGNS: '/marketing/campaigns',
@@ -192,40 +157,29 @@ export const API_ENDPOINTS = {
   MARKETING_SCHEDULE_CAMPAIGN: '/marketing/schedule-campaign',
   MARKETING_SEGMENTS: '/marketing/segments',
   MARKETING_SMS: '/marketing/sms',
-
-  // Admin
   ADMIN_DASHBOARD: '/admin/dashboard',
   ADMIN_ANALYTICS: '/admin/analytics',
   ADMIN_STOCK_ALERTS: '/admin/stock-alerts',
-
-  // Hero Banner
   HEROBANNER_CREATE: '/herobanner',
   HEROBANNER_GET_ALL: '/herobanner',
   HEROBANNER_GET_ONE: '/herobanner/{id}',
   HEROBANNER_UPDATE: '/herobanner/{id}',
   HEROBANNER_DELETE: '/herobanner/{id}',
-
   HEROBANNER_BOTTOM_CREATE: '/herobanner/bottom',
   HEROBANNER_BOTTOM_GET_ALL: '/herobanner/bottom',
   HEROBANNER_BOTTOM_GET_ONE: '/herobanner/bottom/{id}',
   HEROBANNER_BOTTOM_UPDATE: '/herobanner/bottom/{id}',
   HEROBANNER_BOTTOM_DELETE: '/herobanner/bottom/{id}',
-
-  // Hero Banner Middle
   HEROBANNER_MIDDLE_CREATE: '/herobanner/middle',
   HEROBANNER_MIDDLE_GET_ALL: '/herobanner/middle',
   HEROBANNER_MIDDLE_GET_ONE: '/herobanner/middle/{id}',
   HEROBANNER_MIDDLE_UPDATE: '/herobanner/middle/{id}',
   HEROBANNER_MIDDLE_DELETE: '/herobanner/middle/{id}',
-
-  // Hero Banner Giveaway
   HEROBANNER_GIVEAWAY_CREATE: '/herobanner/give',
   HEROBANNER_GIVEAWAY_GET_ALL: '/herobanner/give',
   HEROBANNER_GIVEAWAY_GET_ONE: '/herobanner/give/{id}',
   HEROBANNER_GIVEAWAY_UPDATE: '/herobanner/give/{id}',
   HEROBANNER_GIVEAWAY_DELETE: '/herobanner/give/{id}',
-
-  // EMI
   EMI_PLAN_CREATE: '/emi/plan',
   EMI_PLAN_UPDATE: '/emi/plan/{id}',
   EMI_PLAN_GET: '/emi/plan/{id}',
@@ -236,20 +190,16 @@ export const API_ENDPOINTS = {
   EMI_BANK_GET: '/emi/bank/{id}',
   EMI_BANK_DELETE: '/emi/bank/{id}',
   EMI_BANKS_GET: '/emi/banks',
-
-  // Homecategory
   HOMECATEGORY_CREATE: '/homecategory',
   HOMECATEGORY_LIST: '/homecategory',
   HOMECATEGORY_GET: '/homecategory/{id}',
   HOMECATEGORY_UPDATE: '/homecategory/{id}',
   HOMECATEGORY_DELETE: '/homecategory/{id}',
-  // Delivery Methods
   DELIVERY_METHODS_GET: '/delivery-methods',
   DELIVERY_METHODS_CREATE: '/delivery-methods',
   DELIVERY_METHODS_GET_ONE: '/delivery-methods/{id}',
   DELIVERY_METHODS_UPDATE: '/delivery-methods/{id}',
   DELIVERY_METHODS_DELETE: '/delivery-methods/{id}',
-  // Flashsell
   FLASHSELL_CREATE: '/flashsell',
   FLASHSELL_GET_ALL: '/flashsell',
   FLASHSELL_GET_ONE: '/flashsell/{id}',

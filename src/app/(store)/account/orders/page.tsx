@@ -17,6 +17,7 @@ import type { Order } from "../../../lib/api/types"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../../components/ui/dialog"
 import { withProtectedRoute } from "../../../lib/auth/protected-route"
 import { OrderTrackingModal } from "@/app/components/order/order-tracking-modal"
+import { useAuthStore } from "@/app/store/auth-store"
 
 
 
@@ -200,16 +201,15 @@ function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const user = useAuthStore((state: any) => state.user);
 
   useEffect(() => {
     const fetchOrders = async () => {
       setLoading(true);
       try {
-        const res = await ordersService.getAll();
-        if (Array.isArray(res)) {
-          setOrders(res);
-        } else if (res && Array.isArray(res.data)) {
-          setOrders(res.data);
+        if (user && user.email) {
+          const res = await ordersService.getByCustomerEmail(user.email);
+          setOrders(Array.isArray(res) ? res : []);
         } else {
           setOrders([]);
         }
@@ -221,7 +221,7 @@ function OrdersPage() {
       }
     };
     fetchOrders();
-  }, []);
+  }, [user]);
 
   const filteredOrders = orders.filter((order) =>
     order.orderNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||

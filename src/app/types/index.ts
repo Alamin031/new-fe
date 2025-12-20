@@ -34,6 +34,7 @@ export interface Product {
   rating?: number | null
   reviewCount?: number | null
   ratingPoint?: number | null
+  rewardPoints?: number | null
   isFeatured?: boolean
   isNew?: boolean
   createdAt: string

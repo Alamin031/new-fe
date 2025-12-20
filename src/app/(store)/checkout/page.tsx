@@ -31,15 +31,15 @@ import {Separator} from '../../components/ui/separator';
 import {formatPrice} from '../../lib/utils/format';
 import {useCartStore} from '../../store/cart-store';
 import {useAuthStore} from '../../store/auth-store';
-import {
-  getProductPriceWithType,
-} from '../../lib/utils/product';
+import {useLoyaltyPointsStore} from '../../store/loyalty-points-store';
+import {getProductPriceWithType} from '../../lib/utils/product';
 import {toast} from 'sonner';
 
 export default function CheckoutPage() {
   const router = useRouter();
   const {items, getTotal, clearCart} = useCartStore();
   const {user, isAuthenticated} = useAuthStore();
+  const {getUserPoints, updateUserPoints} = useLoyaltyPointsStore();
 
   // Form state
   const [paymentMethod, setPaymentMethod] = useState('cod');
@@ -90,6 +90,11 @@ export default function CheckoutPage() {
   }, [items.length, isAuthenticated, router]);
 
   const subtotal = getTotal();
+  // Calculate total reward points for this order
+  const totalRewardPoints = items.reduce((sum, item) => {
+    const points = Number(item.product.rewardPoints) || 0;
+    return sum + points * item.quantity;
+  }, 0);
   // Find selected delivery method
   const selectedDelivery = deliveryMethods.find(m => m.id === deliveryMethod);
   // Use extraFee from selected delivery method, fallback to 0
@@ -207,9 +212,12 @@ export default function CheckoutPage() {
             dynamicInputs,
             // Full selectedVariants for backend flexibility
             selectedVariants: item.selectedVariants,
+            // Add rewardPoints to each order item
+            rewardPoints: Number(item.product.rewardPoints) || 0,
           };
         }),
         total,
+        totalRewardPoints,
         // Add any other fields your backend expects
       };
       await ordersService.create(orderPayload);
@@ -642,6 +650,13 @@ export default function CheckoutPage() {
                 <div className="flex justify-between text-sm text-green-600">
                   <span>Discount</span>
                   <span>-{formatPrice(discount)}</span>
+                </div>
+              )}
+              {/* Show total reward points to be earned */}
+              {totalRewardPoints > 0 && (
+                <div className="flex justify-between text-sm text-blue-600">
+                  <span>Reward Points Earned</span>
+                  <span>+{totalRewardPoints}</span>
                 </div>
               )}
             </div>

@@ -15,7 +15,7 @@ const authService = new AuthService();
 const sidebarLinks = [
   { href: "/account", label: "Dashboard", icon: User },
   { href: "/account/orders", label: "My Orders", icon: Package },
-  { href: "/account/addresses", label: "Addresses", icon: MapPin },
+  // { href: "/account/addresses", label: "Addresses", icon: MapPin },
   // { href: "/account/wishlist", label: "Wishlist", icon: Heart },
   //warranty
   { href: "/account/warranty", label: "Warranty", icon: Heart },
