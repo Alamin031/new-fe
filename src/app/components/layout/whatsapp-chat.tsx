@@ -17,9 +17,11 @@ export function WhatsappChat() {
   const [isDragging, setIsDragging] = useState(false);
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [mounted, setMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    setMounted(true);
     // Load saved position from localStorage or set default
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -43,13 +45,13 @@ export function WhatsappChat() {
     if (!containerRef.current) return;
     setIsDragging(true);
     setDragStart({
-      x: e.clientX - position.x,
-      y: e.clientY - position.y,
+      x: e.clientX - (position?.x || 0),
+      y: e.clientY - (position?.y || 0),
     });
   };
 
   useEffect(() => {
-    if (!isDragging) return;
+    if (!isDragging || !position) return;
 
     const handleMouseMove = (e: MouseEvent) => {
       const newX = e.clientX - dragStart.x;
@@ -68,7 +70,9 @@ export function WhatsappChat() {
     const handleMouseUp = () => {
       setIsDragging(false);
       // Save position to localStorage
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(position));
+      if (position) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(position));
+      }
     };
 
     document.addEventListener("mousemove", handleMouseMove);
@@ -87,14 +91,24 @@ export function WhatsappChat() {
     return () => clearInterval(id);
   }, []);
 
+  // Don't render on server
+  if (!mounted) {
+    return null;
+  }
+
   return (
     <div
       ref={containerRef}
-      className="fixed bottom-24 right-4 z-40 flex flex-col items-end gap-3 select-none"
+      className="fixed z-40 flex flex-col items-end gap-3 select-none"
       style={position ? {
-        transform: `translate(${position.x}px, ${position.y}px)`,
+        right: position ? `${window.innerWidth - position.x - 80}px` : "auto",
+        bottom: position ? `${window.innerHeight - position.y - 80}px` : "auto",
         cursor: isDragging ? "grabbing" : "grab",
-      } : undefined}
+      } : {
+        right: "16px",
+        bottom: "96px",
+        cursor: "grab",
+      }}
     >
       {showBubble && (
         <div
@@ -124,20 +138,19 @@ export function WhatsappChat() {
         aria-label="Chat on WhatsApp"
         className="relative inline-flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-lg transition-transform duration-200 hover:scale-[1.03] hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
       >
-        <div className="relative w-full h-full flex items-center justify-center">
+        <div className="relative w-full h-full flex items-center justify-center rounded-full">
           <Image
             src={ICONS[iconIndex]}
-            alt="WhatsApp"
+            alt=""
             width={74}
             height={74}
             className="h-full w-full rounded-full object-cover absolute"
             priority
-            onError={() => {}}
           />
-          <MessageCircle className="h-8 w-8 relative" strokeWidth={1.5} />
+          <MessageCircle className="h-8 w-8 relative z-10 text-white" strokeWidth={1.5} />
         </div>
         <span className="absolute top-0 right-0 h-3 w-3 rounded-full bg-red-500 border-2 border-white" aria-hidden="true" />
-        <span className="sr-only">WhatsApp</span>
+        <span className="sr-only">Chat on WhatsApp</span>
       </Link>
     </div>
   );
