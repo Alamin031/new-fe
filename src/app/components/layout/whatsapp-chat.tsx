@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
-import { X, GripHorizontal } from "lucide-react";
+import { X, GripHorizontal, MessageCircle } from "lucide-react";
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "8801343159931";
 const DEFAULT_MESSAGE = "Hi! I need help with my order.";
