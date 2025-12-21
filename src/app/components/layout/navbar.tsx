@@ -292,11 +292,10 @@ export function Navbar({ initialCategories, initialBrands }: NavbarProps = {}) {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Link href="/login" className="hidden sm:inline-flex">
-                <Button variant="default" size="sm">
-                  Sign In
-                </Button>
-              </Link>
+              <Button variant="ghost" size="icon" onClick={() => setIsSignInSheetOpen(true)} className="hidden sm:inline-flex">
+                <User className="h-5 w-5" />
+                <span className="sr-only">Account</span>
+              </Button>
             )}
 
             {/* Mobile Menu */}
