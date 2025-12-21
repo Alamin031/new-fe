@@ -15,23 +15,27 @@ export function WhatsappChat() {
   const [iconIndex, setIconIndex] = useState(0);
   const [showBubble, setShowBubble] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Load saved position from localStorage
+    // Load saved position from localStorage or set default
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
         setPosition(JSON.parse(saved));
       } catch (e) {
         // Reset to default if corrupted
-        setPosition({ x: window.innerWidth - 100, y: window.innerHeight - 150 });
+        const defaultX = Math.max(0, window.innerWidth - 100);
+        const defaultY = Math.max(0, window.innerHeight - 150);
+        setPosition({ x: defaultX, y: defaultY });
       }
     } else {
       // Set default position (right: 1rem, bottom: 6rem)
-      setPosition({ x: window.innerWidth - 100, y: window.innerHeight - 150 });
+      const defaultX = Math.max(0, window.innerWidth - 100);
+      const defaultY = Math.max(0, window.innerHeight - 150);
+      setPosition({ x: defaultX, y: defaultY });
     }
   }, []);
 
