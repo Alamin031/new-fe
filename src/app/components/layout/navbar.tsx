@@ -42,6 +42,7 @@ export function Navbar({ initialCategories, initialBrands }: NavbarProps = {}) {
   const [isLoadingCategories, setIsLoadingCategories] = useState(!initialCategories)
   const [isLoadingBrands, setIsLoadingBrands] = useState(!initialBrands)
   const [isHydrated, setIsHydrated] = useState(false)
+  const [isSignInSheetOpen, setIsSignInSheetOpen] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
 
