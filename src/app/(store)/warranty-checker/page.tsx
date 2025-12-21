@@ -11,11 +11,6 @@ import { warrantyService } from "../../lib/api/services"
 import type { Warranty } from "../../lib/api/types"
 import { toast } from "sonner"
 
-export const metadata = {
-  title: "Warranty Checker - TechStore",
-  description: "Check your product warranty status and coverage details.",
-}
-
 function WarrantyCheckerPage() {
   const [formData, setFormData] = useState({
     imei: "",
