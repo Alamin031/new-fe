@@ -249,54 +249,66 @@ export function Navbar({ initialCategories, initialBrands }: NavbarProps = {}) {
             </Link>
 
             {/* User Menu */}
-            {isAuthenticated ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <User className="h-5 w-5" />
-                    <span className="sr-only">Account</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <div className="px-2 py-1.5">
-                    <p className="text-sm font-medium">{user?.name}</p>
-                    <p className="text-xs text-muted-foreground">{user?.email}</p>
-                  </div>
-                  <DropdownMenuSeparator />
-                  {user?.role !== "admin" && (
-                    <>
-                      <DropdownMenuItem asChild>
-                        <Link href="/account">Dashboard</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/account/orders">My Orders</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/account/wishlist">Wishlist</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                    </>
-                  )}
-                  {user?.role === "admin" && (
-                    <>
-                      <DropdownMenuItem asChild>
-                        <Link href="/admin">Admin Panel</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                    </>
-                  )}
-                  <DropdownMenuItem onClick={handleLogout} className="text-destructive cursor-pointer">
-                    Logout
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Link href="/login" className="hidden sm:inline-flex">
-                <Button variant="default" size="sm">
-                  Sign In
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <User className="h-5 w-5" />
+                  <span className="sr-only">Account</span>
                 </Button>
-              </Link>
-            )}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {isAuthenticated ? (
+                  <>
+                    <div className="px-2 py-1.5">
+                      <p className="text-sm font-medium">{user?.name}</p>
+                      <p className="text-xs text-muted-foreground">{user?.email}</p>
+                    </div>
+                    <DropdownMenuSeparator />
+                    {user?.role !== "admin" && (
+                      <>
+                        <DropdownMenuItem asChild>
+                          <Link href="/account">Dashboard</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/account/orders">My Orders</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/account/wishlist">Wishlist</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/warranty-checker">Warranty Checker</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                      </>
+                    )}
+                    {user?.role === "admin" && (
+                      <>
+                        <DropdownMenuItem asChild>
+                          <Link href="/admin">Admin Panel</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                      </>
+                    )}
+                    <DropdownMenuItem onClick={handleLogout} className="text-destructive cursor-pointer">
+                      Logout
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/login">Sign In</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/register">Create Account</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/warranty-checker">Warranty Checker</Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {/* Mobile Menu */}
             <Sheet>

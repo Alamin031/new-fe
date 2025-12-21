@@ -6,25 +6,27 @@ const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || "  https://friends
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000,
+  timeout: 10000, // Use 10s timeout to fail fast and let error handling work
   headers: {
     "Content-Type": "application/json",
   },
 })
 
 // Configure automatic retry with exponential backoff
-// Retries up to 3 times on network errors or 5xx errors (not 4xx)
+// Only retry on network errors and 5xx errors (not timeouts, to fail fast)
 axiosRetry(apiClient, {
-  retries: 3,
+  retries: 2,
   retryDelay: (retryCount) => {
-    // Exponential backoff: 1s, 2s, 4s
+    // Exponential backoff: 1s, 2s
     return retryCount * 1000 * Math.pow(2, retryCount - 1)
   },
   retryCondition: (error) => {
     // Retry on network errors and 5xx server errors
-    // Don't retry on 4xx client errors
-    return axiosRetry.isNetworkOrIdempotentRequestError(error) &&
-           (!error.response || (error.response.status >= 500))
+    // Don't retry on timeouts or 4xx client errors
+    const isTimeout = error.code === 'ECONNABORTED'
+    const isNetworkError = axiosRetry.isNetworkOrIdempotentRequestError(error)
+    const isServerError = !error.response || (error.response.status >= 500)
+    return !isTimeout && isNetworkError && isServerError
   },
 })
 
