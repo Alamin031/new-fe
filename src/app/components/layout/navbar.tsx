@@ -275,6 +275,9 @@ export function Navbar({ initialCategories, initialBrands }: NavbarProps = {}) {
                         <DropdownMenuItem asChild>
                           <Link href="/account/wishlist">Wishlist</Link>
                         </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/warranty-checker">Warranty Checker</Link>
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                       </>
                     )}
