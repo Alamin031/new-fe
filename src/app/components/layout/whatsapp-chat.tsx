@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
-import { X, GripHorizontal } from "lucide-react";
+import { X, GripHorizontal, MessageCircle } from "lucide-react";
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "8801343159931";
 const DEFAULT_MESSAGE = "Hi! I need help with my order.";
@@ -15,41 +15,63 @@ export function WhatsappChat() {
   const [iconIndex, setIconIndex] = useState(0);
   const [showBubble, setShowBubble] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
+  const [mounted, setMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Load saved position from localStorage
+    setMounted(true);
+    // Load saved position from localStorage or set default
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
         setPosition(JSON.parse(saved));
       } catch (e) {
         // Reset to default if corrupted
-        setPosition({ x: 0, y: 0 });
+        const defaultX = Math.max(0, window.innerWidth - 100);
+        const defaultY = Math.max(0, window.innerHeight - 150);
+        setPosition({ x: defaultX, y: defaultY });
       }
     } else {
       // Set default position (right: 1rem, bottom: 6rem)
-      setPosition({ x: 0, y: 0 });
+      const defaultX = Math.max(0, window.innerWidth - 100);
+      const defaultY = Math.max(0, window.innerHeight - 150);
+      setPosition({ x: defaultX, y: defaultY });
     }
   }, []);
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!containerRef.current) return;
-    setIsDragging(true);
-    setDragStart({
-      x: e.clientX - position.x,
-      y: e.clientY - position.y,
-    });
-  };
+  const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+  const positionRef = useRef<{ x: number; y: number } | null>(null);
+  const isDraggingRef = useRef(false);
+  const didDragRef = useRef(false);
+
+  // Keep refs in sync with state
+  useEffect(() => {
+    positionRef.current = position;
+  }, [position]);
 
   useEffect(() => {
-    if (!isDragging) return;
+    isDraggingRef.current = isDragging;
+  }, [isDragging]);
 
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!position) return;
+    isDraggingRef.current = true;
+    didDragRef.current = false; // Reset drag flag
+    setIsDragging(true);
+    dragStartRef.current = {
+      x: e.clientX - position.x,
+      y: e.clientY - position.y,
+    };
+  };
+
+  // Setup global mouse move and mouse up handlers
+  useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      const newX = e.clientX - dragStart.x;
-      const newY = e.clientY - dragStart.y;
+      if (!isDraggingRef.current || !dragStartRef.current || !positionRef.current) return;
+
+      const newX = e.clientX - dragStartRef.current.x;
+      const newY = e.clientY - dragStartRef.current.y;
 
       // Constrain position to viewport
       const maxX = window.innerWidth - 80;
@@ -58,15 +80,28 @@ export function WhatsappChat() {
       const constrainedX = Math.max(0, Math.min(newX, maxX));
       const constrainedY = Math.max(0, Math.min(newY, maxY));
 
+      // Mark that we actually dragged if position changed
+      if (positionRef.current.x !== constrainedX || positionRef.current.y !== constrainedY) {
+        didDragRef.current = true;
+      }
+
       setPosition({ x: constrainedX, y: constrainedY });
     };
 
-    const handleMouseUp = () => {
+    const handleMouseUp = (e: MouseEvent) => {
+      if (!isDraggingRef.current) return;
+
+      isDraggingRef.current = false;
       setIsDragging(false);
+      dragStartRef.current = null;
+
       // Save position to localStorage
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(position));
+      if (positionRef.current) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(positionRef.current));
+      }
     };
 
+    // Always attach listeners when component mounts
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
 
@@ -74,7 +109,7 @@ export function WhatsappChat() {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isDragging, dragStart, position]);
+  }, []);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -83,13 +118,23 @@ export function WhatsappChat() {
     return () => clearInterval(id);
   }, []);
 
+  // Don't render on server
+  if (!mounted) {
+    return null;
+  }
+
   return (
     <div
       ref={containerRef}
       className="fixed z-40 flex flex-col items-end gap-3 select-none"
-      style={{
-        transform: `translate(${position.x}px, ${position.y}px)`,
+      style={position ? {
+        right: `${window.innerWidth - position.x - 80}px`,
+        bottom: `${window.innerHeight - position.y - 80}px`,
         cursor: isDragging ? "grabbing" : "grab",
+      } : {
+        right: "16px",
+        bottom: "96px",
+        cursor: "grab",
       }}
     >
       {showBubble && (
@@ -113,24 +158,32 @@ export function WhatsappChat() {
         </div>
       )}
 
-      <Link
-        href={WHATSAPP_URL}
-        target="_blank"
-        rel="noreferrer"
-        aria-label="Chat on WhatsApp"
-        className="relative inline-flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-r from-emerald-500 to-green-600 text-white shadow-lg transition-transform duration-200 hover:scale-[1.03] hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
+      <div
+        onMouseDown={handleMouseDown}
+        onClick={() => {
+          // Only open if we didn't actually drag
+          if (!didDragRef.current) {
+            window.open(WHATSAPP_URL, '_blank');
+          }
+          // Reset for next interaction
+          didDragRef.current = false;
+        }}
+        className="relative inline-flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-lg transition-transform duration-200 hover:scale-[1.03] hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500 cursor-grab hover:cursor-grab"
       >
-        <Image
-          src={ICONS[iconIndex]}
-          alt="WhatsApp"
-          width={74}
-          height={74}
-          className="h-full w-full rounded-full object-cover"
-          priority
-        />
+        <div className="relative w-full h-full flex items-center justify-center rounded-full">
+          <Image
+            src={ICONS[iconIndex]}
+            alt="WhatsApp"
+            width={74}
+            height={74}
+            className="h-full w-full rounded-full object-cover absolute"
+            priority
+          />
+          <MessageCircle className="h-8 w-8 relative z-10 text-white" strokeWidth={1.5} />
+        </div>
         <span className="absolute top-0 right-0 h-3 w-3 rounded-full bg-red-500 border-2 border-white" aria-hidden="true" />
-        <span className="sr-only">WhatsApp</span>
-      </Link>
+        <span className="sr-only">Chat on WhatsApp</span>
+      </div>
     </div>
   );
 }
