@@ -41,21 +41,31 @@ export function WhatsappChat() {
     }
   }, []);
 
+  const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+  const positionRef = useRef<{ x: number; y: number } | null>(null);
+
+  // Keep refs in sync with state
+  useEffect(() => {
+    positionRef.current = position;
+  }, [position]);
+
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!containerRef.current) return;
+    if (!position) return;
     setIsDragging(true);
-    setDragStart({
-      x: e.clientX - (position?.x || 0),
-      y: e.clientY - (position?.y || 0),
-    });
+    dragStartRef.current = {
+      x: e.clientX - position.x,
+      y: e.clientY - position.y,
+    };
   };
 
   useEffect(() => {
-    if (!isDragging || !position) return;
+    if (!isDragging) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      const newX = e.clientX - dragStart.x;
-      const newY = e.clientY - dragStart.y;
+      if (!dragStartRef.current || !positionRef.current) return;
+
+      const newX = e.clientX - dragStartRef.current.x;
+      const newY = e.clientY - dragStartRef.current.y;
 
       // Constrain position to viewport
       const maxX = window.innerWidth - 80;
@@ -69,9 +79,10 @@ export function WhatsappChat() {
 
     const handleMouseUp = () => {
       setIsDragging(false);
+      dragStartRef.current = null;
       // Save position to localStorage
-      if (position) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(position));
+      if (positionRef.current) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(positionRef.current));
       }
     };
 
@@ -82,7 +93,7 @@ export function WhatsappChat() {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isDragging, dragStart, position]);
+  }, [isDragging]);
 
   useEffect(() => {
     const id = setInterval(() => {
