@@ -43,6 +43,7 @@ export function WhatsappChat() {
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
   const positionRef = useRef<{ x: number; y: number } | null>(null);
   const isDraggingRef = useRef(false);
+  const didDragRef = useRef(false);
 
   // Keep refs in sync with state
   useEffect(() => {
