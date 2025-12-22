@@ -58,11 +58,10 @@ export function WhatsappChat() {
     };
   };
 
+  // Setup global mouse move and mouse up handlers
   useEffect(() => {
-    if (!isDragging) return;
-
     const handleMouseMove = (e: MouseEvent) => {
-      if (!dragStartRef.current || !positionRef.current) return;
+      if (!isDragging || !dragStartRef.current || !positionRef.current) return;
 
       const newX = e.clientX - dragStartRef.current.x;
       const newY = e.clientY - dragStartRef.current.y;
@@ -86,6 +85,7 @@ export function WhatsappChat() {
       }
     };
 
+    // Always attach listeners when component mounts
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
 
@@ -93,7 +93,7 @@ export function WhatsappChat() {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isDragging]);
+  }, []);
 
   useEffect(() => {
     const id = setInterval(() => {
