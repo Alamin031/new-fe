@@ -55,13 +55,15 @@ export function FlashSaleSection() {
     <section className="mx-auto w-full max-w-7xl px-4 py-8">
       <div className="mb-6">
         <h2 className="text-2xl font-bold tracking-tight md:text-3xl">
-          Flash Sales
+          <span className="bg-gradient-to-r from-orange-500 via-amber-400 to-purple-500 bg-clip-text text-transparent">Flash</span>
+          <span className="text-foreground"> Sales</span>
         </h2>
-        <p className="text-muted-foreground mt-1">
-          Limited time deals on selected items
-        </p>
       </div>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className={flashsales.length >= 3
+        ? "grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
+        : flashsales.length === 2
+        ? "grid grid-cols-1 gap-4 md:grid-cols-2"
+        : "grid grid-cols-1 gap-4"}>
         {flashsales.map((flashsale) => (
           <FlashSaleCard key={flashsale.id} flashsale={flashsale} />
         ))}

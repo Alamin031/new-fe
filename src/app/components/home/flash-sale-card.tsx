@@ -4,8 +4,6 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "../ui/button"
-import { Zap } from "lucide-react"
-import { Badge } from "../ui/badge"
 import type { Flashsell } from "@/app/lib/api/services/flashsell"
 
 interface FlashSaleCardProps {
@@ -81,43 +79,22 @@ function useCountdown(startTime: string, endTime: string): TimeLeft {
 export function FlashSaleCard({ flashsale }: FlashSaleCardProps) {
   const timeLeft = useCountdown(flashsale.startTime, flashsale.endTime)
 
-  const getStatusBadge = () => {
-    if (timeLeft.isUpcoming) {
-      return (
-        <Badge className="bg-blue-500/10 text-blue-600 border-0">
-          Upcoming
-        </Badge>
-      )
-    }
-    if (timeLeft.isEnded) {
-      return (
-        <Badge className="bg-gray-500/10 text-gray-600 border-0">
-          Ended
-        </Badge>
-      )
-    }
-    return (
-      <Badge className="bg-green-500/10 text-green-600 border-0">
-        Active
-      </Badge>
-    )
-  }
-
   const getCountdownLabel = () => {
     if (timeLeft.isUpcoming) {
-      return "Starts in:"
+      return "🎉 Coming Soon"
     }
     if (timeLeft.isEnded) {
-      return "Ended"
+      return "🔥 Sale Ended"
     }
-    return "Ends in:"
+    return "⚡ Hurry! Sale Ends In"
   }
 
   return (
-    <div className="group relative overflow-hidden rounded-2xl bg-card border border-border transition-all duration-300 hover:shadow-lg">
-      {/* Banner Image */}
-      {flashsale.bannerImg && (
-        <div className="relative h-48 w-full overflow-hidden bg-muted">
+    <Link href={`/flashsell?id=${flashsale.id}`} className="block">
+      <div className="group relative overflow-hidden rounded-2xl bg-card border border-border transition-all duration-300 hover:shadow-lg cursor-pointer">
+        {/* Banner Image */}
+        {flashsale.bannerImg && (
+        <div className="relative w-full overflow-hidden bg-muted aspect-[16/9] sm:aspect-[1920/800]">
           <Image
             src={flashsale.bannerImg}
             alt={flashsale.title}
@@ -126,71 +103,35 @@ export function FlashSaleCard({ flashsale }: FlashSaleCardProps) {
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
           {/* Overlay with gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-        </div>
-      )}
-
-      {/* Content */}
-      <div className="p-4 space-y-3">
-        {/* Title and Status */}
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold line-clamp-2">
-              {flashsale.title}
-            </h3>
-          </div>
-          {getStatusBadge()}
-        </div>
-
-        {/* Discount */}
-        <div className="flex items-center gap-2 bg-blue-500/10 w-fit px-3 py-1.5 rounded-lg">
-          <Zap className="h-4 w-4 text-blue-600" />
-          <span className="text-sm font-semibold text-blue-600">
-            {flashsale.discountpercentage}% OFF
-          </span>
-        </div>
-
-        {/* Countdown Timer */}
-        {!timeLeft.isEnded && (
-          <div className="space-y-2">
-            <p className="text-xs text-muted-foreground font-medium">
-              {getCountdownLabel()}
-            </p>
-            <div className="flex gap-1.5">
-              {[
-                { value: timeLeft.days, label: "D" },
-                { value: timeLeft.hours, label: "H" },
-                { value: timeLeft.minutes, label: "M" },
-                { value: timeLeft.seconds, label: "S" },
-              ].map((item) => (
-                <div key={item.label} className="flex flex-col items-center">
-                  <div className="h-8 w-8 bg-muted rounded flex items-center justify-center">
-                    <span className="text-xs font-bold">
-                      {String(item.value).padStart(2, "0")}
-                    </span>
-                  </div>
-                  <span className="text-xs text-muted-foreground mt-0.5">
-                    {item.label}
-                  </span>
+          <div className="absolute inset-0 bg-linear-to-t from-black/40 to-transparent" />
+          {/* Countdown overlay - centered */}
+          <div className="absolute top-0 left-0 right-0 p-3 sm:p-6 z-10 flex justify-center">
+            <div className="inline-flex flex-col sm:flex-row items-center gap-2 sm:gap-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-black/15 to-black/5 text-white px-3 py-3 sm:px-6 sm:py-5 backdrop-blur-sm shadow-lg border border-white/5">
+              <span className="text-sm sm:text-lg font-bold tracking-wide">{getCountdownLabel()}</span>
+              {!timeLeft.isEnded && (
+                <div className="flex gap-1.5 sm:gap-2.5">
+                  {[
+                    { value: timeLeft.days, label: "Days" },
+                    { value: timeLeft.hours, label: "Hours" },
+                    { value: timeLeft.minutes, label: "Mins" },
+                    { value: timeLeft.seconds, label: "Secs" },
+                  ].map((item) => (
+                    <div key={item.label} className="flex flex-col items-center gap-0.5 sm:gap-1.5">
+                      <div className="h-10 w-10 sm:h-14 sm:w-14 bg-gradient-to-br from-white/70 to-white/50 rounded-full flex items-center justify-center shadow-md transform transition-transform hover:scale-105">
+                        <span className="text-base sm:text-2xl font-extrabold text-gray-900">
+                          {String(item.value).padStart(2, "0")}
+                        </span>
+                      </div>
+                      <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider opacity-95">{item.label}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
           </div>
-        )}
-
-        {/* Stock and Products Info */}
-        <div className="flex items-center justify-between text-xs text-muted-foreground border-t border-border pt-2">
-          <span>{flashsale.stock} units</span>
-          <span>{flashsale.productIds.length} products</span>
         </div>
-
-        {/* View Product Button */}
-        <Link href={`/flashsell?id=${flashsale.id}`} className="block">
-          <Button className="w-full" size="sm" disabled={timeLeft.isEnded}>
-            View Products
-          </Button>
-        </Link>
-      </div>
+      )}
     </div>
+    </Link>
   )
 }
