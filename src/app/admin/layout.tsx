@@ -29,6 +29,7 @@ const sidebarLinks = [
   {href: '/admin/banners', label: 'Banners', icon: ImageIcon},
   {href: '/admin/brand', label: 'Brand', icon: TrendingUp},
   {href: '/admin/categories', label: 'Categories', icon: FolderTree},
+  {href: '/admin/appelcategories', label: 'Appel Categories', icon: FolderTree},
   {href: '/admin/corporate', label: 'Corporate Deals', icon: Users},
   {href: '/admin/delivery', label: 'Delivery Methods', icon: Package},
   {href: '/admin/emi', label: 'EMI Plans', icon: CreditCard},
@@ -42,7 +43,6 @@ const sidebarLinks = [
   {href: '/admin/orders', label: 'Orders', icon: ShoppingCart, badge: '12'},
   {href: '/admin/customers', label: 'Customers', icon: Users},
   {href: '/admin/flashsell', label: 'Flash Sale', icon: TrendingUp},
-//warranty
   {href: '/admin/warranty', label: 'Warranty', icon: CreditCard},
   {
     href: '/admin/notify-products',
