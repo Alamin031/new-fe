@@ -64,22 +64,22 @@ export default function RegisterPage() {
   }
 
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight">Create an account</h1>
-        <p className="mt-2 text-muted-foreground">Join us and start shopping for the best tech products.</p>
+    <div className="w-full max-w-md mx-auto">
+      <div className="mb-8 text-center">
+        <h1 className="text-3xl font-bold tracking-tight">Create an account</h1>
+        <p className="mt-3 text-muted-foreground">Join us and start shopping for the best tech products.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="firstName">First Name</Label>
+            <Label htmlFor="firstName" className="text-sm font-medium">First Name</Label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 id="firstName"
                 placeholder="John"
-                className="pl-10"
+                className="pl-10 h-11"
                 required
                 value={form.firstName}
                 onChange={handleChange}
@@ -87,10 +87,11 @@ export default function RegisterPage() {
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="lastName">Last Name</Label>
+            <Label htmlFor="lastName" className="text-sm font-medium">Last Name</Label>
             <Input
               id="lastName"
               placeholder="Doe"
+              className="h-11"
               required
               value={form.lastName}
               onChange={handleChange}
@@ -99,14 +100,14 @@ export default function RegisterPage() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email" className="text-sm font-medium">Email</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               id="email"
               type="email"
               placeholder="john@example.com"
-              className="pl-10"
+              className="pl-10 h-11"
               required
               value={form.email}
               onChange={handleChange}
@@ -115,14 +116,14 @@ export default function RegisterPage() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="phone">Phone Number</Label>
+          <Label htmlFor="phone" className="text-sm font-medium">Phone Number</Label>
           <div className="relative">
             <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               id="phone"
               type="tel"
               placeholder="+91 98765 43210"
-              className="pl-10"
+              className="pl-10 h-11"
               required
               value={form.phone}
               onChange={handleChange}
@@ -131,32 +132,32 @@ export default function RegisterPage() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password" className="text-sm font-medium">Password</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               id="password"
               type={showPassword ? "text" : "password"}
               placeholder="Create a password"
-              className="pl-10 pr-10"
+              className="pl-10 pr-10 h-11"
               required
               value={form.password}
               onChange={handleChange}
             />
             <button
               type="button"
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
               onClick={() => setShowPassword(!showPassword)}
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Must be at least 8 characters with uppercase, lowercase, and number
+          <p className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950/20 rounded px-3 py-2 mt-2">
+            ✓ Min 8 chars • Uppercase • Lowercase • Number
           </p>
         </div>
 
-        <div className="flex items-start gap-2">
+        <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border border-border/50">
           <Checkbox
             id="terms"
             className="mt-1"
@@ -164,41 +165,54 @@ export default function RegisterPage() {
             checked={form.terms}
             onCheckedChange={(checked) => setForm((prev) => ({ ...prev, terms: !!checked }))}
           />
-          <Label htmlFor="terms" className="text-sm font-normal leading-tight">
+          <Label htmlFor="terms" className="text-sm font-normal leading-relaxed cursor-pointer">
             I agree to the{" "}
-            <Link href="/terms" className="text-primary hover:underline">
+            <Link href="/terms" className="font-medium text-primary hover:underline">
               Terms of Service
             </Link>{" "}
             and{" "}
-            <Link href="/privacy-policy" className="text-primary hover:underline">
+            <Link href="/privacy-policy" className="font-medium text-primary hover:underline">
               Privacy Policy
             </Link>
           </Label>
         </div>
 
         {error && (
-          <div className="text-sm text-red-600 font-medium">{error}</div>
+          <div className="text-sm text-red-600 font-semibold bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 rounded-lg px-4 py-3">
+            ✕ {error}
+          </div>
         )}
 
-        <Button type="submit" className="w-full gap-2" disabled={isLoading}>
-          {isLoading ? "Creating account..." : "Create account"}
-          {!isLoading && <ArrowRight className="h-4 w-4" />}
+        <Button type="submit" className="w-full h-11 text-base font-semibold gap-2 shadow-md hover:shadow-lg transition-all duration-200" disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <span className="animate-spin">⏳</span>
+              Creating account...
+            </>
+          ) : (
+            <>
+              Create account
+              <ArrowRight className="h-4 w-4" />
+            </>
+          )}
         </Button>
       </form>
 
-      <div className="mt-6">
+      <div className="mt-8">
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <Separator />
+            <Separator className="w-full" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+            <span className="bg-background px-3 text-muted-foreground font-medium">
+              Or continue with
+            </span>
           </div>
         </div>
 
-        <div className="mt-6 grid grid-cols-2 gap-4">
-          <Button variant="outline" type="button">
-            <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+        <div className="mt-6 grid grid-cols-1 gap-3">
+          <Button variant="outline" type="button" className="h-11 gap-2 font-medium w-full">
+            <svg className="h-5 w-5" viewBox="0 0 24 24">
               <path
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                 fill="#4285F4"
@@ -218,18 +232,12 @@ export default function RegisterPage() {
             </svg>
             Google
           </Button>
-          <Button variant="outline" type="button">
-            <svg className="mr-2 h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2C6.477 2 2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.879V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.989C18.343 21.129 22 16.99 22 12c0-5.523-4.477-10-10-10z" />
-            </svg>
-            Facebook
-          </Button>
         </div>
       </div>
 
       <p className="mt-8 text-center text-sm text-muted-foreground">
         Already have an account?{" "}
-        <Link href="/login" className="font-medium text-primary hover:underline">
+        <Link href="/login" className="font-semibold text-primary hover:underline">
           Sign in
         </Link>
       </p>
