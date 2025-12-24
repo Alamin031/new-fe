@@ -35,12 +35,14 @@ function BrandPage() {
     name: string;
     slug: string;
     logo: File | string;
+    indexNumber?: number;
   } | null>(null);
   const [form, setForm] = useState<{
     name: string;
     slug: string;
     logo: File | string;
-  }>({ name: "", slug: "", logo: "" });
+    indexNumber?: number | string;
+  }>({ name: "", slug: "", logo: "", indexNumber: "" });
   const [loading, setLoading] = useState(false);
 
   // For delete confirmation modal
@@ -85,6 +87,10 @@ function BrandPage() {
         name: form.name,
         slug: form.slug,
         logo: form.logo,
+        indexNumber:
+          form.indexNumber === "" || typeof form.indexNumber === "undefined"
+            ? undefined
+            : Number(form.indexNumber),
       };
       // Simulate 1.5s delay for UX
       await new Promise((res) => setTimeout(res, 1500));
@@ -141,7 +147,7 @@ function BrandPage() {
     }
   };
   const handleAddBrand = () => {
-    setForm({ name: "", slug: "", logo: "" });
+    setForm({ name: "", slug: "", logo: "", indexNumber: "" });
     setEditMode(false);
     setViewMode(false);
     setModalOpen(true);
@@ -151,9 +157,15 @@ function BrandPage() {
     name: string;
     slug: string;
     logo: string;
+    indexNumber?: number;
   }) => {
     setSelectedBrand(brand);
-    setForm({ name: brand.name, slug: brand.slug, logo: brand.logo });
+    setForm({
+      name: brand.name,
+      slug: brand.slug,
+      logo: brand.logo,
+      indexNumber: brand.indexNumber ?? "",
+    });
     setEditMode(true);
     setViewMode(false);
     setModalOpen(true);
@@ -163,9 +175,15 @@ function BrandPage() {
     name: string;
     slug: string;
     logo: string;
+    indexNumber?: number;
   }) => {
     setSelectedBrand(brand);
-    setForm({ name: brand.name, slug: brand.slug, logo: brand.logo });
+    setForm({
+      name: brand.name,
+      slug: brand.slug,
+      logo: brand.logo,
+      indexNumber: brand.indexNumber ?? "",
+    });
     setEditMode(false);
     setViewMode(true);
     setModalOpen(true);
@@ -175,11 +193,18 @@ function BrandPage() {
     if (type === "file" && files && files[0]) {
       setForm((prev) => ({ ...prev, logo: files[0] }));
     } else {
-      setForm((prev) => ({
-        ...prev,
-        [name]: value,
-        slug: name === "name" ? slugify(value) : prev.slug,
-      }));
+      setForm((prev) => {
+        if (name === "indexNumber") {
+          // Only allow numbers or empty string
+          const val = value === "" ? "" : value.replace(/[^0-9]/g, "");
+          return { ...prev, indexNumber: val };
+        }
+        return {
+          ...prev,
+          [name]: value,
+          slug: name === "name" ? slugify(value) : prev.slug,
+        };
+      });
     }
   };
 
@@ -203,6 +228,7 @@ function BrandPage() {
                   <th className="px-4 py-2 text-left">Name</th>
                   <th className="px-4 py-2 text-left">Slug</th>
                   <th className="px-4 py-2 text-left">Logo</th>
+                  <th className="px-4 py-2 text-left">Index Number</th>
                   <th className="px-4 py-2 text-left">Actions</th>
                 </tr>
               </thead>
@@ -225,6 +251,7 @@ function BrandPage() {
                         </span>
                       )}
                     </td>
+                    <td className="px-4 py-2">{typeof brand.indexNumber !== "undefined" ? brand.indexNumber : "-"}</td>
                     <td className="px-4 py-2">
                       <div className="flex gap-2">
                         <Button
@@ -377,6 +404,19 @@ function BrandPage() {
                   Image size: 140x80px
                 </span>
               )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="indexNumber">Index Number</Label>
+              <Input
+                id="indexNumber"
+                name="indexNumber"
+                type="number"
+                min="0"
+                value={form.indexNumber}
+                onChange={handleFormChange}
+                disabled={viewMode}
+                placeholder="Order/Index (optional)"
+              />
             </div>
             <div className="flex justify-end gap-2 mt-4">
               <Button

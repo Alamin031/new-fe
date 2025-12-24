@@ -98,6 +98,44 @@ export const categoriesService = {
   },
 
   /**
+   * Create Appel Category (includes optional brandsId)
+   */
+  createAppelCategory: async (
+    data: CreateCategoryWithFile & { brandsId?: string },
+  ): Promise<Category> => {
+    const formData = new FormData();
+
+    formData.append('name', data.name);
+    if (data.slug !== undefined) {
+      formData.append('slug', data.slug);
+    }
+
+    if (data.priority !== undefined) {
+      formData.append('priority', String(data.priority));
+    }
+
+    if (data.brandsId !== undefined) {
+      formData.append('brandsId', data.brandsId);
+    }
+
+    if (data.banner instanceof File) {
+      formData.append('banner', data.banner);
+    } else if (typeof data.banner === 'string' && data.banner) {
+      formData.append('banner', data.banner);
+    }
+
+    // Use a dedicated endpoint if available, fallback to regular categories create
+    const endpoint =
+      (API_ENDPOINTS as any).APPEL_CATEGORIES_CREATE || API_ENDPOINTS.CATEGORIES_CREATE;
+
+    const response = await apiClient.post<Category>(endpoint, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+
+    return response.data;
+  },
+
+  /**
    * ✅ Get all categories
    */
   getAll: async (): Promise<Category[]> => {

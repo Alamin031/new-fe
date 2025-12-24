@@ -21,6 +21,9 @@ export const brandsService = {
     const formData = new FormData();
     formData.append('name', data.name);
     formData.append('slug', data.slug);
+    if (typeof data.indexNumber !== 'undefined') {
+      formData.append('indexNumber', String(data.indexNumber));
+    }
     if (data.logo instanceof File) {
       formData.append('logo', data.logo);
     } else if (typeof data.logo === 'string' && data.logo) {
@@ -90,6 +93,9 @@ export const brandsService = {
     const formData = new FormData();
     if (data.name) formData.append('name', data.name);
     if (data.slug) formData.append('slug', data.slug);
+    if (typeof data.indexNumber !== 'undefined') {
+      formData.append('indexNumber', String(data.indexNumber));
+    }
     if (data.logo instanceof File) {
       formData.append('logo', data.logo);
     } else if (typeof data.logo === 'string' && data.logo) {

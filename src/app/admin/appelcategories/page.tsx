@@ -65,6 +65,7 @@ type AddFormData = {
   priority: string;
   subcategories: Subcategory[];
   banner: string | File;
+  brandsId?: string;
 };
 
 function AdminCategoriesPage() {
@@ -85,6 +86,7 @@ function AdminCategoriesPage() {
     priority: "",
     subcategories: [],
     banner: "",
+    brandsId: "",
   });
 
   // ===== FETCH =====
@@ -119,11 +121,12 @@ function AdminCategoriesPage() {
   // ===== CREATE =====
   const handleCreateCategory = async () => {
     try {
-      const newCat = await categoriesService.create({
+      const newCat = await categoriesService.createAppelCategory({
         name: addFormData.name,
         slug: addFormData.slug,
         priority: Number(addFormData.priority),
         banner: addFormData.banner,
+        brandsId: addFormData.brandsId,
       });
 
       setCategories((prev) =>
@@ -136,6 +139,7 @@ function AdminCategoriesPage() {
         banner: "",
         priority: "",
         subcategories: [],
+        brandsId: "",
       });
 
       setIsAddDialogOpen(false);
@@ -282,6 +286,18 @@ function AdminCategoriesPage() {
                   }
                 />
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="brandsId">Brands ID (optional)</Label>
+                <Input
+                  id="brandsId"
+                  value={addFormData.brandsId || ""}
+                  onChange={(e) =>
+                    setAddFormData((f) => ({ ...f, brandsId: e.target.value }))
+                  }
+                />
+              </div>
+
               <Button type="submit" className="w-full">
                 Create
               </Button>

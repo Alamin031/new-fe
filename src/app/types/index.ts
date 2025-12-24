@@ -72,6 +72,7 @@ export interface Brand {
   slug: string
   logo: string
   productCount?: number
+  indexNumber?: number
 }
 
 export interface CartItem {

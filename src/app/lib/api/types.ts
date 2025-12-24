@@ -131,6 +131,7 @@ export interface Brand {
   productCount?: number
   isFeatured?: boolean
   order?: number
+  indexNumber?: number
   createdAt: string
   updatedAt: string
 }
@@ -142,6 +143,7 @@ export interface CreateBrandRequest {
   logo: string
   banner?: string
   isFeatured?: boolean
+  indexNumber?: number
 }
 
 export interface UpdateBrandRequest {
@@ -151,6 +153,7 @@ export interface UpdateBrandRequest {
   logo?: string
   banner?: string
   isFeatured?: boolean
+  indexNumber?: number
 }
 
 export interface BrandProductsResponse {
