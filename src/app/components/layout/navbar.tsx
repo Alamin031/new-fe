@@ -181,13 +181,28 @@ export function Navbar({ initialCategories, initialBrands }: NavbarProps = {}) {
 
           {/* Desktop Navigation */}
           <nav className="hidden items-center gap-1 lg:flex">
-            {/* Show only the brand whose indexNumber === "1" - moved up to appear first */}
+            <button
+              onMouseEnter={() => setIsMegaMenuOpen(true)}
+              className={cn(
+                "flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent",
+                isMegaMenuOpen && "bg-accent",
+              )}
+            >
+              Categories
+              <ChevronDown className={cn("h-4 w-4 transition-transform", isMegaMenuOpen && "rotate-180")} />
+            </button>
+
+            {/* Show only the brand whose indexNumber === "1" */}
             {featuredBrand && (() => {
               const brand = featuredBrand
               return (
-                <div key={brand.id} className="relative">
+                <div 
+                  key={brand.id} 
+                  className="relative"
+                  onMouseEnter={() => setOpenBrandId(brand.id)}
+                  onMouseLeave={() => setOpenBrandId(null)}
+                >
                   <button
-                    onClick={() => setOpenBrandId((id) => (id === brand.id ? null : brand.id))}
                     className="flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"
                   >
                     {brand.name}
@@ -203,7 +218,6 @@ export function Navbar({ initialCategories, initialBrands }: NavbarProps = {}) {
                               key={c.id}
                               href={`/category/${c.slug}`}
                               className="px-3 py-2 text-sm hover:bg-gray-50"
-                              onClick={() => setOpenBrandId(null)}
                             >
                               {c.name}
                             </Link>
@@ -218,24 +232,13 @@ export function Navbar({ initialCategories, initialBrands }: NavbarProps = {}) {
               )
             })()}
 
-            <button
-              onMouseEnter={() => setIsMegaMenuOpen(true)}
-              className={cn(
-                "flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent",
-                isMegaMenuOpen && "bg-accent",
-              )}
-            >
-              Categories
-              <ChevronDown className={cn("h-4 w-4 transition-transform", isMegaMenuOpen && "rotate-180")} />
-            </button>
-
             {categories
               .sort((a, b) => {
                 const priorityA = a.priority ? Number(a.priority) : Infinity
                 const priorityB = b.priority ? Number(b.priority) : Infinity
                 return priorityA - priorityB
               })
-              .slice(0, 3)
+              .slice(0, 2)
               .map((category) => (
                 <Link
                   key={category.slug}
