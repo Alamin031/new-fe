@@ -84,7 +84,7 @@ export function OrderTrackingModal({ tracking, productName, productImage }: Orde
       {/* Product Header */}
       <div className="flex gap-3 sm:gap-4 pb-4 border-b">
         {productImage && (
-          <div className="h-14 w-14 sm:h-16 sm:w-16 shrink-0 overflow-hidden rounded-md bg-gray-100 border border-gray-200">
+          <div className="h-14 w-14 sm:h-16 sm:w-16 shrink-0 overflow-hidden rounded-lg bg-white border border-gray-200 shadow-sm">
             <img
               src={productImage}
               alt={productName || "Product"}
@@ -93,15 +93,15 @@ export function OrderTrackingModal({ tracking, productName, productImage }: Orde
           </div>
         )}
         <div className="flex flex-1 flex-col justify-between py-0.5">
-          <div>
-            <p className="font-semibold text-sm sm:text-base text-gray-900 mb-1">{productName || "Order Details"}</p>
-            <p className="text-xs sm:text-sm text-gray-500">
-              Order #{tracking.trackingNumber}
-            </p>
+          <div className="flex items-start gap-2 flex-wrap">
+            <p className="font-semibold text-base text-gray-900 leading-tight">{productName || "Order Details"}</p>
+            <span className="text-xs sm:text-sm text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+              #{tracking.trackingNumber}
+            </span>
           </div>
-          <div className="flex items-center gap-1.5 sm:gap-2 mt-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 mt-2 text-gray-600">
             <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400" />
-            <span className="text-xs sm:text-sm text-gray-600 font-medium">
+            <span className="text-xs sm:text-sm font-medium">
               Arrives {formatDate(tracking.estimatedDelivery)}
             </span>
           </div>
@@ -123,7 +123,7 @@ export function OrderTrackingModal({ tracking, productName, productImage }: Orde
           <div className="absolute left-[12%] right-[12%] sm:left-[10%] sm:right-[10%] top-4 sm:top-5 h-[2px] bg-gray-200 z-0" />
           {/* Progress line filled */}
           <div 
-            className="absolute left-[12%] sm:left-[10%] top-4 sm:top-5 h-[2px] bg-green-500 z-10 transition-all duration-500" 
+            className="absolute left-[12%] sm:left-[10%] top-4 sm:top-5 h-[2px] bg-emerald-500 z-10 transition-all duration-500" 
             style={{
               width: STATUS_STEPS.length > 1 
                 ? `${((lastCompletedIndex / (STATUS_STEPS.length - 1)) * 76)}%` 
@@ -143,7 +143,7 @@ export function OrderTrackingModal({ tracking, productName, productImage }: Orde
                   <div className={cn(
                     "flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 sm:border-[3px] mb-1.5 sm:mb-2.5 font-semibold transition-all shadow-sm",
                     completed 
-                      ? "border-green-500 bg-green-500 text-white shadow-green-200" 
+                      ? "border-emerald-500 bg-emerald-500 text-white shadow-emerald-200" 
                       : "border-gray-300 bg-white text-gray-400"
                   )}>
                     {completed ? (
@@ -154,14 +154,14 @@ export function OrderTrackingModal({ tracking, productName, productImage }: Orde
                   </div>
                   
                   <span className={cn(
-                    "text-[9px] sm:text-xs text-center leading-tight px-0.5 max-w-[55px] sm:max-w-[80px]", 
-                    completed ? "text-gray-900 font-medium" : "text-gray-500"
+                    "text-[9px] sm:text-xs text-center leading-tight px-0.5 max-w-[65px] sm:max-w-[90px]", 
+                    completed ? "text-gray-900 font-semibold" : "text-gray-500"
                   )}>
                     {step.label}
                   </span>
                   
                   {isCurrent && date && (
-                    <span className="text-[9px] sm:text-xs text-green-600 font-semibold mt-0.5 sm:mt-1.5">
+                    <span className="text-[9px] sm:text-xs text-emerald-600 font-semibold mt-0.5 sm:mt-1.5">
                       {formatDate(date)}
                     </span>
                   )}
@@ -182,12 +182,34 @@ export function OrderTrackingModal({ tracking, productName, productImage }: Orde
         </div>
       )}
 
-      {/* Carrier Information */}
-      <div className="rounded-lg bg-gray-50/80 border border-gray-200 p-3.5 sm:p-4 mt-5">
-        <p className="text-xs sm:text-sm font-semibold text-gray-900 mb-2">Carrier: {tracking.carrier}</p>
-        <p className="text-xs sm:text-sm text-gray-600 break-all font-mono">
-          Tracking #: {tracking.trackingNumber}
-        </p>
+      {/* Carrier + From in a single column card */}
+      <div className="rounded-lg bg-gray-50 border border-gray-200 p-3.5 sm:p-4 mt-4">
+        {/* Carrier row */}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <p className="text-xs sm:text-sm font-semibold text-gray-900">Carrier</p>
+            <span className="text-xs sm:text-sm px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 border border-gray-200">
+              {tracking.carrier}
+            </span>
+          </div>
+          <p className="text-xs sm:text-sm text-gray-600 font-mono">
+            Tracking #: {tracking.trackingNumber}
+          </p>
+        </div>
+
+        {/* From section */}
+        <div className="mt-3 pt-3 border-t">
+          <div className="flex items-center gap-2 mb-2">
+            <MapPin className="h-4 w-4 text-blue-600" />
+            <p className="text-sm font-semibold text-gray-900">From</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-gray-900">Friend&apos;s Telecom</p>
+            <p className="text-sm text-gray-600">
+              Bashundhara City Shopping Complex Basement 2, Shop 25, Dhaka, Bangladesh
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -3,6 +3,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import {ArrowLeft, CheckCircle2, MapPin, Phone} from 'lucide-react';
 import {
   Card,
@@ -358,21 +359,25 @@ function OrderDetailPage() {
   console.log(`Discount: ${discount}`);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
+    <div className="space-y-6 pb-12">
+      <div className="flex items-center gap-3 sm:gap-4">
         <Link href="/account/orders">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-5 w-5" />
+          <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-10 sm:w-10">
+            <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
         </Link>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
+        <div className="flex-1">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900">
             {tracking.orderNumber || orderId}
           </h1>
-          {/* You can add placed date if available */}
+          {tracking.createdAt && (
+            <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+              Placed on {new Date(tracking.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+            </p>
+          )}
         </div>
         <Badge
-          className="ml-auto bg-green-500/10 text-green-600 border-green-200"
+          className="bg-green-500/10 text-green-600 border-green-200 font-semibold px-3 py-1"
           variant="outline">
           {tracking.status
             ? tracking.status.charAt(0).toUpperCase() + tracking.status.slice(1)
@@ -380,114 +385,130 @@ function OrderDetailPage() {
         </Badge>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Order Timeline</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="relative space-y-6">
-                {timeline.length === 0 ? (
-                  <div className="text-muted-foreground">
-                    No timeline available
-                  </div>
-                ) : (
-                  timeline.map((event, index) => (
-                    <div key={index} className="flex gap-4">
-                      <div className="relative flex flex-col items-center">
-                        <div
-                          className={`flex h-8 w-8 items-center justify-center rounded-full ${
-                            event.completed
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-muted text-muted-foreground'
-                          }`}>
-                          {event.completed ? (
-                            <CheckCircle2 className="h-4 w-4" />
-                          ) : (
-                            <div className="h-2 w-2 rounded-full bg-current" />
-                          )}
-                        </div>
-                        {index < timeline.length - 1 && (
-                          <div
-                            className={`absolute top-8 h-full w-0.5 ${
-                              event.completed ? 'bg-primary' : 'bg-muted'
-                            }`}
-                          />
-                        )}
-                      </div>
-                      <div className="pb-6">
-                        <p className="font-medium">{event.status}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {event.date}
-                        </p>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
 
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
+                {/* Order Items Section */}
+                <div className="lg:col-span-2">
+                  <Card className="shadow-sm hover:shadow-md transition-shadow">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base sm:text-lg">Order Items</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {items.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500">
+                          No items found
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {items.map((item: any, index: number) => (
+                            <div key={index} className="flex gap-4 pb-4 border-b last:border-b-0 last:pb-0">
+                              <div className="h-20 w-20 sm:h-24 sm:w-24 shrink-0 overflow-hidden rounded-lg bg-gray-100 border border-gray-200 relative">
+                                {item.image ? (
+                                  <Image
+                                    src={item.image}
+                                    alt={item.productName || item.name}
+                                    fill
+                                    className="object-cover"
+                                  />
+                                ) : (
+                                  <div className="h-full w-full flex items-center justify-center text-gray-400 text-xs">
+                                    No image
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-semibold text-gray-900 text-sm sm:text-base mb-1">
+                                  {item.productName || item.name || 'Product'}
+                                </h3>
+                                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+                                  <div className="text-gray-600">
+                                    <span className="text-xs text-gray-500">Qty:</span>{' '}
+                                    <span className="font-medium text-gray-900">{item.quantity}</span>
+                                  </div>
+                                  <div className="text-gray-600">
+                                    <span className="text-xs text-gray-500">Price:</span>{' '}
+                                    <span className="font-medium text-gray-900">{formatPrice(item.price || 0)}</span>
+                                  </div>
+                                </div>
+                                <div className="mt-2">
+                                  <span className="text-xs text-gray-500">Total:</span>{' '}
+                                  <span className="font-bold text-gray-900">
+                                    {formatPrice((item.price || 0) * (item.quantity || 0))}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+        <div className="space-y-4 sm:space-y-6 lg:col-span-1">
+          <Card className="shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10">
+                  <MapPin className="h-4 w-4 text-blue-600" />
+                </div>
                 Shipping Address
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-1 text-sm">
-                <p className="font-medium">
+              <div className="space-y-2 text-sm">
+                <p className="font-semibold text-gray-900">
                   {shippingAddress.fullName || shippingAddress.name || '-'}
                 </p>
-                <p className="text-muted-foreground">
+                <p className="text-gray-600 leading-relaxed">
                   {shippingAddress.address || '-'}
                 </p>
-                <p className="text-muted-foreground">
+                <p className="text-gray-600">
                   {shippingAddress.division || '-'},{' '}
                   {shippingAddress.district || shippingAddress.city || '-'} -{' '}
                   {shippingAddress.postCode || shippingAddress.pincode || '-'}
                 </p>
-                <p className="flex items-center gap-1 text-muted-foreground">
-                  <Phone className="h-3 w-3" />
-                  {shippingAddress.phone || '-'}
+                <div className="flex items-center gap-2 text-gray-600 pt-1">
+                  <div className="flex h-6 w-6 items-center justify-center rounded bg-gray-100">
+                    <Phone className="h-3 w-3 text-gray-600" />
+                  </div>
+                  <span className="font-medium">{shippingAddress.phone || '-'}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base sm:text-lg">Payment Summary</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Subtotal</span>
+                  <span className="font-medium text-gray-900">{formatPrice(paymentSummary.subtotal || 0)}</span>
+                </div>
+
+                <Separator />
+                <div className="flex justify-between text-base sm:text-lg">
+                  <span className="font-semibold text-gray-900">Total</span>
+                  <span className="font-bold text-gray-900">{formatPrice(paymentSummary.total || 0)}</span>
+                </div>
+              </div>
+              <div className="rounded-lg bg-gray-50 border border-gray-200 p-3 mt-4">
+                <p className="text-xs text-gray-500 mb-1">Payment Method</p>
+                <p className="text-sm font-semibold text-gray-900 capitalize">
+                  {paymentSummary.paymentMethod || '-'}
                 </p>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Payment Summary</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Subtotal</span>
-                <span>{formatPrice(paymentSummary.subtotal || 0)}</span>
-              </div>
-
-              <Separator />
-              <div className="flex justify-between font-semibold">
-                <span>Total</span>
-                <span>{formatPrice(paymentSummary.total || 0)}</span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Paid via {paymentSummary.paymentMethod || '-'}
-              </p>
-            </CardContent>
-          </Card>
-
-          <div className="space-y-2">
-            <Button
-              variant="outline"
-              className="w-full bg-transparent"
-              onClick={handlePrintInvoice}>
-              Print Invoice
-            </Button>
-          </div>
+          <Button
+            variant="black"
+            className="w-full bg-white hover:bg-gray-50 border-gray-300 font-semibold shadow-sm"
+            onClick={handlePrintInvoice}>
+            Print Invoice
+          </Button>
         </div>
       </div>
     </div>

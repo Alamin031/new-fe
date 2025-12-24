@@ -91,43 +91,35 @@ function OrderCard({ order }: { order: OrderWithStatus }) {
   const firstItem = order.items && order.items.length > 0 ? order.items[0] : null;
   return (
     <>
-      <Card key={order.id}>
+      <Card key={order.id} className="shadow-sm border border-border/60 hover:shadow-md transition-shadow rounded-xl">
         <CardContent className="p-6">
           <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
-            <div>
+            <div className="space-y-1">
               <div className="flex items-center gap-3">
-                {firstItem && (
-                  <Image
-                    src={firstItem.image || "/placeholder.svg"}
-                    alt={firstItem.name}
-                    width={40}
-                    height={40}
-                    className="rounded border object-cover"
-                  />
-                )}
-                <p className="font-semibold">
-                  {firstItem ? firstItem.name : order.id}
+                <p className="font-semibold text-base text-foreground">
+                  Order #{order.orderNumber || order.id}
                 </p>
                 <Badge className={getStatusColor(order.status)} variant="outline">
                   {order.status}
                 </Badge>
               </div>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Ordered on {order.date}
+              <p className="text-sm text-muted-foreground">
+                Ordered on {order.date} · {order.items.length} {order.items.length === 1 ? "item" : "items"}
               </p>
+              {firstItem?.name && (
+                <p className="text-sm font-medium text-foreground/80">{firstItem.name}</p>
+              )}
             </div>
             <div className="text-right">
               <p className="text-lg font-bold">{formatPrice(order.total)}</p>
-              <p className="text-sm text-muted-foreground">
-                {order.items.length} {order.items.length === 1 ? "item" : "items"}
-              </p>
+              <p className="text-xs text-muted-foreground">Total</p>
             </div>
           </div>
 
           <div className="space-y-3">
             {order.items.map((item, index) => (
-              <div key={index} className="flex items-center gap-4 rounded-lg bg-muted/50 p-3">
-                <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-background">
+              <div key={index} className="flex items-center gap-4 rounded-xl bg-muted/30 border border-border/60 p-3">
+                <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-background border">
                   <Image
                     src={item.image || "/placeholder.svg"}
                     alt={item.name}
@@ -137,7 +129,7 @@ function OrderCard({ order }: { order: OrderWithStatus }) {
                   />
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium">{item.name}</p>
+                  <p className="font-semibold text-sm sm:text-base">{item.name}</p>
                   <p className="text-sm text-muted-foreground">
                     Qty: {item.quantity} × {formatPrice(item.price)}
                   </p>
@@ -146,9 +138,9 @@ function OrderCard({ order }: { order: OrderWithStatus }) {
             ))}
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center gap-2">
+          <div className="mt-4 flex flex-wrap items-center gap-2 justify-end">
             <Link href={`/account/orders/${order.id}`}>
-              <Button variant="outline" size="sm" className="gap-1 bg-transparent">
+              <Button variant="outline" size="sm" className="gap-1">
                 View Details
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -156,7 +148,7 @@ function OrderCard({ order }: { order: OrderWithStatus }) {
             <Button
               variant="black"
               size="sm"
-              className="gap-1 bg-transparent"
+              className="gap-1"
               onClick={handleTrackOrder}
             >
               <Map className="h-4 w-4" />
@@ -174,14 +166,6 @@ function OrderCard({ order }: { order: OrderWithStatus }) {
           </DialogHeader>
           {trackingData && (
             <>
-              {/* Show From section above tracking modal */}
-              <div className="mb-4 p-4 rounded bg-muted/50 border">
-                <div className="font-semibold mb-1">From:</div>
-                <div className="font-mono text-sm">
-                  Friend&apos;s Telecom<br />
-                  Bashundhara City Shopping Complex Basement 2, Shop 25, Dhaka, Bangladesh
-                </div>
-              </div>
               <OrderTrackingModal
                 tracking={trackingData}
                 productName={firstItem?.name}
@@ -202,6 +186,8 @@ function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const user = useAuthStore((state: any) => state.user);
+  const [tab, setTab] = useState<string>("all");
+  const [filterOpen, setFilterOpen] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -223,10 +209,21 @@ function OrdersPage() {
     fetchOrders();
   }, [user]);
 
-  const filteredOrders = orders.filter((order) =>
-    order.orderNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.id?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const term = searchTerm.trim().toLowerCase();
+  const filteredOrders = orders.filter((order: any) => {
+    if (!term) return true;
+    const idMatch =
+      order.orderNumber?.toLowerCase().includes(term) ||
+      order.id?.toLowerCase().includes(term);
+
+    const items = Array.isArray(order.orderItems) ? order.orderItems : [];
+    const itemMatch = items.some((it: any) => {
+      const name = (it.productName || it.name || "").toLowerCase();
+      return name.includes(term);
+    });
+
+    return idMatch || itemMatch;
+  });
 
   // Map API orderItems to items for UI
   const mapOrder = (order: any) => ({
@@ -247,32 +244,74 @@ function OrdersPage() {
 
   const groupedOrders = {
     all: filteredOrders.map(mapOrder),
-    processing: filteredOrders.filter((o) => o.status === "processing").map(mapOrder),
-    shipped: filteredOrders.filter((o) => o.status === "shipped").map(mapOrder),
-    delivered: filteredOrders.filter((o) => o.status === "delivered").map(mapOrder),
+    processing: filteredOrders.filter((o) => (o.status || "").toLowerCase() === "processing").map(mapOrder),
+    shipped: filteredOrders.filter((o) => (o.status || "").toLowerCase() === "shipped").map(mapOrder),
+    delivered: filteredOrders.filter((o) => (o.status || "").toLowerCase() === "delivered").map(mapOrder),
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">My Orders</h1>
-        <p className="text-muted-foreground">Track and manage your orders.</p>
+    <div className="space-y-6 pb-10 max-w-5xl mx-auto">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">My Orders</h1>
+          <p className="text-sm text-muted-foreground">Track and manage your orders.</p>
+        </div>
+        <Badge className="w-fit bg-blue-50 text-blue-700 border-blue-100">Dashboard</Badge>
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1 sm:max-w-xs">
+        <div className="relative flex-1 sm:max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search orders..."
-            className="pl-9"
+            className="pl-9 h-10"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Button variant="outline" size="sm" className="gap-2 bg-transparent">
-          <Filter className="h-4 w-4" />
-          Filter
-        </Button>
+        <div className="relative">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 h-10"
+            onClick={() => setFilterOpen((v) => !v)}
+            aria-haspopup="menu"
+            aria-expanded={filterOpen}
+          >
+            <Filter className="h-4 w-4" />
+            Filter
+          </Button>
+          {filterOpen && (
+            <div className="absolute right-0 mt-2 w-40 rounded-md border border-border/60 bg-background shadow-md z-50">
+              <div className="py-1">
+                <button
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-muted"
+                  onClick={() => { setTab("all"); setFilterOpen(false); }}
+                >
+                  All Orders
+                </button>
+                <button
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-muted"
+                  onClick={() => { setTab("processing"); setFilterOpen(false); }}
+                >
+                  Processing
+                </button>
+                <button
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-muted"
+                  onClick={() => { setTab("shipped"); setFilterOpen(false); }}
+                >
+                  Shipped
+                </button>
+                <button
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-muted"
+                  onClick={() => { setTab("delivered"); setFilterOpen(false); }}
+                >
+                  Delivered
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {loading ? (
@@ -286,12 +325,20 @@ function OrdersPage() {
           <p className="text-red-500">{error}</p>
         </div>
       ) : (
-        <Tabs defaultValue="all">
-          <TabsList>
-            <TabsTrigger value="all">All Orders</TabsTrigger>
-            <TabsTrigger value="processing">Processing</TabsTrigger>
-            <TabsTrigger value="shipped">Shipped</TabsTrigger>
-            <TabsTrigger value="delivered">Delivered</TabsTrigger>
+        <Tabs value={tab} onValueChange={setTab}>
+          <TabsList className="h-auto flex-wrap gap-2 bg-transparent p-0">
+            <TabsTrigger value="all" className="rounded-full px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              All Orders
+            </TabsTrigger>
+            <TabsTrigger value="processing" className="rounded-full px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              Processing
+            </TabsTrigger>
+            <TabsTrigger value="shipped" className="rounded-full px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              Shipped
+            </TabsTrigger>
+            <TabsTrigger value="delivered" className="rounded-full px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              Delivered
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="all" className="mt-6 space-y-4">
