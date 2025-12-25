@@ -1639,17 +1639,17 @@ function NewProductPage() {
         <TabsList className="grid w-full grid-cols-3 mb-8 bg-gray-100 p-1 rounded-lg">
           <TabsTrigger
             value="basic"
-            className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            className="data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-sm">
             Basic Product
           </TabsTrigger>
           <TabsTrigger
             value="network"
-            className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            className="data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-sm">
             Network Product
           </TabsTrigger>
           <TabsTrigger
             value="region"
-            className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            className="data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-sm">
             Region Product
           </TabsTrigger>
         </TabsList>
