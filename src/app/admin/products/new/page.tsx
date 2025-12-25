@@ -1617,7 +1617,7 @@ function NewProductPage() {
       <div className="mb-6">
         <div className="rounded-md bg-yellow-50 border-l-4 border-yellow-400 p-4">
           <p className="text-sm text-yellow-700">
-            Recommended image sizes — Product card: 400x400px; Product detail main image: 800–1200px (square preferred); Gallery thumbnails: 96x96px; Lightbox thumbnails: 64x64px; Color swatches: 56x56px (upload at ~200x200px for quality).
+            Recommended image sizes — Product : 400x400px.
           </p>
         </div>
       </div>
