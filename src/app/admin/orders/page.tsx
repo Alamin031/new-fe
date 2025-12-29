@@ -59,6 +59,8 @@ import {Label} from '../../components/ui/label';
 import {Textarea} from '../../components/ui/textarea';
 import {formatPrice} from '../../lib/utils/format';
 import {ordersService} from '../../lib/api/services';
+import {AssignUnitsModal} from '../../components/admin/assign-units-modal';
+import type {Order as ApiOrder} from '../../types/index';
 
 interface OrderItem {
   id: string;
