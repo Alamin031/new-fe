@@ -54,11 +54,13 @@ export function AssignUnitsModal({
 
   const initializeForm = (order: Order) => {
     const initialized: Record<string, UnitInput[]> = {};
-    order.items.forEach((item) => {
-      initialized[item.id] = Array(item.quantity)
-        .fill(null)
-        .map(() => ({ imei: '', serial: '' }));
-    });
+    if (Array.isArray(order.items)) {
+      order.items.forEach((item) => {
+        initialized[item.id] = Array(item.quantity)
+          .fill(null)
+          .map(() => ({ imei: '', serial: '' }));
+      });
+    }
     setUnitsByItem(initialized);
   };
 
