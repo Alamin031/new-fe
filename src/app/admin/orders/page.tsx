@@ -433,6 +433,22 @@ function AdminOrdersPage() {
     setFormErrors({});
   };
 
+  const openAssignUnitsModal = async (order: Order) => {
+    try {
+      // Fetch full order details from API
+      const fullOrder = await ordersService.getById(order.id);
+      setSelectedOrderForUnits(fullOrder as any);
+      setAssignUnitsModalOpen(true);
+    } catch (err) {
+      console.error('Error fetching order details:', err);
+    }
+  };
+
+  const handleAssignUnitsSuccess = () => {
+    // Refresh orders list after successful unit assignment
+    // Trigger refetch (you can call the fetch function or use a different approach)
+  };
+
   const handleAddOrder = async () => {
     if (!validateForm()) {
       return;
