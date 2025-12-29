@@ -55,9 +55,14 @@ export function AssignUnitsModal({
 
   const initializeForm = (order: Order) => {
     const initialized: Record<string, UnitInput[]> = {};
-    if (Array.isArray(order.items)) {
-      order.items.forEach((item, index) => {
-        const itemId = (item as any).id || `temp-id-${index}`; // Fallback to a temporary ID
+    // Support both orderItems and items (for backward compatibility)
+    const items = (order as any).orderItems || (order as any).items || [];
+    if (Array.isArray(items)) {
+      items.forEach((item, index) => {
+        // Use productName as fallback for ID if id is undefined
+        const itemId = (item as any).id && (item as any).id !== 'undefined'
+          ? (item as any).id
+          : `item-${index}`;
         initialized[itemId] = Array(item.quantity)
           .fill(null)
           .map(() => ({ imei: '', serial: '' }));
