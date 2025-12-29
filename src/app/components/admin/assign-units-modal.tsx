@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import {
   Dialog,
@@ -41,6 +41,12 @@ export function AssignUnitsModal({
   const [unitsByItem, setUnitsByItem] = useState<
     Record<string, UnitInput[]>
   >({});
+
+  useEffect(() => {
+    if (open && order) {
+      initializeForm(order);
+    }
+  }, [open, order]);
 
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
