@@ -1,64 +1,82 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { apiClient } from "../client"
+import {apiClient} from '../client';
 import {
   Order,
   CreateOrderRequest,
   UpdateOrderStatusRequest,
   CalculateEMIRequest,
   CalculateEMIResponse,
-} from "../types"
-import { API_ENDPOINTS } from "../config"
+} from '../types';
+import {API_ENDPOINTS} from '../config';
 
 export const ordersService = {
-    /**
-     * Get orders by customer email
-     */
-    getByCustomerEmail: async (email: string): Promise<Order[]> => {
-      const endpoint = API_ENDPOINTS.ORDERS_BY_CUSTOMER_EMAIL.replace("{email}", encodeURIComponent(email));
-      const response = await apiClient.get<Order[]>(endpoint);
-      return response.data;
-    },
   /**
-   * Create a new order
+   * Get orders by customer email
    */
-  create: async (data: CreateOrderRequest): Promise<Order> => {
-    const response = await apiClient.post<Order>(API_ENDPOINTS.ORDERS_CREATE, data)
-    return response.data
+  getByCustomerEmail: async (email: string): Promise<Order[]> => {
+    const endpoint = API_ENDPOINTS.ORDERS_BY_CUSTOMER_EMAIL.replace(
+      '{email}',
+      encodeURIComponent(email),
+    );
+    const response = await apiClient.get<Order[]>(endpoint);
+    return response.data;
   },
 
   /**
-   * Get all orders (Admin/Management only)
+   * Create a new order
+   * ❌ NO IMEI / SERIAL HERE
    */
-  getAll: async (page = 1, limit = 20): Promise<{ data: Order[]; pagination: unknown }> => {
-    const response = await apiClient.get<{ data: Order[]; pagination: unknown }>(API_ENDPOINTS.ORDERS_GET, {
-      params: { page, limit },
-    })
-    return response.data
+  create: async (data: CreateOrderRequest): Promise<Order> => {
+    const response = await apiClient.post<Order>(
+      API_ENDPOINTS.ORDERS_CREATE,
+      data,
+    );
+    return response.data;
+  },
+
+  /**
+   * Get all orders (Admin)
+   */
+  getAll: async (
+    page = 1,
+    limit = 20,
+  ): Promise<{data: Order[]; pagination: unknown}> => {
+    const response = await apiClient.get(API_ENDPOINTS.ORDERS_GET, {
+      params: {page, limit},
+    });
+    return response.data;
   },
 
   /**
    * Get order by ID
    */
   getById: async (id: string): Promise<Order> => {
-    const endpoint = API_ENDPOINTS.ORDERS_GET_ONE.replace("{id}", id)
-    const response = await apiClient.get<Order>(endpoint)
-    return response.data
+    const endpoint = API_ENDPOINTS.ORDERS_GET_ONE.replace('{id}', id);
+    const response = await apiClient.get<Order>(endpoint);
+    return response.data;
   },
 
   /**
-   * Update order status (Admin/Management only)
+   * Update order status
+   * ❌ NO IMEI / SERIAL
    */
-  updateStatus: async (id: string, data: UpdateOrderStatusRequest): Promise<Order> => {
-    const endpoint = API_ENDPOINTS.ORDERS_UPDATE_STATUS.replace("{id}", id)
-    const response = await apiClient.patch<Order>(endpoint, data)
-    return response.data
+  updateStatus: async (
+    id: string,
+    data: UpdateOrderStatusRequest,
+  ): Promise<Order> => {
+    const endpoint = API_ENDPOINTS.ORDERS_UPDATE_STATUS.replace('{id}', id);
+    const response = await apiClient.patch<Order>(endpoint, data);
+    return response.data;
   },
 
   /**
-   * Get order tracking info by order number
+   * Track order by order number
    */
   getByOrderNumber: async (orderNumber: string): Promise<Order> => {
-    const endpoint = API_ENDPOINTS.ORDERS_TRACKING.replace("{orderNumber}", orderNumber);
+    const endpoint = API_ENDPOINTS.ORDERS_TRACKING.replace(
+      '{orderNumber}',
+      orderNumber,
+    );
     const response = await apiClient.get<Order>(endpoint);
     return response.data;
   },
@@ -67,37 +85,42 @@ export const ordersService = {
    * Cancel order
    */
   cancel: async (id: string, reason?: string): Promise<Order> => {
-    const endpoint = `/orders/${id}/cancel`
-    const response = await apiClient.post<Order>(endpoint, { reason })
-    return response.data
+    const response = await apiClient.post<Order>(`/orders/${id}/cancel`, {
+      reason,
+    });
+    return response.data;
   },
 
   /**
-   * Generate invoice for order
+   * Generate invoice
    */
   generateInvoice: async (id: string): Promise<any> => {
-    const endpoint = API_ENDPOINTS.ORDERS_INVOICE.replace("{id}", id)
-    const response = await apiClient.get<any>(endpoint)
-    return response.data
+    const endpoint = API_ENDPOINTS.ORDERS_INVOICE.replace('{id}', id);
+    const response = await apiClient.get(endpoint);
+    return response.data;
   },
 
   /**
-   * Calculate EMI for amount
+   * Calculate EMI
    */
-  calculateEMI: async (data: CalculateEMIRequest): Promise<CalculateEMIResponse> => {
-    const response = await apiClient.post<CalculateEMIResponse>(API_ENDPOINTS.ORDERS_CALCULATE_EMI, data)
-    return response.data
+  calculateEMI: async (
+    data: CalculateEMIRequest,
+  ): Promise<CalculateEMIResponse> => {
+    const response = await apiClient.post(
+      API_ENDPOINTS.ORDERS_CALCULATE_EMI,
+      data,
+    );
+    return response.data;
   },
 
   /**
-   * Track order (new backend endpoint)
+   * Track order (detail page)
    */
   track: async (id: string): Promise<any> => {
-    const endpoint = API_ENDPOINTS.ORDERS_GET_ONE.replace("{id}", id);
+    const endpoint = API_ENDPOINTS.ORDERS_GET_ONE.replace('{id}', id);
     const response = await apiClient.get(endpoint);
-
-    // Return full order data for detail page
     const data = response.data;
+
     return {
       id: data.id,
       orderNumber: data.orderNumber,
@@ -106,7 +129,6 @@ export const ordersService = {
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
 
-      // Customer/Shipping address
       customer: data.customer,
       fullName: data.fullName,
       email: data.email,
@@ -116,28 +138,43 @@ export const ordersService = {
       upzila: data.upzila,
       postCode: data.postCode,
       address: data.address,
-      shippingAddress: data.shippingAddress,
 
-      // Payment info
       paymentMethod: data.paymentMethod,
       deliveryMethod: data.deliveryMethod,
-      subtotal: data.subtotal,
-      discount: data.discount,
       total: data.total,
-      paymentSummary: data.paymentSummary,
 
-      // Items
-      orderItems: data.orderItems,
-      items: data.items,
+      orderItems: data.orderItems, // ❌ no imei here
+      orderItemUnits: data.orderItemUnits || [], // ✅ read-only
 
-      // Timeline/tracking
-      timeline: data.timeline,
       statusHistory: data.statusHistory,
-      estimatedDelivery: data.estimatedDelivery || new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
       trackingNumber: data.trackingNumber || data.orderNumber,
-      carrier: data.carrier || "Standard Delivery",
     };
   },
-}
 
-export default ordersService
+  /**
+   * ✅ Assign IMEI / Serial (ADMIN ONLY)
+   */
+  assignUnitsAdmin: async (
+    orderId: string,
+    data: AssignOrderItemUnitsRequest[],
+  ): Promise<any> => {
+    const endpoint = API_ENDPOINTS.ORDERS_ADMIN_ASSIGN_UNITS.replace(
+      '{id}',
+      orderId,
+    );
+    const response = await apiClient.post(endpoint, data);
+    return response.data;
+  },
+};
+
+export default ordersService;
+
+/* ================= TYPES ================= */
+
+export type AssignOrderItemUnitsRequest = {
+  orderItemId: string;
+  units: {
+    imei?: string;
+    serial?: string;
+  }[];
+};

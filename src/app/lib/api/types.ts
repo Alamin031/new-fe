@@ -340,6 +340,12 @@ export interface OrderItem {
   sim?: string;
   image?: string;
   dynamicInputs?: Record<string, any>;
+  // Read-only units assigned by admin (for display only)
+  orderItemUnits?: {
+    imei?: string;
+    serial?: string;
+    status: string;
+  }[];
 }
 
 export type OrderStatus = "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled" | "returned"
@@ -356,6 +362,7 @@ export interface CreateOrderRequest {
     RAM?: string;
     sim?: string;
     image?: string;
+    // Keep dynamicInputs for product options, but IMEI/serial must NOT be sent here.
     dynamicInputs?: Record<string, any>;
     selectedVariants?: Record<string, string>;
   }[];
@@ -373,6 +380,17 @@ export interface CreateOrderRequest {
   total?: number;
   // Add any other fields your backend expects
 }
+
+// Payload used by admin to assign units (IMEI/Serial) to order items
+export interface AssignUnitsPayload {
+  orderItemId: string;
+  units: {
+    imei?: string;
+    serial?: string;
+  }[];
+}
+
+export type AssignUnitsRequest = AssignUnitsPayload[];
 
 export interface UpdateOrderStatusRequest {
   status: OrderStatus

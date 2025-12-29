@@ -101,6 +101,7 @@ export const API_ENDPOINTS = {
   ORDERS_INVOICE: '/orders/{id}/invoice',
   ORDERS_CALCULATE_EMI: '/orders/calculate-emi',
   ORDERS_BY_CUSTOMER_EMAIL: '/orders/by-customer-email/{email}',
+  ORDERS_ADMIN_ASSIGN_UNITS: '/orders/admin/{id}/assign-units',
   
   WARRANTY_ACTIVATE: '/warranty/activate',
   WARRANTY_LOOKUP: '/warranty/lookup',
@@ -108,6 +109,7 @@ export const API_ENDPOINTS = {
   WARRANTY_ADD: '/warranty/add',
   WARRANTY_UPDATE: '/warranty/update/{id}',
   WARRANTY_DELETE: '/warranty/delete/{id}',
+  
   GIVEAWAYS_CREATE: '/giveaways',
   GIVEAWAYS_GET: '/giveaways',
   GIVEAWAYS_GET_ONE: '/giveaways/{id}',
