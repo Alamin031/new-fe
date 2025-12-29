@@ -122,7 +122,7 @@ export function AssignUnitsModal({
           </DialogDescription>
         </DialogHeader>
 
-        {order && (
+        {order && Array.isArray(order.items) && order.items.length > 0 ? (
           <div className="space-y-6">
             {order.items.map((item) => {
               const itemUnits = unitsByItem[item.id] || [];
@@ -199,6 +199,10 @@ export function AssignUnitsModal({
                 </Card>
               );
             })}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-muted-foreground">
+            <p>No items in this order</p>
           </div>
         )}
 
